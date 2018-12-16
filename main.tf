@@ -15,3 +15,7 @@ resource "google_storage_bucket" "terraform-state" {
     storage_class = "REGIONAL"
     location = "${data.google_client_config.current.region}"
 }
+
+terraform {
+    backend "gcs" {}
+}
