@@ -1,4 +1,5 @@
 .terraform
 *.tfstate*
+plan
 backend.auto.tfvars
 provider.auto.tfvars
