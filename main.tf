@@ -1,21 +1,28 @@
 
-# See $GOOGLE_APPLICATION_CREDENTIALS
-#     GOOGLE_PROJECT
-#     GOOGLE_REGION
-#     GOOGLE_ZONE
-provider "google" {}
-
-# Access to project, region, and access_token
-data "google_client_config" "current" {}
-
-# Bucket for holding/locking terraform state
-resource "google_storage_bucket" "terraform-state" {
-    name = "me-icuc-test-terraform-state"
-    project = "${data.google_client_config.current.project}"
-    storage_class = "REGIONAL"
-    location = "${data.google_client_config.current.region}"
-}
-
+# From CLI -backend-config="backend.auto.tfvars"
 terraform {
     backend "gcs" {}
 }
+
+# From provider.auto.tfvars and backend.auto.tfvars
+variable "credentials" {}
+variable "project" {}
+variable "region" {}
+variable "zone" {}
+variable "bucket" {}
+
+provider "google" {
+    credentials = "${var.credentials}"
+    project = "${var.project}"
+    region = "${var.region}"
+    zone = "${var.zone}"
+}
+
+# Bucket for holding/locking terraform state
+resource "google_storage_bucket" "terraform-state" {
+    name = "${var.bucket}"
+    project = "${var.project}"
+    storage_class = "REGIONAL"
+    location = "${var.region}"
+}
+
