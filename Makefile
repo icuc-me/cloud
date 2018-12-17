@@ -1,5 +1,5 @@
 
 .PHONY: all
 all:
-	terraform init -backend-config="terraform.secrets"
+	terraform init -backend-config="backend.auto.tfvars"
 	terraform apply
