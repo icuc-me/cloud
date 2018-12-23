@@ -31,9 +31,13 @@ $ SUSERNAME=fng
 
 $ for ENV_NAME in test stage prod; do \
 pgcloud --configuration=$ENV_NAME --project=${ENV_NAME}-${PROJECT_SFX} init; \
-pgcloud --configuration=prod iam service-accounts create ${SUSERNAME}; \
+pgcloud --configuration=$ENV_NAME iam service-accounts create ${SUSERNAME}; \
+pgcloud --configuration=$ENV_NAME projects add-iam-policy-binding ${ENV_NAME}-${PROJECT_SFX} \
+    --member serviceAccount:${SUSERNAME}@${ENV_NAME}-cloud-icuc-me.iam.gserviceaccount.com \
+    --role roles/storage.admin; \
 pgcloud --configuration=$ENV_NAME iam service-accounts keys create \
     $PWD/${ENV_NAME}-${SUSERNAME}.json \
-    --iam-account=${SUSERNAME}@${ENV_NAME}-cloud-icuc-me.iam.gserviceaccount.com \
-    --key-file-type=json; done
+    --iam-account=serviceAccount:${SUSERNAME}@${ENV_NAME}-cloud-icuc-me.iam.gserviceaccount.com \
+    --key-file-type=json; \
+done
 ```
