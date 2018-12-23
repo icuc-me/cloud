@@ -31,6 +31,7 @@ clean-prod:
 clean-%:
 	@$(MAKE) -C secrets ENV_NAME=$*
 	@$(MAKE) -C terraform clean ENV_NAME=$*
+	@$(MAKE) -C terraform clean
 	@$(MAKE) clean
 
 .PHONY: %_env
