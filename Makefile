@@ -21,6 +21,7 @@ help:
 .PHONY: clean
 clean:
 	@$(MAKE) -C secrets clean
+	@rm -rf terraform/.terraform
 
 .PHONY: clean-prod
 clean-prod:
