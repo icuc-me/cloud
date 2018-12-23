@@ -28,7 +28,7 @@ clean-prod:
 	$(error "I have a bag of hammers smarter than you")
 
 .PHONY: clean-%
-clean-%: clean
+clean-%:
 	@$(MAKE) -C secrets ENV_NAME=$*
 	@$(MAKE) -C terraform clean ENV_NAME=$*
 	@$(MAKE) clean
