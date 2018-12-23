@@ -16,9 +16,11 @@ apply: guard-ENV_NAME plan
 plan: guard-ENV_NAME init provider.auto.tfvars
 	TF_IN_AUTOMATION=1 terraform plan -input=false -var env_name=$(ENV_NAME) out=$@
 
-.PHONY: init
-init: backend.auto.tfvars
+.terraform: backend.auto.tfvars
 	TF_IN_AUTOMATION=1 terraform init -input=false -backend-config="$<" -force-copy -upgrade=true
+
+.PHONY: init
+init: .terraform
 
 .PHONY: clean
 clean: guard-ENV_NAME init
@@ -28,3 +30,4 @@ clean: guard-ENV_NAME init
 	fi;
 	TF_IN_AUTOMATION=1 terraform destroy -auto-approve -var env_name=$(ENV_NAME)
 	rm -f plan
+	rm -rf .terraform
