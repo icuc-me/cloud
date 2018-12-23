@@ -1,1 +1,0 @@
-../secrets/provider.auto.tfvars

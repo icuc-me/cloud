@@ -2,12 +2,12 @@ ENV_NAME_TOKEN=\%\%ENV_NAME\%\%
 CWD_TOKEN=\%\%CWD_PATH\%\%
 
 .PHONY: all
-all: guard-ENV_NAME backend.auto.tfvars
+all: guard-ENV_NAME $(ENV_NAME)-backend.auto.tfvars
 
-backend.auto.tfvars: backend.auto.tfvars.in_2
+$(ENV_NAME)-backend.auto.tfvars: $(ENV_NAME)-backend.auto.tfvars.in_2
 	sed -r -e 's)$(CWD_TOKEN))$(shell realpath $(@D)))g' '$^' > '$@'
 
-backend.auto.tfvars.in_2: backend.auto.tfvars.in
+$(ENV_NAME)-backend.auto.tfvars.in_2: backend.auto.tfvars.in
 	sed -r -e 's/$(ENV_NAME_TOKEN)/$(ENV_NAME)/g' '$^' > '$@'
 
 # Utility target for checking required parameters
@@ -18,5 +18,5 @@ guard-%:
 	fi;
 
 clean:
-	rm -f backend.auto.tfvars.in_2
-	rm -f backend.auto.tfvars
+	rm -f *backend.auto.tfvars.in_2
+	rm -f *backend.auto.tfvars

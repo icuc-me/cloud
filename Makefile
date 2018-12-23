@@ -14,14 +14,14 @@ help:
 	@echo 'clean - remove temporary and generated files'
 	@echo 'clean-test - Destroy test environment'
 	@echo 'clean-stage - Destroy staging environment'
-	@echo 'clean-prod - Remind you of your intelligence level'
+	@echo 'clean-prod - Reminder of your intelligence level'
 	@echo ''
 	@echo '###########################################################################'
 
 .PHONY: clean
 clean:
+	@$(MAKE) -C terraform clean
 	@$(MAKE) -C secrets clean
-	@rm -rf terraform/.terraform
 
 .PHONY: clean-prod
 clean-prod:
@@ -34,6 +34,6 @@ clean-%: clean
 	@$(MAKE) clean
 
 .PHONY: %_env
-%_env: clean
+%_env:
 	@$(MAKE) -C secrets ENV_NAME=$*
 	@$(MAKE) -C terraform ENV_NAME=$*
