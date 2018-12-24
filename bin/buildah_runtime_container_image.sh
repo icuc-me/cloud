@@ -130,11 +130,14 @@ then
     if ((CHANGED)) || ! sudo podman images $IMAGE_NAME &> /dev/null
     then
         sudo podman rm $IMAGE_NAME 2> /dev/null || true
+        trap cleanup EXIT
         sudo podman tag $_LAYER_4:CACHE $IMAGE_NAME
+        trap - EXIT
     else
         echo "Skipping tag of layer 4"
     fi
 
+    echo "Success!"
 
 elif [[ "$MAGIC" == "$_LAYER_1" ]]
 then
