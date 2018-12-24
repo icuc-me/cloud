@@ -39,8 +39,8 @@ build_layer() {
         "--env=VERSION=$VERSION" \
         $container
     sudo buildah run $container -- /usr/src/$SCRIPT_SUBDIR/$SCRIPT_FILENAME
-    [[ -z "$XTRA_CONFIG" ]] || sudo buildah config $XTRA_CONFIG $container
-    sudo buildah commit --rm --format=docker $container "$LAYER_NAME:$VERSION"
+    [[ -z "$XTRA_CONFIG" ]] || sudo buildah config "$XTRA_CONFIG" $container
+    sudo buildah commit --rm --format=docker $container "$LAYER_NAME"
     trap - EXIT
     set +x
     unset FROM_NAME LAYER_NAME XTRA_CONFIG
@@ -89,50 +89,48 @@ then
     fi
 
     CHANGED=0
-    if [[ "$(image_age $_LAYER_1:$VERSION)" -ge "$[60 * 60 * 24 * 7]" ]] || \
-       [[ "$(image_packages $_LAYER_1:$VERSION)" != "$INSTALL_RPMS" ]]
+    if [[ "$(image_age $_LAYER_1:CACHE)" -ge "$[60 * 60 * 24 * 7]" ]] || \
+       [[ "$(image_version $_LAYER_1:CACHE | cut -d . -f 1)" != "$VERSION_MAJ" ]]
     then
-        build_layer docker://centos:7 $_LAYER_1 "--label=PACKAGES=$INSTALL_RPMS"
+        build_layer docker://centos:7 $_LAYER_1:CACHE "--label=PACKAGES=$INSTALL_RPMS"
         CHANGED=1
     else
         echo "Skipping build of layer 1"
     fi
 
     if ((CHANGED)) || \
-       [[ $(image_version $_LAYER_1:$VERSION) != $(image_version $_LAYER_2:$VERSION) ]] || \
-       [[ "$(image_packages $_LAYER_1:$VERSION)" != "$INSTALL_RPMS" ]]
+       [[ "$(image_packages $_LAYER_2:CACHE)" != "$INSTALL_RPMS" ]] || \
+       [[ "$(image_version $_LAYER_2:CACHE | cut -d . -f 1)" != "$VERSION_MAJ" ]]
     then
-        build_layer $_LAYER_1:$VERSION $_LAYER_2
+        build_layer $_LAYER_1:CACHE $_LAYER_2:CACHE
         CHANGED=1
     else
         echo "Skipping build of layer 2"
     fi
 
     if ((CHANGED)) || \
-       [[ $(image_version $_LAYER_2:$VERSION) != $(image_version $_LAYER_3:$VERSION) ]] || \
-       [[ "$(image_packages $_LAYER_2:$VERSION)" != "$INSTALL_RPMS" ]]
+       [[ "$(image_version $_LAYER_3:CACHE | cut -d . -f 1-2)" != "$VERSION_MAG_MIN" ]]
     then
-        build_layer $_LAYER_2:$VERSION $_LAYER_3
+        build_layer $_LAYER_2:CACHE $_LAYER_3:CACHE
         CHANGED=1
     else
         echo "Skipping build of layer 3"
     fi
 
     if ((CHANGED)) || \
-       [[ $(image_version $_LAYER_3:$VERSION) != $(image_version $_LAYER_4:$VERSION) ]] || \
-       [[ "$(image_packages $_LAYER_3:$VERSION)" != "$INSTALL_RPMS" ]]
+       [[ "$(image_version $_LAYER_4:CACHE)" != "$VERSION" ]]
     then
-        build_layer $_LAYER_3:$VERSION $_LAYER_4
+        build_layer $_LAYER_3:CACHE $_LAYER_4:CACHE \
             "--entrypoint=/root/bin/as_user.sh"
         CHANGED=1
     else
         echo "Skipping build of layer 4"
     fi
 
-    if ((CHANGED)) || ! sudo podman images $IMAGE_NAME 2> /dev/null
+    if ((CHANGED)) || ! sudo podman images $IMAGE_NAME &> /dev/null
     then
         sudo podman rm $IMAGE_NAME 2> /dev/null || true
-        sudo podman tag $_LAYER_4:$VERSION $IMAGE_NAME
+        sudo podman tag $_LAYER_4:CACHE $IMAGE_NAME
     else
         echo "Skipping tag of layer 4"
     fi
@@ -142,7 +140,6 @@ elif [[ "$MAGIC" == "$_LAYER_1" ]]
 then
     yum update -y
     yum install -y epel-release
-    yum install -y $INSTALL_RPMS
     yum clean all
     rm -rf /var/cache/yum
 elif [[ "$MAGIC" == "$_LAYER_2" ]]
@@ -157,7 +154,7 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
-    yum install -y google-cloud-sdk
+    yum install -y google-cloud-sdk $INSTALL_RPMS
     cd /tmp
     curl -o terraform.zip "$TERRAFORM_URL"
     unzip terraform.zip
