@@ -129,7 +129,7 @@ then
         echo "Skipping build of layer 4"
     fi
 
-    if ((CHANGED)) || ! sudo podman images $IMAGE_NAME 2> /dev/null
+    if ((CHANGED)) || ! sudo podman images $IMAGE_NAME &> /dev/null
     then
         sudo podman rm $IMAGE_NAME 2> /dev/null || true
         sudo podman tag $_LAYER_4:$VERSION $IMAGE_NAME
