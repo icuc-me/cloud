@@ -38,6 +38,9 @@ $(ENV_NAME)-backend.auto.tfvars: guard-ENV_NAME ../secrets/$(ENV_NAME)-backend.a
 provider.auto.tfvars:
 	ln -s ../secrets/provider.auto.tfvars .
 
+uuid.auto.tfvars:
+	ln -s ../secrets/uuid.auto.tfvars .
+
 .PHONY: init
 init: .terraform
 
@@ -48,5 +51,5 @@ clean:
 		test) ;& \
 		stage) TF_IN_AUTOMATION=1 terraform destroy -auto-approve -var env_name=$(ENV_NAME) ;; \
 	esac
-	rm -f plan *tfstate* *backend.auto.tfvars provider.auto.tfvars
+	rm -f plan *tfstate* *backend.auto.tfvars *provider.auto.tfvars *uuid.auto.tfvars
 	rm -rf .terraform

@@ -8,7 +8,8 @@
 
 ## Contents of `backend.auto.tfvars.in`:
 
-May use `%%ENV_NAME%%` and `%%CWD_PATH` substitution tokens in values
+May use `%%ENV_NAME%%`, `%%CREDS_DIRPATH%%`, and '%%UUID%%' substitution tokens in values,
+as defined by Makefile.
 
 ```
     credentials
