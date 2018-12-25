@@ -13,6 +13,9 @@ then
 elif [[ -z "$IMAGE_NAME" ]]
 then
     die "Error retrieving image name" 3
+elif sudo podman pull $IMAGE_NAME || $SCRIPT_DIRPATH/buildah_runtime_container_image.sh
+then
+    sudo podman images $IMAGE_NAME &> /dev/null || die "Error accessing image $IMAGE_NAME"
 fi
 
 sudo podman run -it --rm \
