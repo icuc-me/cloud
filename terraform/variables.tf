@@ -1,6 +1,6 @@
 
 
-# From provider.auto.tfvars and backend.auto.tfvars
+# From provider.auto.tfvars, backend.auto.tfvars, uuid.auto.tfvars
 variable "credentials" {
     description = "https://www.terraform.io/docs/providers/google/provider_reference.html#credentials"
 }
@@ -15,6 +15,9 @@ variable "zone" {
 }
 variable "bucket" {
     description = "https://www.terraform.io/docs/backends/types/gcs.html#configuration-variables"
+}
+variable "env_uuid" {
+    description = "Unique Name associated but also loosely associated to env_name"
 }
 
 # From command-line
