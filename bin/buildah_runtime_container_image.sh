@@ -23,27 +23,29 @@ cleanup() {
 build_layer() {
     FROM_NAME="$1"
     LAYER_NAME="$2"
-    XTRA_CONFIG="$3"
+    TAG_NAME="$3"
+    XTRA_CONFIG="$4"
 
-    sudo podman rmi $LAYER_NAME 2> /dev/null || true
-    set -x
+    echo "Building $LAYER_NAME"
+    sudo podman rmi $LAYER_NAME:$TAG_NAME 2> /dev/null || true
     container=$(sudo buildah from \
                         --security-opt=label=disable \
                         --volume=$SRC_DIR:/usr/src:ro \
                         $FROM_NAME)
     trap cleanup EXIT
+    set -x
     sudo buildah config \
-        "--label=MAGIC=$LAYER_NAME" \
+        "--label=MAGIC=$TAG_NAME" \
         "--label=VERSION=$VERSION" \
-        "--env=MAGIC=$LAYER_NAME" \
+        "--env=MAGIC=$TAG_NAME" \
         "--env=VERSION=$VERSION" \
         $container
     sudo buildah run $container -- /usr/src/$SCRIPT_SUBDIR/$SCRIPT_FILENAME
-    [[ -z "$XTRA_CONFIG" ]] || sudo buildah config "$XTRA_CONFIG" $container
-    sudo buildah commit --rm --format=docker $container "$LAYER_NAME"
-    trap - EXIT
     set +x
-    unset FROM_NAME LAYER_NAME XTRA_CONFIG
+    [[ -z "$XTRA_CONFIG" ]] || sudo buildah config "$XTRA_CONFIG" $container
+    sudo buildah commit --rm --format=docker $container "$LAYER_NAME:$TAG_NAME"
+    trap - EXIT
+    unset FROM_NAME LAYER_NAME TAG_NAME XTRA_CONFIG
 }
 
 image_age() {
@@ -89,38 +91,39 @@ then
     fi
 
     CHANGED=0
-    if [[ "$(image_age $_LAYER_1:CACHE)" -ge "$[60 * 60 * 24 * 7]" ]] || \
-       [[ "$(image_version $_LAYER_1:CACHE | cut -d . -f 1)" != "$VERSION_MAJ" ]]
+    if [[ "$(image_age layer_1:$_LAYER_1)" -ge "$[60 * 60 * 24 * 7]" ]] || \
+       [[ "$(image_version layer1:$_LAYER_1 | cut -d . -f 1)" != "$VERSION_MAJ" ]]
     then
-        build_layer docker://centos:7 $_LAYER_1:CACHE "--label=PACKAGES=$INSTALL_RPMS"
+        build_layer docker://centos:7 layer_1 $_LAYER_1
         CHANGED=1
     else
         echo "Skipping build of layer 1"
     fi
 
     if ((CHANGED)) || \
-       [[ "$(image_packages $_LAYER_2:CACHE)" != "$INSTALL_RPMS" ]] || \
-       [[ "$(image_version $_LAYER_2:CACHE | cut -d . -f 1)" != "$VERSION_MAJ" ]]
+       [[ "$(image_packages layer_2:$_LAYER_2)" != "$INSTALL_RPMS" ]] || \
+       [[ "$(image_version layer_2:$_LAYER_2 | cut -d . -f 1)" != "$VERSION_MAJ" ]]
     then
-        build_layer $_LAYER_1:CACHE $_LAYER_2:CACHE
+        build_layer layer_1:$_LAYER_1 layer_2 $_LAYER_2 \
+            "--label=PACKAGES=$INSTALL_RPMS"
         CHANGED=1
     else
         echo "Skipping build of layer 2"
     fi
 
     if ((CHANGED)) || \
-       [[ "$(image_version $_LAYER_3:CACHE | cut -d . -f 1-2)" != "$VERSION_MAG_MIN" ]]
+       [[ "$(image_version layer_3:$_LAYER_3 | cut -d . -f 1-2)" != "$VERSION_MAG_MIN" ]]
     then
-        build_layer $_LAYER_2:CACHE $_LAYER_3:CACHE
+        build_layer layer_2:$_LAYER_2 layer_3 $_LAYER_3
         CHANGED=1
     else
         echo "Skipping build of layer 3"
     fi
 
     if ((CHANGED)) || \
-       [[ "$(image_version $_LAYER_4:CACHE)" != "$VERSION" ]]
+       [[ "$(image_version layer_4:$_LAYER_4)" != "$VERSION" ]]
     then
-        build_layer $_LAYER_3:CACHE $_LAYER_4:CACHE \
+        build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4 \
             "--entrypoint=/root/bin/as_user.sh"
         CHANGED=1
     else
@@ -131,13 +134,13 @@ then
     then
         sudo podman rm $IMAGE_NAME 2> /dev/null || true
         trap cleanup EXIT
-        sudo podman tag $_LAYER_4:CACHE $IMAGE_NAME
+        sudo podman tag layer_4:$_LAYER_4 $IMAGE_NAME
         trap - EXIT
     else
         echo "Skipping tag of layer 4"
     fi
 
-    echo "Success!"
+    echo "Successfully built: $IMAGE_NAME"
 
 elif [[ "$MAGIC" == "$_LAYER_1" ]]
 then
@@ -159,6 +162,7 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
 EOF
     yum install -y google-cloud-sdk $INSTALL_RPMS
     cd /tmp
+    echo "Installing Terraform"
     curl -o terraform.zip "$TERRAFORM_URL"
     unzip terraform.zip
     rm -f terraform.zip
@@ -167,6 +171,7 @@ EOF
     rm -rf /var/cache/yum
 elif [[ "$MAGIC" == "$_LAYER_3" ]]
 then
+    echo "Installing entrypoint script"
     mkdir -p /root/bin
     cat << "EOF" > /root/bin/as_user.sh
 #!/bin/bash
@@ -185,6 +190,7 @@ EOF
     chmod +x /root/bin/as_user.sh
 elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
+    echo "Finalizing image"
     exit 0  # no-op
 else
     die "You found a bug in the script! Current \$MAGIC=$MAGIC"
