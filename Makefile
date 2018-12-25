@@ -22,7 +22,7 @@ help:
 
 .PHONY: version
 version:
-	@echo "$(shell git describe --abbrev=4 HEAD 2> /dev/null || echo '0.0.0')"
+	@echo "$(shell git describe --abbrev=6 HEAD 2> /dev/null || echo '0.0.0')"
 
 RUNTIME_IMAGE_REGISTRY ?= "quay.io"
 RUNTIME_IMAGE_NAMESPACE ?= "r4z0r7o3"
