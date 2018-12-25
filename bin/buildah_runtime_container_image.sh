@@ -37,8 +37,10 @@ build_layer() {
     sudo buildah config \
         "--label=MAGIC=$TAG_NAME" \
         "--label=VERSION=$VERSION" \
+        "--label=PACKAGES=$INSTALL_RPMS" \
         "--env=MAGIC=$TAG_NAME" \
         "--env=VERSION=$VERSION" \
+        "--env=PACKAGES=$INSTALL_RPMS" \
         $container
     sudo buildah run $container -- /usr/src/$SCRIPT_SUBDIR/$SCRIPT_FILENAME
     set +x
@@ -70,6 +72,39 @@ image_packages() {
            echo '')
 }
 
+rebuild_cache_layer(){
+    LAYER_NUM="$1"
+    LAYER_AGE="$2"
+    LAYER_MAX_AGE="$3"
+    LAYER_VER="$4"
+    COMPARE_VER="$5"
+    LAYER_PACKAGES="$6"
+    CHANGED="$7"
+    BUILD_CMD="$8"
+
+    if ((CHANGED))
+    then
+        echo "Previous cache layer changed, rebuilding layer $LAYER_NUM"
+        CHANGED=1
+    elif [[ "$LAYER_AGE" -gt "$LAYER_MAX_AGE" ]]
+    then
+        echo "Cached layer $LAYER_NUM age ($LAYER_AGE) greater than expected ($LAYER_MAX_AGE)."
+        CHANGED=1
+    elif [[ "$LAYER_VER" != "$COMPARE_VER" ]]
+    then
+        echo "Cached layer $LAYER_NUM version ($LAYER_VER) unequal to current ($COMPARE_VER)"
+        CHANGED=1
+    elif [[ "$LAYER_PACKAGES" != "$INSTALL_RPMS" ]]
+    then
+        echo "Cached layer $LAYER_NUM package list ($LAYER_PACKAGES) unequal to current ($INSTALL_RPMS)"
+        CHANGED=1
+    else
+        echo "Skipping build of cache layer $LAYER_NUM"
+    fi
+
+    if ((CHANGED)); then $BUILD_CMD; fi
+}
+
 if [[ "$MAGIC" == "$_HOST" ]]
 then
 
@@ -90,45 +125,46 @@ then
         die "Error retrieving image name" 5
     fi
 
+    LAYER_AGE="$(image_age layer_1:$_LAYER_1)"
+    LAYER_MAX_AGE="$[60 * 60 * 24 * 28]"
+    LAYER_MAJ_VER="$(image_version layer_1:$_LAYER_1 | cut -d . -f 1)"
+    LAYER_PACKAGES="$(image_packages layer_1:$_LAYER_1)"
     CHANGED=0
-    if [[ "$(image_age layer_1:$_LAYER_1)" -ge "$[60 * 60 * 24 * 7]" ]] || \
-       [[ "$(image_version layer1:$_LAYER_1 | cut -d . -f 1)" != "$VERSION_MAJ" ]]
-    then
-        build_layer docker://centos:7 layer_1 $_LAYER_1
-        CHANGED=1
-    else
-        echo "Skipping build of layer 1"
-    fi
+    rebuild_cache_layer 1 \
+        "$LAYER_AGE" "$LAYER_MAX_AGE" \
+        "$LAYER_MAJ_VER" "$VERSION_MAJ" \
+        "$LAYER_PACKAGES" "$CHANGED" \
+        "build_layer docker://centos:7 layer_1 $_LAYER_1"
 
-    if ((CHANGED)) || \
-       [[ "$(image_packages layer_2:$_LAYER_2)" != "$INSTALL_RPMS" ]] || \
-       [[ "$(image_version layer_2:$_LAYER_2 | cut -d . -f 1)" != "$VERSION_MAJ" ]]
-    then
-        build_layer layer_1:$_LAYER_1 layer_2 $_LAYER_2 \
-            "--label=PACKAGES=$INSTALL_RPMS"
-        CHANGED=1
-    else
-        echo "Skipping build of layer 2"
-    fi
+    LAYER_AGE="$(image_age layer_2:$_LAYER_2)"
+    LAYER_MAX_AGE="$[60 * 60 * 24 * 14]"
+    LAYER_MAJ_MIN_VER="$(image_version layer_2:$_LAYER_2 | cut -d . -f 1-2)"
+    LAYER_PACKAGES="$(image_packages layer_2:$_LAYER_2)"
+    rebuild_cache_layer 2 \
+        "$LAYER_AGE" "$LAYER_MAX_AGE" \
+        "$LAYER_MAJ_MIN_VER" "$VERSION_MAJ_MIN" \
+        "$LAYER_PACKAGES" "$CHANGED" \
+        "build_layer layer_1:$_LAYER_1 layer_2 $_LAYER_2"
 
-    if ((CHANGED)) || \
-       [[ "$(image_version layer_3:$_LAYER_3 | cut -d . -f 1-2)" != "$VERSION_MAG_MIN" ]]
-    then
-        build_layer layer_2:$_LAYER_2 layer_3 $_LAYER_3
-        CHANGED=1
-    else
-        echo "Skipping build of layer 3"
-    fi
+    LAYER_AGE="$(image_age layer_3:$_LAYER_3)"
+    LAYER_MAX_AGE="$[60 * 60 * 24 * 7]"
+    LAYER_MAJ_MIN_REV_VER="$(image_version layer_3:$_LAYER_3 | cut -d . -f 1-3 | cut -d - -f 1)"
+    LAYER_PACKAGES="$(image_packages layer_3:$_LAYER_3)"
+    rebuild_cache_layer 3 \
+        "$LAYER_AGE" "$LAYER_MAX_AGE" \
+        "$LAYER_MAJ_MIN_REV_VER" "$VERSION_MAJ_MIN_REV" \
+        "$LAYER_PACKAGES" "$CHANGED" \
+        "build_layer layer_2:$_LAYER_2 layer_3 $_LAYER_3"
 
-    if ((CHANGED)) || \
-       [[ "$(image_version layer_4:$_LAYER_4)" != "$VERSION" ]]
-    then
-        build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4 \
-            "--entrypoint=/root/bin/as_user.sh"
-        CHANGED=1
-    else
-        echo "Skipping build of layer 4"
-    fi
+    LAYER_AGE="$(image_age layer_4:$_LAYER_4)"
+    LAYER_MAX_AGE="$[60 * 60 * 24 * 3]"
+    LAYER_VER="$(image_version layer_4:$_LAYER_4)"
+    LAYER_PACKAGES="$(image_packages layer_4:$_LAYER_4)"
+    rebuild_cache_layer 4 \
+        "$LAYER_AGE" "$LAYER_MAX_AGE" \
+        "$LAYER_VER" "$VERSION" \
+        "$LAYER_PACKAGES" "$CHANGED" \
+        "build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4 --entrypoint=/root/bin/as_user.sh"
 
     if ((CHANGED)) || ! sudo podman images $IMAGE_NAME &> /dev/null
     then
@@ -140,7 +176,7 @@ then
         echo "Skipping tag of layer 4"
     fi
 
-    echo "Successfully built: $IMAGE_NAME"
+    echo "Image ready for use: $IMAGE_NAME"
 
 elif [[ "$MAGIC" == "$_LAYER_1" ]]
 then
@@ -176,13 +212,14 @@ then
     cat << "EOF" > /root/bin/as_user.sh
 #!/bin/bash
 set -e
-die() { echo -e "$2"; exit $1 }
+die() { echo -e "$2"; exit "$1" }
 [[ -n "$AS_ID" ]] || die 2 'Expected \$AS_ID to be set.'
 [[ -n "$AS_USER" ]] || die 3 'Expected \$AS_USER to be set.'
 groupadd -g "$AS_ID" "$AS_USER"
 useradd -g "$AS_ID" -u "$AS_ID" "$AS_USER"
 set -x
-rsync --quiet --stats --recursive --links --safe-links --perms --sparse --chown=$AS_ID:$AS_ID \
+rsync --quiet --stats --recursive --links \
+    --safe-links --perms --sparse --chown=$AS_ID:$AS_ID \
     "/usr/src/" "/home/$AS_USER"
 cd /home/$AS_USER
 exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -i -l -c "$@"
