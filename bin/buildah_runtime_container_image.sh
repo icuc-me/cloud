@@ -10,6 +10,7 @@ _LAYER_1="ee51f9f0-0301-4f3b-a3ab-aa3308820bac"
 _LAYER_2="e93e002f-9443-466e-ab90-f78df5d5f7fa"
 _LAYER_3="23cc6743-7e22-4401-8e68-4d4c3fc18849"
 _LAYER_4="0e491b98-eb2b-4d69-a1d4-75bc487665c0"
+_LAYER_5="a4028aa0-5e11-4ab7-989b-404b62b9749a"
 MAGIC="${MAGIC:-$_HOST}"
 INSTALL_RPMS="ansible-2.7.5-1.el7 rsync git vim unzip"
 TERRAFORM_URL="https://releases.hashicorp.com/terraform/0.11.11/terraform_0.11.11_linux_amd64.zip"
@@ -164,7 +165,18 @@ then
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_VER" "$VERSION" \
         "$LAYER_PACKAGES" "$CHANGED" \
-        "build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4 --entrypoint=/root/bin/as_user.sh"
+        "build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4"
+
+    LAYER_AGE="$(image_age layer_5:$_LAYER_5)"
+    LAYER_MAX_AGE="$[60 * 60 * 24 * 1]"
+    LAYER_VER="$RANDOM"
+    LAYER_PACKAGES="$(image_packages layer_5:$_LAYER_5)"
+    rebuild_cache_layer 5 \
+        "$LAYER_AGE" "$LAYER_MAX_AGE" \
+        "$LAYER_VER" "$VERSION" \
+        "$LAYER_PACKAGES" "$CHANGED" \
+        "build_layer layer_4:$_LAYER_4 layer_5 $_LAYER_5 \
+        --entrypoint=/root/bin/as_user.sh"
 
     if ((CHANGED)) || ! sudo podman images $IMAGE_NAME &> /dev/null
     then
@@ -197,19 +209,25 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
     yum install -y google-cloud-sdk $INSTALL_RPMS
+
     cd /tmp
     echo "Installing Terraform"
     curl -o terraform.zip "$TERRAFORM_URL"
     unzip terraform.zip
     rm -f terraform.zip
     install -D -m 755 ./terraform /usr/local/bin/
+
     yum clean all
     rm -rf /var/cache/yum
 elif [[ "$MAGIC" == "$_LAYER_3" ]]
 then
+    # Reserved for future use
+    exit 0  # no-op
+elif [[ "$MAGIC" == "$_LAYER_4" ]]
+then
     echo "Installing entrypoint script"
     install -D -m 0755 /usr/src/$SCRIPT_SUBDIR/as_user.sh /root/bin/as_user.sh
-elif [[ "$MAGIC" == "$_LAYER_4" ]]
+elif [[ "$MAGIC" == "$_LAYER_5" ]]
 then
     echo "Finalizing image"
     exit 0  # no-op
