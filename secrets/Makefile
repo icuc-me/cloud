@@ -5,7 +5,7 @@ TEST_UUID=test$(shell uuidgen | tr -d -)
 PROD_UUID=prod5808eee9756c49299496a99db62bdd7f
 STAGE_UUID=stage85985f738ea84c4c8faccb1f4ee47327
 ENV_NAME_TOKEN=\%\%ENV_NAME\%\%
-CREDS_DIRPATH_TOKEN=\%\%CWD_PATH\%\%
+CREDS_DIRPATH_TOKEN=\%\%CREDS_DIRPATH\%\%
 
 .PHONY: all
 all: guard-ENV_NAME $(ENV_NAME)-backend.auto.tfvars uuid.auto.tfvars
