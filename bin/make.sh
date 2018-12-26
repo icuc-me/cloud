@@ -20,10 +20,11 @@ then
         die "Error accessing image $IMAGE_NAME"
 fi
 
+set -x
 sudo podman run -it --rm \
     --security-opt=label=disable \
     --volume $PWD:/usr/src:ro \
     --workdir /usr/src \
-    --env AS_USER:$USER \
-    --env AS_ID:$UID \
-    $IMAGE_NAME make $@
+    --env AS_USER=$USER \
+    --env AS_ID=$UID \
+    $IMAGE_NAME make -C /home/$USER $@
