@@ -208,23 +208,7 @@ EOF
 elif [[ "$MAGIC" == "$_LAYER_3" ]]
 then
     echo "Installing entrypoint script"
-    mkdir -p /root/bin
-    cat << "EOF" > /root/bin/as_user.sh
-#!/bin/bash
-set -e
-die() { echo -e "$2"; exit "$1" }
-[[ -n "$AS_ID" ]] || die 2 'Expected \$AS_ID to be set.'
-[[ -n "$AS_USER" ]] || die 3 'Expected \$AS_USER to be set.'
-groupadd -g "$AS_ID" "$AS_USER"
-useradd -g "$AS_ID" -u "$AS_ID" "$AS_USER"
-set -x
-rsync --quiet --stats --recursive --links \
-    --safe-links --perms --sparse --chown=$AS_ID:$AS_ID \
-    "/usr/src/" "/home/$AS_USER"
-cd /home/$AS_USER
-exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -i -l -c "$@"
-EOF
-    chmod +x /root/bin/as_user.sh
+    install -D -m 0755 /usr/src/$SCRIPT_SUBDIR/as_user.sh /root/bin/as_user.sh
 elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
     echo "Finalizing image"
