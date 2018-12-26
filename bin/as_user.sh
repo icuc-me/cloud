@@ -8,8 +8,9 @@ useradd -g "$AS_ID" -u "$AS_ID" "$AS_USER"
 set -x
 echo "Creating a working copy of source"
 rsync --stats --recursive --links \
-    --safe-links --perms --sparse "--chown=$AS_ID:$AS_ID" \
+    --safe-links --sparse \
+    --executability --chmod=ug+w \
     "/usr/src/" "/home/$AS_USER"
+chown -R $AS_ID:$AS_ID "/home/$AS_USER"
 set -x
-cd "/home/$AS_USER"
-exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -i -l -c "$@"
+exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -l -i -c "$@"
