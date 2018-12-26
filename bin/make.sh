@@ -27,4 +27,4 @@ sudo podman run -it --rm \
     --workdir /usr/src \
     --env AS_USER=$USER \
     --env AS_ID=$UID \
-    $IMAGE_NAME make -C /home/$USER $@
+    $IMAGE_NAME "/usr/bin/make $@"

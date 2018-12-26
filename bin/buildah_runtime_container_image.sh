@@ -32,9 +32,8 @@ build_layer() {
     container=$(sudo buildah from \
                         --security-opt=label=disable \
                         --volume=$SRC_DIR:/usr/src:ro \
-                        $FROM_NAME)
+                        $FROM_NAME 2> /dev/null)
     trap cleanup EXIT
-    set -x
     sudo buildah config \
         "--label=MAGIC=$TAG_NAME" \
         "--label=VERSION=$VERSION" \
@@ -42,11 +41,12 @@ build_layer() {
         "--env=MAGIC=$TAG_NAME" \
         "--env=VERSION=$VERSION" \
         "--env=PACKAGES=$INSTALL_RPMS" \
-        $container
+        $container 2> /dev/null
+    set -x
     sudo buildah run $container -- /usr/src/$SCRIPT_SUBDIR/$SCRIPT_FILENAME
-    set +x
     [[ -z "$XTRA_CONFIG" ]] || sudo buildah config "$XTRA_CONFIG" $container
-    sudo buildah commit --rm --format=docker $container "$LAYER_NAME:$TAG_NAME"
+    sudo buildah commit --rm --format=docker $container "$LAYER_NAME:$TAG_NAME" 2> /dev/null
+    set +x
     trap - EXIT
     unset FROM_NAME LAYER_NAME TAG_NAME XTRA_CONFIG
 }
@@ -87,17 +87,17 @@ rebuild_cache_layer(){
     then
         echo "Previous cache layer changed, rebuilding layer $LAYER_NUM"
         CHANGED=1
-    elif [[ "$LAYER_AGE" -gt "$LAYER_MAX_AGE" ]]
+    elif [[ "$LAYER_PACKAGES" != "$INSTALL_RPMS" ]]
     then
-        echo "Cached layer $LAYER_NUM age ($LAYER_AGE) greater than expected ($LAYER_MAX_AGE)."
+        echo "Cached layer $LAYER_NUM package list ($LAYER_PACKAGES) unequal to current ($INSTALL_RPMS)"
         CHANGED=1
     elif [[ "$LAYER_VER" != "$COMPARE_VER" ]]
     then
         echo "Cached layer $LAYER_NUM version ($LAYER_VER) unequal to current ($COMPARE_VER)"
         CHANGED=1
-    elif [[ "$LAYER_PACKAGES" != "$INSTALL_RPMS" ]]
+    elif [[ "$LAYER_AGE" -gt "$LAYER_MAX_AGE" ]]
     then
-        echo "Cached layer $LAYER_NUM package list ($LAYER_PACKAGES) unequal to current ($INSTALL_RPMS)"
+        echo "Cached layer $LAYER_NUM age ($LAYER_AGE) greater than expected ($LAYER_MAX_AGE)."
         CHANGED=1
     else
         echo "Skipping build of cache layer $LAYER_NUM"
@@ -129,7 +129,7 @@ then
     LAYER_AGE="$(image_age layer_1:$_LAYER_1)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 28]"
     LAYER_MAJ_VER="$(image_version layer_1:$_LAYER_1 | cut -d . -f 1)"
-    LAYER_PACKAGES="$(image_packages layer_1:$_LAYER_1)"
+    LAYER_PACKAGES="$INSTALL_RPMS"  # Don't care, installed in layer 2 (below)
     CHANGED=0
     rebuild_cache_layer 1 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
@@ -165,7 +165,8 @@ then
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_VER" "$VERSION" \
         "$LAYER_PACKAGES" "$CHANGED" \
-        "build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4"
+        "build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4
+        --entrypoint=[\"/root/bin/as_user.sh\"]"
 
     LAYER_AGE="$(image_age layer_5:$_LAYER_5)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 1]"
@@ -175,8 +176,7 @@ then
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_VER" "$VERSION" \
         "$LAYER_PACKAGES" "$CHANGED" \
-        "build_layer layer_4:$_LAYER_4 layer_5 $_LAYER_5 \
-        --entrypoint=/root/bin/as_user.sh"
+        "build_layer layer_4:$_LAYER_4 layer_5 $_LAYER_5"
 
     if ((CHANGED)) || ! sudo podman images $IMAGE_NAME &> /dev/null
     then
@@ -194,10 +194,6 @@ elif [[ "$MAGIC" == "$_LAYER_1" ]]
 then
     yum update -y
     yum install -y epel-release
-    yum clean all
-    rm -rf /var/cache/yum
-elif [[ "$MAGIC" == "$_LAYER_2" ]]
-then
     cat << EOF > /etc/yum.repos.d/google-cloud-sdk.repo
 [google-cloud-sdk]
 name=Google Cloud SDK
@@ -208,8 +204,15 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
+    yum clean all
+    rm -rf /var/cache/yum
+elif [[ "$MAGIC" == "$_LAYER_2" ]]
+then
     yum install -y google-cloud-sdk $INSTALL_RPMS
-
+    yum clean all
+    rm -rf /var/cache/yum
+elif [[ "$MAGIC" == "$_LAYER_3" ]]
+then
     cd /tmp
     echo "Installing Terraform"
     curl -o terraform.zip "$TERRAFORM_URL"
@@ -217,11 +220,6 @@ EOF
     rm -f terraform.zip
     install -D -m 755 ./terraform /usr/local/bin/
 
-    yum clean all
-    rm -rf /var/cache/yum
-elif [[ "$MAGIC" == "$_LAYER_3" ]]
-then
-    # Reserved for future use
     exit 0  # no-op
 elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
