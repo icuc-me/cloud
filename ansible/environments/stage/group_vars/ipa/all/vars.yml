@@ -1,0 +1,14 @@
+---
+
+public_network_open_ports:
+    - '{{ vault_public_network_open_ports }}'
+
+private_network_open_ports:
+    - 22
+    - 80   # HTTP
+    - 443  # HTTPS
+    - 389  # LDAP
+    - 636  # LDAPS
+    - 88   # KERBEROS
+    - 464  # KPASSWD
+    - 123  # NTP

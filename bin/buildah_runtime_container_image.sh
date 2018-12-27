@@ -12,7 +12,28 @@ _LAYER_3="23cc6743-7e22-4401-8e68-4d4c3fc18849"
 _LAYER_4="0e491b98-eb2b-4d69-a1d4-75bc487665c0"
 _LAYER_5="a4028aa0-5e11-4ab7-989b-404b62b9749a"
 MAGIC="${MAGIC:-$_HOST}"
-INSTALL_RPMS="ansible-2.7.5-1.el7 rsync git vim unzip sudo"
+INSTALL_RPMS="
+    PyYAML
+    ansible-2.7.5-1.el7
+    python2-boto
+    curl
+    findutils
+    git
+    git
+    google-cloud-sdk
+    libselinux-python
+    nmap-ncat
+    python-pycurl
+    python2-requests
+    python-simplejson
+    rsync
+    rsync
+    sshpass
+    sudo
+    unzip
+    vim
+    wget
+"
 TERRAFORM_URL="https://releases.hashicorp.com/terraform/0.11.11/terraform_0.11.11_linux_amd64.zip"
 
 container=""
@@ -208,7 +229,7 @@ EOF
     rm -rf /var/cache/yum
 elif [[ "$MAGIC" == "$_LAYER_2" ]]
 then
-    yum install -y google-cloud-sdk $INSTALL_RPMS
+    yum install -y $INSTALL_RPMS
     yum clean all
     rm -rf /var/cache/yum
 elif [[ "$MAGIC" == "$_LAYER_3" ]]
