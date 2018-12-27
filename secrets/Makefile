@@ -1,19 +1,19 @@
 
-
 UUID_TOKEN=\%\%UUID\%\%
 TEST_UUID=test$(shell uuidgen | tr -d -)
 PROD_UUID=prod5808eee9756c49299496a99db62bdd7f
 STAGE_UUID=stage85985f738ea84c4c8faccb1f4ee47327
 ENV_NAME_TOKEN=\%\%ENV_NAME\%\%
 CREDS_DIRPATH_TOKEN=\%\%CREDS_DIRPATH\%\%
+SUSERNAME=$(shell ls $(ENV_NAME)-*.json | cut -d - -f 2 | cut -d . -f 1)
+SUSERNAME_TOKEN=\%\%SUSERNAME\%\%
 
 .PHONY: all
-all: guard-ENV_NAME $(ENV_NAME)-backend.auto.tfvars uuid.auto.tfvars
-	rm -f *backend.auto.tfvars.in_*
+all: guard-ENV_NAME uuid.auto.tfvars $(ENV_NAME)-backend.auto.tfvars provider.auto.tfvars gcp_vars.yml
 	rm -f .uuid
 
 clean:
-	rm -f *backend.auto.tfvars.in_*
+	rm -f gcp_vars.yml
 	rm -f *backend.auto.tfvars
 	rm -f uuid.auto.tfvars
 	rm -f .uuid
@@ -24,6 +24,9 @@ guard-%:
 		echo "Missing required make parameter '$*'."; \
 		exit 1; \
 	fi;
+
+gcp_vars.yml: guard-ENV_NAME guard-SUSERNAME $(ENV_NAME)-backend.auto.tfvars provider.auto.tfvars uuid.auto.tfvars
+	@./terraform_to_ansible.sh $(ENV_NAME) $(SUSERNAME)
 
 .uuid: guard-ENV_NAME
 	@if [[ "$(ENV_NAME)" =~ "test" ]]; then \
@@ -37,13 +40,7 @@ guard-%:
 	fi
 
 uuid.auto.tfvars: .uuid
-	@echo "env_uuid = '$(shell cat .uuid)'" > uuid.auto.tfvars
+	@echo "env_uuid = \"$(shell cat .uuid)\"" > uuid.auto.tfvars
 
-$(ENV_NAME)-backend.auto.tfvars.in_2: all-backend.auto.tfvars.in .uuid
-	sed -r -e 's/$(UUID_TOKEN)/$(shell cat "./.uuid")/g' '$<' > '$@'; \
-
-$(ENV_NAME)-backend.auto.tfvars.in_3: $(ENV_NAME)-backend.auto.tfvars.in_2
-	sed -r -e 's/$(ENV_NAME_TOKEN)/$(ENV_NAME)/g' '$<' > '$@'; \
-
-$(ENV_NAME)-backend.auto.tfvars: $(ENV_NAME)-backend.auto.tfvars.in_3
-	sed -r -e 's)$(CREDS_DIRPATH_TOKEN))$(shell realpath $(@D)))g' '$<' > '$@'
+$(ENV_NAME)-backend.auto.tfvars: all-backend.auto.tfvars.in uuid.auto.tfvars guard-ENV_NAME
+	@sed -r -e 's)$(CREDS_DIRPATH_TOKEN))$(shell realpath $(@D)))g;s/$(UUID_TOKEN)/$(shell cat "./.uuid")/g;s/$(SUSERNAME_TOKEN)/$(SUSERNAME)/g;s/$(ENV_NAME_TOKEN)/$(ENV_NAME)/g;' '$<' > '$@'
