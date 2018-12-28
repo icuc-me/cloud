@@ -14,9 +14,9 @@ help:
 	@echo "version - Return the canonical version number for repo's current state"
 	@echo ''
 	@echo 'clean - remove temporary and generated files'
-	@echo 'clean-test - Destroy test environment'
-	@echo 'clean-stage - Destroy staging environment'
-	@echo 'clean-prod - Reminder of your intelligence level'
+	@echo 'clean_test - Destroy test environment'
+	@echo 'clean_stage - Destroy staging environment'
+	@echo 'clean_prod - Reminder of your intelligence level'
 	@echo ''
 	@echo '###########################################################################'
 
@@ -34,21 +34,19 @@ image_name:
 
 .PHONY: clean
 clean:
-	@$(MAKE) -C terraform clean
 	@$(MAKE) -C secrets clean
 
 .PHONY: clean-prod
-clean-prod:
+clean_prod:
 	$(error "I have a bag of hammers smarter than you")
 
 .PHONY: clean-%
-clean-%:
+clean_%:
 	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C terraform clean ENV_NAME=$*
-	@$(MAKE) -C terraform clean
+	@$(MAKE) -C ansible clean ENV_NAME=$*
 	@$(MAKE) clean
 
 .PHONY: %_env
 %_env:
 	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C terraform ENV_NAME=$*
+	@$(MAKE) -C ansible ENV_NAME=$*
