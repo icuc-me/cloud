@@ -1,27 +1,4 @@
 ---
 
-- hosts: 'all'
-  gather_facts: True
-  force_handlers: True
-  pre_tasks:
-    - name: 'The shared terraform state bucket exists'
-      when: "inventory_hostname_short == 'localhost'"
-      gcp_storage_bucket:
-        auth_kind: 'serviceaccount'
-        location: '{{ terraform.region }}'
-        name: '{{ terraform.bucket }}'
-        project: '{{ terraform.project }}'
-        service_account_file: '{{ terraform.credentials }}'
-        storage_class: 'REGIONAL'
-      notify: 'The shared terraform state bucket is removed in test environment'
-  handlers:
-    - name: 'The shared terraform state bucket is removed in test environment'
-      when: "inventory_hostname_short == 'localhost' and env_name == 'test'"
-      gcp_storage_bucket:
-        auth_kind: 'serviceaccount'
-        location: '{{ terraform.region }}'
-        name: '{{ terraform.bucket }}'
-        project: '{{ terraform.project }}'
-        service_account_file: '{{ terraform.credentials }}'
-        storage_class: 'REGIONAL'
-        state: 'absent'
+- import_playbook: create.yml
+- import_playbook: configure.yml

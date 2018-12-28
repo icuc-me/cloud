@@ -16,7 +16,7 @@ tfvar_to_yml() {
 }
 
 echo -e '---\n\nterraform:'
-cat "${ENV_NAME}-backend.auto.tfvars" "provider.auto.tfvars" "uuid.auto.tfvars" | \
+cat "${ENV_NAME}-backend.auto.tfvars" "provider.auto.tfvars" "${ENV_NAME}-uuid.auto.tfvars" | \
     while read LINE; do
         echo "    "`tfvar_to_yml "$LINE"`
     done

@@ -24,6 +24,7 @@ INSTALL_RPMS="
     libselinux-python
     nmap-ncat
     python-pycurl
+    python2-pip
     python2-requests
     python-simplejson
     rsync
@@ -240,7 +241,10 @@ then
     unzip terraform.zip
     rm -f terraform.zip
     install -D -m 755 ./terraform /usr/local/bin/
-    exit 0  # no-op
+
+    echo "Upgrading pip, installing pip packages"
+    pip install --force-reinstall --upgrade pip
+    pip install google-auth
 elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
     echo "Installing entrypoint script"
