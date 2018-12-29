@@ -2,25 +2,34 @@
 
 - hosts: 'all'
   gather_facts: True
-  post_tasks:
+  pre_tasks:
     - name: 'Validate initial expectations'
       assert:
         that:
             - 'env_name | default("", True) | trim | length'
             - 'env_name != "prod"'
-            - 'terraform.region | default("", True) | trim | length'
-            - 'terraform.bucket | default("", True) | trim | length'
-            - 'terraform.project | default("", True) | trim | length'
-            - 'terraform.credentials | default("", True) | trim | length'
-            - 'terraform.env_uuid is search(env_name)'
+            - 'terraform_backend | default("", True) | trim | length'
+            - 'terraform_provider | default("", True) | trim | length'
+            - 'terraform_uuid | default("", True) | trim | length'
+            - 'terraform_project | default("", True) | trim | length'
 
+  tasks:
+    - name: 'Terraform project is destroyed'
+      when: "inventory_hostname_short == 'localhost' and env_name != 'prod'"
+      make:
+        chdir: "{{ terraform_project }}"
+        params: "ENV_NAME={{ env_name }}"
+        target: "clean"
+      ignore_errors: true
+
+  post_tasks:
     - name: 'The shared terraform state bucket is removed in test environment'
       when: "inventory_hostname_short == 'localhost' and env_name != 'prod'"
       gcp_storage_bucket:
         auth_kind: 'serviceaccount'
-        location: '{{ terraform.region }}'
-        name: '{{ terraform.bucket }}'
-        project: '{{ terraform.project }}'
-        service_account_file: '{{ terraform.credentials }}'
+        location: '{{ terraform_backend.region }}'
+        name: '{{ terraform_backend.bucket }}'
+        project: '{{ terraform_backend.project }}'
+        service_account_file: '{{ terraform_backend.credentials }}'
         storage_class: 'REGIONAL'
         state: 'absent'

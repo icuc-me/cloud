@@ -29,6 +29,7 @@ guard-%:
 $(ENV_NAME)-secrets.yml: guard-ENV_NAME guard-SUSERNAME $(ENV_NAME)-backend.auto.tfvars provider.auto.tfvars $(ENV_NAME)-uuid.auto.tfvars
 	@echo "Producing $@"
 	@./terraform_to_ansible.sh $(ENV_NAME) $(SUSERNAME) > $@
+	@echo -e "\nterraform_project: \"$(shell realpath ../terraform)\"" >> $@
 
 .PHONY: uuid
 uuid: guard-ENV_NAME

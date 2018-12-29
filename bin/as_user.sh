@@ -16,4 +16,4 @@ rsync --stats --recursive --links \
     "/usr/src/" "/home/$AS_USER"
 chown -R $AS_ID:$AS_ID "/home/$AS_USER"
 set -x
-exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -l -i -c "$@"
+exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -l -i -c "cd /home/$AS_USER && $@"
