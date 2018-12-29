@@ -7,8 +7,16 @@ all: guard-ENV_NAME
 		--extra-vars=@../secrets/$(ENV_NAME)-secrets.yml \
 		./main.yml
 
-.PHONY: clean
-clean: guard-ENV_NAME
+.PHONY: configure
+configure: guard-ENV_NAME
+	ansible-playbook \
+		--inventory ./environments/$(ENV_NAME) \
+		--extra-vars=env_name=$(ENV_NAME) \
+		--extra-vars=@../secrets/$(ENV_NAME)-secrets.yml \
+		./configure.yml
+
+.PHONY: cleanup
+cleanup: guard-ENV_NAME
 	ansible-playbook \
 		--inventory ./environments/$(ENV_NAME) \
 		--extra-vars=env_name=$(ENV_NAME) \

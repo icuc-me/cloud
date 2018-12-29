@@ -7,6 +7,7 @@ help:
 	@echo '###########################################################################'
 	@echo 'Valid Make Targets:'
 	@echo ''
+	@echo 'test' - Execute automated tests
 	@echo 'test_env - Deploy to test environment'
 	@echo 'stage_env - Deploy to staging environment'
 	@echo 'prod_env - Deploy to production environment'
@@ -31,6 +32,18 @@ RUNTIME_IMAGE_TAG = "$(shell $(MAKE) version)"
 .PHONY: image_name
 image_name:
 	@echo "$(RUNTIME_IMAGE_REGISTRY)/$(RUNTIME_IMAGE_NAMESPACE)/$(RUNTIME_IMAGE_NAME):$(RUNTIME_IMAGE_TAG)"
+
+.PHONY: test
+test:
+	@if $(MAKE) test_env; \
+	then \
+		$(MAKE) clean_test; \
+		echo "Tests pass"; \
+	else \
+		$(MAKE) clean_test; \
+		echo "Tests fail"; \
+		exit 1; \
+	fi
 
 .PHONY: clean
 clean:

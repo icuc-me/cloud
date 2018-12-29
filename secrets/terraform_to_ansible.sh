@@ -15,8 +15,12 @@ tfvar_to_yml() {
     echo -n "$1" | sed -re 's/ *= */: /g'
 }
 
-echo -e '---\n\nterraform:'
-cat "${ENV_NAME}-backend.auto.tfvars" "provider.auto.tfvars" "${ENV_NAME}-uuid.auto.tfvars" | \
-    while read LINE; do
+echo -e '---\n'
+for filename in "${ENV_NAME}-backend.auto.tfvars" "provider.auto.tfvars" "${ENV_NAME}-uuid.auto.tfvars"
+do
+    dict="terraform_$(echo $filename | cut -d - -f 2 | cut -d . -f 1)"
+    echo -e "\n${dict}:"
+    cat "$filename" | while read LINE; do
         echo "    "`tfvar_to_yml "$LINE"`
     done
+done
