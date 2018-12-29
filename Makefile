@@ -48,6 +48,7 @@ test:
 .PHONY: clean
 clean:
 	@$(MAKE) -C secrets clean
+	@$(MAKE) -C terraform clean ENV_NAME=$*
 
 .PHONY: clean-prod
 clean_prod:
@@ -56,10 +57,12 @@ clean_prod:
 .PHONY: clean-%
 clean_%:
 	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C ansible clean ENV_NAME=$*
+	@$(MAKE) -C terraform clean ENV_NAME=$*
+	@bin/teardown.sh secrets/$*-backend.auto.tfvars
 	@$(MAKE) clean
 
 .PHONY: %_env
 %_env:
 	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C ansible ENV_NAME=$*
+	@bin/prepare.sh secrets/$*-backend.auto.tfvars
+	@$(MAKE) -C terraform ENV_NAME=$*
