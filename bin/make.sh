@@ -20,6 +20,7 @@ then
         die "Error accessing image $IMAGE_NAME"
 fi
 
+cd "$SRC_DIR/secrets"
 set -x
 sudo podman run -it --rm \
     --security-opt=label=disable \
