@@ -14,20 +14,13 @@ _LAYER_5="a4028aa0-5e11-4ab7-989b-404b62b9749a"
 MAGIC="${MAGIC:-$_HOST}"
 INSTALL_RPMS="
     PyYAML
-    ansible-2.7.5-1.el7
-    python2-boto
     curl
     findutils
     git
-    git
     google-cloud-sdk
-    libselinux-python
+    make
     nmap-ncat
-    python-pycurl
-    python2-pip
-    python2-requests
     python-simplejson
-    rsync
     rsync
     sshpass
     sudo
@@ -241,10 +234,6 @@ then
     unzip terraform.zip
     rm -f terraform.zip
     install -D -m 755 ./terraform /usr/local/bin/
-
-    echo "Upgrading pip, installing pip packages"
-    pip install --force-reinstall --upgrade pip
-    pip install google-auth
 elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
     echo "Installing entrypoint script"

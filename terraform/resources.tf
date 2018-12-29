@@ -4,6 +4,5 @@ resource "google_storage_bucket" "terraform-state" {
     project = "${var.project}"
     storage_class = "REGIONAL"
     location = "${var.region}"
-    force_destroy = "${var.env_name == "prod" ? false : true}"
+    # force_destroy = "${var.env_name == "prod" ? false : true}"
 }
-

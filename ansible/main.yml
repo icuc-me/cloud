@@ -1,5 +1,0 @@
----
-
-- import_playbook: create.yml
-- import_playbook: configure.yml
-- import_playbook: cleanup.yml

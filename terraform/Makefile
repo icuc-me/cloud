@@ -1,7 +1,7 @@
-SETUP_BACKEND ?= 0
+
 
 .PHONY: all
-all: apply
+all: prep apply
 
 # Utility target for checking required parameters
 .PHONY: guard-%
@@ -10,6 +10,10 @@ guard-%:
 		echo "Missing required make parameter '$*'."; \
 		exit 1; \
 	fi;
+
+.PHONY: prep
+prep: guard-ENV_NAME ../bin/prep.sh $(ENV_NAME)-backend.auto.tfvars
+	../bin/prep.sh $(ENV_NAME)-backend.auto.tfvars
 
 .PHONY: apply
 apply: guard-ENV_NAME plan

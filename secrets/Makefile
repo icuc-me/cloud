@@ -9,12 +9,11 @@ SUSERNAME=$(shell ls $(ENV_NAME)-*.json | cut -d - -f 2 | cut -d . -f 1)
 SUSERNAME_TOKEN=\%\%SUSERNAME\%\%
 
 .PHONY: all
-all: guard-ENV_NAME uuid $(ENV_NAME)-uuid.auto.tfvars $(ENV_NAME)-backend.auto.tfvars provider.auto.tfvars $(ENV_NAME)-secrets.yml
+all: guard-ENV_NAME uuid $(ENV_NAME)-uuid.auto.tfvars $(ENV_NAME)-backend.auto.tfvars provider.auto.tfvars
 
 .PHONY: Makefile
 
 clean:
-	rm -f *-secrets.yml
 	rm -f *backend.auto.tfvars
 	rm -f *-uuid.auto.tfvars
 	rm -f *-uuid
@@ -25,11 +24,6 @@ guard-%:
 		echo "Missing required make parameter '$*'."; \
 		exit 1; \
 	fi;
-
-$(ENV_NAME)-secrets.yml: guard-ENV_NAME guard-SUSERNAME $(ENV_NAME)-backend.auto.tfvars provider.auto.tfvars $(ENV_NAME)-uuid.auto.tfvars
-	@echo "Producing $@"
-	@./terraform_to_ansible.sh $(ENV_NAME) $(SUSERNAME) > $@
-	@echo -e "\nterraform_project: \"$(shell realpath ../terraform)\"" >> $@
 
 .PHONY: uuid
 uuid: guard-ENV_NAME
