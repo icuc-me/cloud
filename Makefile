@@ -35,15 +35,9 @@ image_name:
 
 .PHONY: test
 test:
-	@if $(MAKE) test_env; \
-	then \
-		$(MAKE) clean_test; \
-		echo "Tests pass"; \
-	else \
-		$(MAKE) clean_test; \
-		echo "Tests fail"; \
-		exit 1; \
-	fi
+	-$(MAKE) test_env
+	-echo "TODO: Run some tests"
+	-$(MAKE) clean_test
 
 .PHONY: clean
 clean:
@@ -58,11 +52,9 @@ clean_prod:
 clean_%:
 	@$(MAKE) -C secrets ENV_NAME=$*
 	@$(MAKE) -C terraform clean ENV_NAME=$*
-	@bin/teardown.sh secrets/$*-backend.auto.tfvars
 	@$(MAKE) clean
 
 .PHONY: %_env
 %_env:
 	@$(MAKE) -C secrets ENV_NAME=$*
-	@bin/prepare.sh secrets/$*-backend.auto.tfvars
 	@$(MAKE) -C terraform ENV_NAME=$*

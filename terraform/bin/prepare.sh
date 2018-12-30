@@ -7,7 +7,11 @@
 
 set -e
 
-source "$(dirname $0)/lib.sh"
+SCRIPT_FILENAME=$(basename "$0")
+SCRIPT_DIRPATH="$(dirname $0)"
+SCRIPT_SUBDIR="$(basename $SCRIPT_DIRPATH)"
+SRC_DIR=$(realpath "$SCRIPT_DIRPATH/../../")
+source "$SRC_DIR/bin/lib.sh"
 
 [[ -r "$1" ]] || die "Must passs terraform backend configuration as parameter" 1
 BACKEND_FILEPATH="$1"
@@ -47,7 +51,6 @@ teardown_bucket() {
     if gsutil ls | grep "$bucket"
     then
         gsutil rm -arf gs://$bucket
-        echo "Created bucket $bucket"
     else
         echo "Bucket $bucket doesn't exist"
     fi
