@@ -27,14 +27,17 @@ guard-%:
 
 .PHONY: uuid
 uuid: guard-ENV_NAME
-	@echo "Producing $(ENV_NAME)-uuid"
 	@[[ -r "$(ENV_NAME)-uuid" ]] || if [[ "$(ENV_NAME)" =~ "test" ]]; then \
+		echo "Producing $(ENV_NAME)-uuid"; \
 		echo "$(TEST_UUID)" > $(ENV_NAME)-uuid; \
 	elif [[ "$(ENV_NAME)" =~ "stage" ]]; then \
+		echo "Producing $(ENV_NAME)-uuid"; \
 		echo "$(STAGE_UUID)" > $(ENV_NAME)-uuid; \
 	elif [[ "$(ENV_NAME)" =~ "prod" ]]; then \
+		echo "Producing $(ENV_NAME)-uuid"; \
 		echo "$(PROD_UUID)" > $(ENV_NAME)-uuid; \
 	else \
+		echo "Producing $(ENV_NAME)-uuid"; \
 		echo "unknown$(shell uuidgen | tr -d -)" > $(ENV_NAME)-uuid; \
 	fi
 

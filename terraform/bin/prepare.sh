@@ -39,7 +39,7 @@ init_gcloud() {
 }
 
 create_bucket() {
-    if gsutil ls | grep "$bucket"
+    if gsutil ls | grep "gs://$bucket"
     then
         echo "Bucket $bucket already exists"
     else

@@ -39,10 +39,15 @@ test:
 	-echo "TODO: Run some tests"
 	-$(MAKE) clean_test
 
+.PHONY: %_env
+%_env:
+	@$(MAKE) -C secrets ENV_NAME=$*
+	@$(MAKE) -C terraform ENV_NAME=$*
+
 .PHONY: clean
 clean:
 	@$(MAKE) -C secrets clean
-	@$(MAKE) -C terraform clean ENV_NAME=$*
+	@$(MAKE) -C terraform clean
 
 .PHONY: clean-prod
 clean_prod:
@@ -51,10 +56,6 @@ clean_prod:
 .PHONY: clean-%
 clean_%:
 	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C terraform clean ENV_NAME=$*
+	@$(MAKE) -C terraform destroy ENV_NAME=$*
+	@$(MAKE) -C terraform teardown ENV_NAME=$*
 	@$(MAKE) clean
-
-.PHONY: %_env
-%_env:
-	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C terraform ENV_NAME=$*

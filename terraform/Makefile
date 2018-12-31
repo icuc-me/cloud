@@ -18,7 +18,7 @@ prepare: guard-ENV_NAME $(ENV_NAME)-backend.auto.tfvars
 apply: guard-ENV_NAME plan $(ENV_NAME)-backend.auto.tfvars $(ENV_NAME)-uuid.auto.tfvars provider.auto.tfvars
 	TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve plan
 
-plan: guard-ENV_NAME init $(ENV_NAME)-backend.auto.tfvars $(ENV_NAME)-uuid.auto.tfvars provider.auto.tfvars 
+plan: guard-ENV_NAME init $(ENV_NAME)-backend.auto.tfvars $(ENV_NAME)-uuid.auto.tfvars provider.auto.tfvars
 	TF_IN_AUTOMATION=1 terraform plan -input=false -var env_name=$(ENV_NAME) -out=$@
 
 .terraform: guard-ENV_NAME $(ENV_NAME)-backend.auto.tfvars prepare
@@ -39,7 +39,7 @@ $(ENV_NAME)-uuid.auto.tfvars:
 init: .terraform
 
 .PHONY: teardown
-teardown:
+teardown: guard-ENV_NAME $(ENV_NAME)-backend.auto.tfvars
 	@if [[ "$(ENV_NAME)" =~ "prod" ]]; then \
 		echo "Cowardly refusing to teardown prod state."; \
 	elif [[ -n "$(ENV_NAME)" ]]; then \
@@ -47,7 +47,7 @@ teardown:
 	fi
 
 .PHONY: destroy
-destroy:
+destroy: guard-ENV_NAME $(ENV_NAME)-backend.auto.tfvars $(ENV_NAME)-uuid.auto.tfvars provider.auto.tfvars init
 	@if [[ "$(ENV_NAME)" =~ "prod" ]]; then \
 		echo "Cowardly refusing to destroy prod environment"; \
 	elif [[ -n "$(ENV_NAME)" ]]; then \
@@ -55,6 +55,6 @@ destroy:
 	fi;
 
 .PHONY: clean
-clean: destroy teardown
+clean:
 	-rm -f plan ./*tfstate* ./*-*.auto.tfvars
 	-rm -rf .terraform
