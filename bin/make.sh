@@ -2,6 +2,8 @@
 
 # Execution front-end for top-level Makefile runtime environment
 
+set -e
+
 source "$(dirname $0)/lib.sh"
 
 if ! type -P podman &> /dev/null
@@ -22,11 +24,14 @@ fi
 
 set -x
 sudo podman run -it --rm \
-    --security-opt=label=disable \
-    --volume $PWD:/usr/src:ro \
-    --volume $PWD/secrets:/usr/src/secrets:rw \
-    --workdir /usr/src \
-    --env AS_USER=$USER \
-    --env AS_ID=$UID \
-    --env PATH="/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" \
-    $IMAGE_NAME "/usr/bin/make $@"
+    --security-opt "label=disable" \
+    --volume "$PWD:/usr/src:ro" \
+    --volume "$PWD/secrets:/usr/src/secrets:rw" \
+    --volume "$(tf_data_dir test)" \
+    --volume "$(tf_data_dir stage)" \
+    --volume "$(tf_data_dir prod)" \
+    --workdir "/usr/src" \
+    --env "AS_USER=$USER" \
+    --env "AS_ID=$UID" \
+    --env "PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" \
+    "$IMAGE_NAME" "/usr/bin/make $@"

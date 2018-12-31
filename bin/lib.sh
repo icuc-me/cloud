@@ -17,3 +17,8 @@ die() {
     echo -e "$1"
     exit $2
 }
+
+tf_data_dir() {
+    echo "$SRC_DIR/terraform/$1/.terraform:/usr/src/terraform/$1/.terraform:rw"
+}
+
