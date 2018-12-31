@@ -13,7 +13,10 @@ echo "Creating a working copy of source"
 rsync --stats --recursive --links \
     --safe-links --sparse \
     --executability --chmod=ug+w \
+    --exclude=secrets \
     "/usr/src/" "/home/$AS_USER"
 chown -R $AS_ID:$AS_ID "/home/$AS_USER"
+rm -rf "/home/$AS_USER/secrets"
+ln -s "/usr/src/secrets" "/home/$AS_USER/secrets"
 set -x
 exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -l -i -c "cd /home/$AS_USER && $@"

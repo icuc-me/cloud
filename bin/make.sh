@@ -24,6 +24,7 @@ set -x
 sudo podman run -it --rm \
     --security-opt=label=disable \
     --volume $PWD:/usr/src:ro \
+    --volume $PWD/secrets:/usr/src/secrets:rw \
     --workdir /usr/src \
     --env AS_USER=$USER \
     --env AS_ID=$UID \
