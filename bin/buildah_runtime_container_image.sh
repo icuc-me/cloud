@@ -143,49 +143,48 @@ then
 
     LAYER_AGE="$(image_age layer_1:$_LAYER_1)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 28]"
-    LAYER_MAJ_VER="$(image_version layer_1:$_LAYER_1 | cut -d . -f 1)"
-    LAYER_PACKAGES="$INSTALL_RPMS"  # Don't care, installed in layer 2 (below)
     CHANGED=0
     rebuild_cache_layer 1 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
-        "$LAYER_MAJ_VER" "$VERSION_MAJ" \
-        "$LAYER_PACKAGES" "$CHANGED" \
+        "IGNORED" "IGNORED" \
+        "$INSTALL_RPMS" \
+        "$CHANGED" \
         "build_layer docker://centos:7 layer_1 $_LAYER_1"
 
     LAYER_AGE="$(image_age layer_2:$_LAYER_2)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 14]"
-    LAYER_MAJ_MIN_VER="$(image_version layer_2:$_LAYER_2 | cut -d . -f 1-2)"
+    LAYER_MAJ_VER="$(image_version layer_2:$_LAYER_2 | cut -d . -f 1)"
     LAYER_PACKAGES="$(image_packages layer_2:$_LAYER_2)"
     rebuild_cache_layer 2 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
-        "$LAYER_MAJ_MIN_VER" "$VERSION_MAJ_MIN" \
+        "$LAYER_MAJ_VER" "$VERSION_MAJ" \
         "$LAYER_PACKAGES" "$CHANGED" \
         "build_layer layer_1:$_LAYER_1 layer_2 $_LAYER_2"
 
     LAYER_AGE="$(image_age layer_3:$_LAYER_3)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 7]"
-    LAYER_MAJ_MIN_REV_VER="$(image_version layer_3:$_LAYER_3 | cut -d . -f 1-3 | cut -d - -f 1)"
+    LAYER_MAJ_MIN_VER="$(image_version layer_3:$_LAYER_3 | cut -d . -f 1-2)"
     LAYER_PACKAGES="$(image_packages layer_3:$_LAYER_3)"
     rebuild_cache_layer 3 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
-        "$LAYER_MAJ_MIN_REV_VER" "$VERSION_MAJ_MIN_REV" \
+        "$LAYER_MAJ_MIN_VER" "$VERSION_MAJ_MIN" \
         "$LAYER_PACKAGES" "$CHANGED" \
         "build_layer layer_2:$_LAYER_2 layer_3 $_LAYER_3"
 
     LAYER_AGE="$(image_age layer_4:$_LAYER_4)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 3]"
-    LAYER_VER="$(image_version layer_4:$_LAYER_4)"
+    LAYER_MAJ_MIN_REV_VER="$(image_version layer_4:$_LAYER_4 | cut -d . -f 1-3 | cut -d - -f 1)"
     LAYER_PACKAGES="$(image_packages layer_4:$_LAYER_4)"
     rebuild_cache_layer 4 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
-        "$LAYER_VER" "$VERSION" \
+        "$LAYER_MAJ_MIN_REV_VER" "$VERSION_MAJ_MIN_REV" \
         "$LAYER_PACKAGES" "$CHANGED" \
         "build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4
         --entrypoint=[\"/root/bin/as_user.sh\"]"
 
     LAYER_AGE="$(image_age layer_5:$_LAYER_5)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 1]"
-    LAYER_VER="$RANDOM"
+    LAYER_VER="$(image_version layer_5:$_LAYER_5)"
     LAYER_PACKAGES="$(image_packages layer_5:$_LAYER_5)"
     rebuild_cache_layer 5 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
