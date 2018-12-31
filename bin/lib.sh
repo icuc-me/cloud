@@ -22,3 +22,6 @@ tf_data_dir() {
     echo "$SRC_DIR/terraform/$1/.terraform:/usr/src/terraform/$1/.terraform:rw"
 }
 
+host_home() {
+    echo "$HOME/$1:/home/$USER/$1:ro"
+}

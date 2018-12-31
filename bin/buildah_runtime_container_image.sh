@@ -6,11 +6,11 @@ source "$(dirname $0)/lib.sh"
 
 # Allows packing multiple scripts into one file
 _HOST="9d5a6ad6-25a0-471f-9f21-75e1be9c398e"
-_LAYER_1="ee51f9f0-0301-4f3b-a3ab-aa3308820bac"
-_LAYER_2="e93e002f-9443-466e-ab90-f78df5d5f7fa"
-_LAYER_3="23cc6743-7e22-4401-8e68-4d4c3fc18849"
-_LAYER_4="0e491b98-eb2b-4d69-a1d4-75bc487665c0"
-_LAYER_5="a4028aa0-5e11-4ab7-989b-404b62b9749a"
+_LAYER_1="ee51f9f0-0301-4f3b-a3ab-aa3308820bac"  # repos + updates
+_LAYER_2="e93e002f-9443-466e-ab90-f78df5d5f7fa"  # packaged deps
+_LAYER_3="23cc6743-7e22-4401-8e68-4d4c3fc18849"  # unpackaged deps
+_LAYER_4="0e491b98-eb2b-4d69-a1d4-75bc487665c0"  # configuration
+_LAYER_5="a4028aa0-5e11-4ab7-989b-404b62b9749a"  # entrypoint
 MAGIC="${MAGIC:-$_HOST}"
 INSTALL_RPMS=$(echo \
     "PyYAML \
@@ -18,6 +18,8 @@ INSTALL_RPMS=$(echo \
     findutils \
     git \
     google-cloud-sdk \
+    golang \
+    golang-docs \
     make \
     nmap-ncat \
     python-simplejson \
@@ -164,32 +166,29 @@ then
     LAYER_AGE="$(image_age layer_3:$_LAYER_3)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 7]"
     LAYER_MAJ_MIN_VER="$(image_version layer_3:$_LAYER_3 | cut -d . -f 1-2)"
-    LAYER_PACKAGES="$(image_packages layer_3:$_LAYER_3)"
     rebuild_cache_layer 3 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_MAJ_MIN_VER" "$VERSION_MAJ_MIN" \
-        "$LAYER_PACKAGES" "$CHANGED" \
+        "$INSTALL_RPMS" "$CHANGED" \
         "build_layer layer_2:$_LAYER_2 layer_3 $_LAYER_3"
 
     LAYER_AGE="$(image_age layer_4:$_LAYER_4)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 3]"
     LAYER_MAJ_MIN_REV_VER="$(image_version layer_4:$_LAYER_4 | cut -d . -f 1-3 | cut -d - -f 1)"
-    LAYER_PACKAGES="$(image_packages layer_4:$_LAYER_4)"
     rebuild_cache_layer 4 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_MAJ_MIN_REV_VER" "$VERSION_MAJ_MIN_REV" \
-        "$LAYER_PACKAGES" "$CHANGED" \
+        "$INSTALL_RPMS" "$CHANGED" \
         "build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4
         --entrypoint=[\"/root/bin/as_user.sh\"]"
 
     LAYER_AGE="$(image_age layer_5:$_LAYER_5)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 1]"
     LAYER_VER="$(image_version layer_5:$_LAYER_5)"
-    LAYER_PACKAGES="$(image_packages layer_5:$_LAYER_5)"
     rebuild_cache_layer 5 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_VER" "$VERSION" \
-        "$LAYER_PACKAGES" "$CHANGED" \
+        "$INSTALL_RPMS" "$CHANGED" \
         "build_layer layer_4:$_LAYER_4 layer_5 $_LAYER_5"
 
     if ((CHANGED)) || ! sudo podman images $IMAGE_NAME &> /dev/null
@@ -237,6 +236,10 @@ elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
     echo "Installing entrypoint script"
     install -D -m 0755 /usr/src/$SCRIPT_SUBDIR/as_user.sh /root/bin/as_user.sh
+    echo "Caching terratest dependencies"
+    export GOPATH=/var/cache/go
+    mkdir -p "$GOPATH"
+    go get github.com/gruntwork-io/terratest/modules/terraform
 elif [[ "$MAGIC" == "$_LAYER_5" ]]
 then
     echo "Finalizing image"

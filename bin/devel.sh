@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Execution front-end for top-level Makefile runtime environment
-
+# Development front-end for project
 set -e
 
 source "$(dirname $0)/lib.sh"
@@ -25,13 +24,12 @@ fi
 set -x
 sudo podman run -it --rm \
     --security-opt "label=disable" \
-    --volume "$SRC_DIR:/usr/src:ro" \
-    --volume "$SRC_DIR/secrets:/usr/src/secrets:rw" \
-    --volume "$(tf_data_dir test)" \
-    --volume "$(tf_data_dir stage)" \
-    --volume "$(tf_data_dir prod)" \
-    --workdir "/usr/src" \
+    --volume "$(host_home .vimrc)" \
+    --volume "$(host_home .gitconfig)" \
+    --volume "$SRC_DIR:/home/$USER/go/src/github.com/icuc-me/cloud/" \
+    --workdir "/home/$USER/go/src/github.com/icuc-me/cloud/" \
     --env "AS_USER=$USER" \
     --env "AS_ID=$UID" \
-    --env "PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" \
-    "$IMAGE_NAME" "/usr/bin/make $@"
+    --env "DEVEL=1" \
+    --env "PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/home/$USER/go/bin" \
+    "$IMAGE_NAME" "bash"
