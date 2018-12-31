@@ -1,8 +1,8 @@
 
 UUID_TOKEN=\%\%UUID\%\%
-TEST_UUID=test$(shell uuidgen | tr -d -)
-PROD_UUID=prod5808eee9756c49299496a99db62bdd7f
-STAGE_UUID=stage85985f738ea84c4c8faccb1f4ee47327
+TEST_UUID=test$(shell uuidgen | cut -d - -f 1,4 | tr -d -)
+PROD_UUID=prod89db7eecb49d
+STAGE_UUID=stage6f0ea558b32c
 ENV_NAME_TOKEN=\%\%ENV_NAME\%\%
 CREDS_DIRPATH_TOKEN=\%\%CREDS_DIRPATH\%\%
 SUSERNAME=$(shell ls $(ENV_NAME)-*.json | cut -d - -f 2 | cut -d . -f 1)
