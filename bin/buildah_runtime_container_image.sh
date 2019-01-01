@@ -195,7 +195,7 @@ then
     then
         sudo podman rm $IMAGE_NAME 2> /dev/null || true
         trap cleanup EXIT
-        sudo podman tag layer_4:$_LAYER_4 $IMAGE_NAME
+        sudo podman tag layer_5:$_LAYER_5 $IMAGE_NAME
         trap - EXIT
     else
         echo "Skipping tag of layer 4"

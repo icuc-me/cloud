@@ -24,16 +24,17 @@ then
     install -o "$AS_ID" -g "$AS_ID" /etc/skel/.??* /home/$AS_USER
 fi
 
+RSYNC_CMD="rsync --stats --recursive --links \
+           --safe-links --sparse --checksum \
+           --executability --chmod=ug+w \
+           --exclude=secrets \
+           --exclude=.terraform \
+           --chown=$AS_ID:$AS_ID"
+
 if [[ -z "$DEVEL" ]]
 then
     echo "Creating a working copy of source"
-    rsync --stats --recursive --links \
-        --safe-links --sparse \
-        --executability --chmod=ug+w \
-        --exclude=secrets \
-        --exclude=.terraform \
-        --chown=$AS_ID:$AS_ID \
-        "/usr/src/" "/home/$AS_USER"
+    $RSYNC_CMD "/usr/src/" "/home/$AS_USER"
     # rsync --chown doesn't affect directories somehow(?)
     chown -R $AS_ID:$AS_ID "/home/$AS_USER" &> /dev/null || true  # ignore any ro errors
     lnrwsrc secrets
@@ -42,14 +43,12 @@ then
     lnrwsrc terraform/prod/.terraform
     SHELLCMD="cd /home/$AS_USER && $@"
 else
-    rsync --stats --recursive --links \
-        --safe-links --sparse \
-        --executability --chmod=ug+w \
-        --exclude=secrets \
-        "/var/cache/go" "/home/$AS_USER"
+    echo "Recovering cached go packages"
+    $RSYNC_CMD "/var/cache/go" "/home/$AS_USER"
     chown -R $AS_ID:$AS_ID "/home/$AS_USER" &> /dev/null || true  # ignore any ro errors
     SHELLCMD="cd $PWD && /usr/bin/bash --rcfile /home/$AS_USER/.bash_profile --login -i"
 fi
 
+echo "Entering prepared environment"
 set -x
 exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -l -i -c "$SHELLCMD"

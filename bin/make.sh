@@ -33,5 +33,4 @@ sudo podman run -it --rm \
     --workdir "/usr/src" \
     --env "AS_USER=$USER" \
     --env "AS_ID=$UID" \
-    --env "PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" \
     "$IMAGE_NAME" "/usr/bin/make $@"
