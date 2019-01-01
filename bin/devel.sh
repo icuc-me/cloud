@@ -31,5 +31,4 @@ sudo podman run -it --rm \
     --env "AS_USER=$USER" \
     --env "AS_ID=$UID" \
     --env "DEVEL=1" \
-    --env "PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/home/$USER/go/bin" \
     "$IMAGE_NAME" "bash"
