@@ -5,12 +5,12 @@ set -e
 source "$(dirname $0)/lib.sh"
 
 # Allows packing multiple scripts into one file
-_HOST="9d5a6ad6-25a0-471f-9f21-75e1be9c398e"
-_LAYER_1="ee51f9f0-0301-4f3b-a3ab-aa3308820bac"  # repos + updates
-_LAYER_2="e93e002f-9443-466e-ab90-f78df5d5f7fa"  # packaged deps
-_LAYER_3="23cc6743-7e22-4401-8e68-4d4c3fc18849"  # unpackaged deps
-_LAYER_4="0e491b98-eb2b-4d69-a1d4-75bc487665c0"  # configuration
-_LAYER_5="a4028aa0-5e11-4ab7-989b-404b62b9749a"  # entrypoint
+_HOST="9d5a6ad6"
+_LAYER_1="ee51f9f0"  # repos + updates
+_LAYER_2="93e0e02f"  # packaged deps
+_LAYER_3="23cc6743"  # unpackaged deps
+_LAYER_4="0e491b98"  # configuration
+_LAYER_5="a4028aa0"  # entrypoint
 MAGIC="${MAGIC:-$_HOST}"
 INSTALL_RPMS=$(echo \
     "PyYAML \
