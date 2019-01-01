@@ -1,4 +1,3 @@
-!*/.terraform/.empty
 */.terraform/**
 */backend.auto.tfvars
 */uuid.auto.tfvars

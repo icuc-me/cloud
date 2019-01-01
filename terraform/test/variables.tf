@@ -20,7 +20,11 @@ variable "env_uuid" {
     description = "Unique Name associated but also loosely associated to env_name"
 }
 
-# From command-line
+# From runtime.auto.tfvars
 variable "env_name" {
     description = "Name of environment to operating in (test, stage, prod)"
+}
+
+variable "src_version" {
+    description = "The version string of the source repository at runtime"
 }

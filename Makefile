@@ -21,28 +21,28 @@ help:
 	@echo ''
 	@echo '###########################################################################'
 
+VERCMD = git describe --abbrev=6 HEAD 2> /dev/null || echo 'TAG-REF-ERROR'
 .PHONY: version
 version:
-	@echo "$(shell git describe --abbrev=6 HEAD 2> /dev/null || echo '0.0.0')"
+	@echo "$(shell $(VERCMD))"
 
-RUNTIME_IMAGE_REGISTRY ?= "quay.io"
-RUNTIME_IMAGE_NAMESPACE ?= "r4z0r7o3"
-RUNTIME_IMAGE_NAME ?= "runtime.cloud.icuc.me"
-RUNTIME_IMAGE_TAG = "$(shell $(MAKE) version)"
+RUNTIME_IMAGE_REGISTRY ?= quay.io
+RUNTIME_IMAGE_NAMESPACE ?= r4z0r7o3
+RUNTIME_IMAGE_NAME ?= runtime.cloud.icuc.me
+SRC_VERSION = $(shell $(VERCMD))
 .PHONY: image_name
 image_name:
-	@echo "$(RUNTIME_IMAGE_REGISTRY)/$(RUNTIME_IMAGE_NAMESPACE)/$(RUNTIME_IMAGE_NAME):$(RUNTIME_IMAGE_TAG)"
+	@echo "$(RUNTIME_IMAGE_REGISTRY)/$(RUNTIME_IMAGE_NAMESPACE)/$(RUNTIME_IMAGE_NAME):$(SRC_VERSION)"
 
 .PHONY: test
 test:
-	-$(MAKE) test_env
-	-echo "TODO: Run some tests"
-	-$(MAKE) clean_test
+	-$(MAKE) test_env && echo "TODO: Run some tests"
+	$(MAKE) clean_test
 
 .PHONY: %_env
 %_env:
 	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C terraform ENV_NAME=$*
+	@$(MAKE) -C terraform ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
 
 .PHONY: clean
 clean:
@@ -56,6 +56,6 @@ clean_prod:
 .PHONY: clean-%
 clean_%:
 	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C terraform destroy ENV_NAME=$*
-	@$(MAKE) -C terraform teardown ENV_NAME=$*
+	@$(MAKE) -C terraform destroy ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
+	@$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
 	@$(MAKE) clean

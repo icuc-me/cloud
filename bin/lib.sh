@@ -19,6 +19,7 @@ die() {
 }
 
 tf_data_dir() {
+    mkdir -p "$SRC_DIR/terraform/$1/.terraform" 1> /dev/stderr
     echo "$SRC_DIR/terraform/$1/.terraform:/usr/src/terraform/$1/.terraform:rw"
 }
 

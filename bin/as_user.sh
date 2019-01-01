@@ -8,7 +8,7 @@ die() {
 
 lnrwsrc() {
     rm -rf "/home/$AS_USER/$1"
-    mkdir -p "/home/$AS_USER/$1"
+    mkdir -p $(dirname "/home/$AS_USER/$1")
     ln -s "/usr/src/$1" "/home/$AS_USER/$1"
 }
 
@@ -18,7 +18,8 @@ lnrwsrc() {
 if ! id "$AS_USER" &> /dev/null
 then
     groupadd -g "$AS_ID" "$AS_USER"
-    useradd -g "$AS_ID" -u "$AS_ID" "$AS_USER" --no-create-home
+    useradd -g "$AS_ID" -u "$AS_ID" "$AS_USER" --no-create-home  # fails if volume mount
+    mkdir -p "/home/$AS_USER"  # does not fail if volume mount
     chown -R $AS_ID:$AS_ID "/home/$AS_USER" &> /dev/null || true  # ignore any ro errors
     install -o "$AS_ID" -g "$AS_ID" /etc/skel/.??* /home/$AS_USER
 fi
@@ -30,7 +31,11 @@ then
         --safe-links --sparse \
         --executability --chmod=ug+w \
         --exclude=secrets \
+        --exclude=.terraform \
+        --chown=$AS_ID:$AS_ID \
         "/usr/src/" "/home/$AS_USER"
+    # rsync --chown doesn't affect directories somehow(?)
+    chown -R $AS_ID:$AS_ID "/home/$AS_USER" &> /dev/null || true  # ignore any ro errors
     lnrwsrc secrets
     lnrwsrc terraform/test/.terraform
     lnrwsrc terraform/stage/.terraform
