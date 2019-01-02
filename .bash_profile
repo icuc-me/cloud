@@ -1,4 +1,3 @@
-# .bash_profile - intended for use by bin/devel.sh
 
 # Get the aliases and functions
 if [ -f ~/.bashrc ]; then

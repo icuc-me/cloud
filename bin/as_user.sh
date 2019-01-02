@@ -46,7 +46,8 @@ else
     echo "Recovering cached go packages"
     $RSYNC_CMD "/var/cache/go" "/home/$AS_USER"
     chown -R $AS_ID:$AS_ID "/home/$AS_USER" &> /dev/null || true  # ignore any ro errors
-    SHELLCMD="cd $PWD && /usr/bin/bash --rcfile /home/$AS_USER/.bash_profile --login -i"
+    install -o "$AS_ID" -g "$AS_ID" "$PWD/.bash_profile" "/home/$AS_USER/"
+    SHELLCMD="cd $PWD && /usr/bin/bash --login -i"
 fi
 
 echo "Entering prepared environment"

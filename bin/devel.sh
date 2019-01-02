@@ -21,14 +21,16 @@ then
         die "Error accessing image $IMAGE_NAME"
 fi
 
+_GOSRC="/home/$USER/go/src/github.com/icuc-me/cloud/"
+
 set -x
 sudo podman run -it --rm \
     --security-opt "label=disable" \
     --volume "$(host_home .vimrc)" \
     --volume "$(host_home .gitconfig)" \
-    --volume "$SRC_DIR:/home/$USER/go/src/github.com/icuc-me/cloud/" \
-    --workdir "/home/$USER/go/src/github.com/icuc-me/cloud/" \
+    --volume "$SRC_DIR:$_GOSRC" \
+    --workdir "$_GOSRC" \
     --env "AS_USER=$USER" \
     --env "AS_ID=$UID" \
     --env "DEVEL=1" \
-    "$IMAGE_NAME" "bash"
+    "$IMAGE_NAME"
