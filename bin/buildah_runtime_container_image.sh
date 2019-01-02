@@ -234,16 +234,20 @@ then
     install -D -m 755 ./terraform /usr/local/bin/
 elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
-    echo "Installing entrypoint script"
-    install -D -m 0755 /usr/src/$SCRIPT_SUBDIR/as_user.sh /root/bin/as_user.sh
-    echo "Caching terratest dependencies"
+    echo "Caching build dependencies"
     export GOPATH=/var/cache/go
     mkdir -p "$GOPATH"
-    go get github.com/gruntwork-io/terratest/modules/terraform
+    cd "$GOPATH"
+    mkdir bin
+
+    curl https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh
+    go get -v github.com/onsi/ginkgo/ginkgo
+    go get -v github.com/onsi/gomega/...
+    go get -v github.com/gruntwork-io/terratest/modules/terraform
 elif [[ "$MAGIC" == "$_LAYER_5" ]]
 then
-    echo "Finalizing image"
-    exit 0  # no-op
+    echo "Installing entrypoint script"
+    install -D -m 0755 /usr/src/$SCRIPT_SUBDIR/as_user.sh /root/bin/as_user.sh
 else
     die "You found a bug in the script! Current \$MAGIC=$MAGIC"
 fi
