@@ -16,6 +16,7 @@ INSTALL_RPMS=$(echo \
     "PyYAML \
     curl \
     findutils \
+    yajl \
     git \
     google-cloud-sdk \
     golang \
