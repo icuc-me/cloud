@@ -49,8 +49,11 @@ else
 fi
 
 # rsync --chown doesn't affect directories somehow(?)
+echo "Correcting permissions and configuring .bash_profile"
 chown -R $AS_ID:$AS_ID "/home/$AS_USER" &> /dev/null || true  # ignore any ro errors
 install -o "$AS_ID" -g "$AS_ID" -m 0664 "$SRC_DIR/.bash_profile" "/home/$AS_USER/"
+echo "export SRC_DIR=\"$SRC_DIR\"" >> "/home/$AS_USER/.bash_profile"
+echo "export PATH=\"\$PATH:$SRC_DIR/bin\"" >> "/home/$AS_USER/.bash_profile"
 
 echo "Entering prepared environment"
 set -x
