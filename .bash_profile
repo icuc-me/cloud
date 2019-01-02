@@ -4,10 +4,11 @@ if [ -f ~/.bashrc ]; then
     . ~/.bashrc
 fi
 
+export HOMEBIN="$HOME/bin"
 export GOPATH="$HOME/go"
 export GOBIN="$GOPATH/bin"
-export GOSRC="/home/$USER/go/src/github.com/icuc-me/cloud/"
-export PATH="/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$HOME/bin:$GOBIN"
+export SRCBIN="$SRC_DIR/bin"
+export PATH="/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$HOMEBIN:$GOBIN:$SRCBIN"
 export EDITOR=/usr/bin/vim
 export VIEWER=/usr/bin/vim
 export SYSTEMD_LESS=FRXMK

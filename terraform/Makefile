@@ -16,7 +16,7 @@ $(ENV_NAME)/%.auto.tfvars:
 
 .PHONY: prepare
 prepare: guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars
-	@bin/prepare.sh $(ENV_NAME)/backend.auto.tfvars
+	bin/prepare.sh $(ENV_NAME)/backend.auto.tfvars
 
 .PHONY: init
 init: guard-ENV_NAME $(ENV_NAME)/.terraform
@@ -64,7 +64,7 @@ destroy: guard-ENV_NAME auto.tfvars
 .PHONY: clean
 clean:
 	# ALL environments
-	-rm -f */plan */*tfstate* */{backend,provider,uuid}.auto.tfvars */runtime.auto.tfvars
-	-for env_name in test stage prod; do \
-		rm -rf "$$env_name/.terraform"; \
-	done
+	-rm -fv {test,stage,prod}/plan
+	-rm -fv {test,stage,prod}/*tfstate*
+	-rm -fv {test,stage,prod}/{backend,provider,uuid,runtime}.auto.tfvars
+	-rm -rvf {test,stage,prod}/.terraform/*

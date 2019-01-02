@@ -32,6 +32,9 @@ RSYNC_CMD="rsync --stats --recursive --links \
            --exclude=.terraform \
            --chown=$AS_ID:$AS_ID"
 
+echo "Recovering cached GOPATH contents"
+$RSYNC_CMD "/var/cache/go" "/home/$AS_USER"
+
 if [[ -r "/usr/src/secrets/README.md" ]]
 then
     echo "Creating working copy of read-only source"
@@ -43,8 +46,6 @@ then
     lnrwsrc terraform/prod/.terraform
     SHELLCMD="$@"
 else
-    echo "Recovering cached GOPATH contents"
-    $RSYNC_CMD "/var/cache/go" "/home/$AS_USER"
     SHELLCMD="/usr/bin/bash --login -i"
 fi
 

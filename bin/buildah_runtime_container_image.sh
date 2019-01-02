@@ -235,13 +235,13 @@ then
     install -D -m 755 ./terraform /usr/local/bin/
 elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
-    echo "Caching build dependencies"
+    echo "Installing Go Meta Linter"
     export GOPATH=/var/cache/go
     mkdir -p "$GOPATH"
     cd "$GOPATH"
     mkdir bin
-
-    curl https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh
+    curl -LsS https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh
+    echo "Caching build dependencies (could take a few minutes)"
     go get -v github.com/onsi/ginkgo/ginkgo
     go get -v github.com/onsi/gomega/...
     go get -v github.com/gruntwork-io/terratest/modules/terraform

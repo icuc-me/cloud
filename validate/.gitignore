@@ -1,0 +1,6 @@
+go.sum
+.pathok
+verify
+lint
+smoke
+validate

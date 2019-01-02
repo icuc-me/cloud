@@ -9,7 +9,7 @@ SUSERNAME=$(shell ls $(ENV_NAME)-*.json | cut -d - -f 2 | cut -d . -f 1)
 SUSERNAME_TOKEN=\%\%SUSERNAME\%\%
 
 .PHONY: all
-all: guard-ENV_NAME uuid $(ENV_NAME)-uuid.auto.tfvars $(ENV_NAME)-backend.auto.tfvars provider.auto.tfvars
+all: guard-ENV_NAME uuid $(ENV_NAME)-uuid.auto.tfvars $(ENV_NAME)-backend.auto.tfvars $(ENV_NAME)-provider.auto.tfvars
 
 .PHONY: Makefile
 
