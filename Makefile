@@ -7,7 +7,7 @@ help:
 	@echo '###########################################################################'
 	@echo 'Valid Make Targets:'
 	@echo ''
-	@echo 'test' - Execute automated tests
+	@echo 'validate - Execute automated test environment validation'
 	@echo 'test_env - Deploy to test environment'
 	@echo 'stage_env - Deploy to staging environment'
 	@echo 'prod_env - Deploy to production environment'
@@ -34,10 +34,9 @@ SRC_VERSION = $(shell $(VERCMD))
 image_name:
 	@echo "$(RUNTIME_IMAGE_REGISTRY)/$(RUNTIME_IMAGE_NAMESPACE)/$(RUNTIME_IMAGE_NAME):$(SRC_VERSION)"
 
-.PHONY: test
-test:
-	-$(MAKE) test_env && echo "TODO: Run some tests"
-	$(MAKE) clean_test
+.PHONY: validate
+validate:
+	@validate/runner.sh
 
 .PHONY: %_env
 %_env:
@@ -58,4 +57,3 @@ clean_%:
 	@$(MAKE) -C secrets ENV_NAME=$*
 	@$(MAKE) -C terraform destroy ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
 	@$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
-	@$(MAKE) clean

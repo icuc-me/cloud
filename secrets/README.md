@@ -22,23 +22,23 @@ as defined by Makefile.
 
 Assumes separate projects for each environment with a suffix of "foobar",
 and a service account username of "fng".  Create service accounts and keys
-with the following commands:
+with the following commands, run from inside the ``secrets`` directory:
 
 ```
-$ alias pgcloud='sudo podman run -it --rm -e AS_ID=$UID -e AS_USER=$USER --security-opt label=disable -v /home/$USER:$HOME -v /tmp:/tmp:ro quay.io/cevich/gcloud_centos:latest'
-
+$ alias pgcloud='sudo podman run -it --rm -e AS_ID=$UID -e AS_USER=$USER --security-opt label=disable -v /home/$USER:$HOME -v /tmp:/tmp:ro quay.io/cevich/gcloud_centos:latest --configuration=$ENV_NAME --project=${ENV_NAME}${PROJECT_SFX}'
 $ PROJECT_SFX=foobar
 $ SUSERNAME=fng
+$ ROLES="--role roles/editor"  # a lesser-privledged account will be created using this
 
 $ for ENV_NAME in test stage prod; do \
-pgcloud --configuration=$ENV_NAME --project=${ENV_NAME}${PROJECT_SFX} init --skip-diagnostics; \
-pgcloud --configuration=$ENV_NAME iam service-accounts create ${SUSERNAME}; \
-pgcloud --configuration=$ENV_NAME projects add-iam-policy-binding ${ENV_NAME}${PROJECT_SFX} \
-    --member serviceAccount:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com \
-    --role roles/storage.admin --role roles/compute.networkAdmin; \
-pgcloud --configuration=$ENV_NAME iam service-accounts keys create \
-    $PWD/${ENV_NAME}-${SUSERNAME}.json \
-    --iam-account=serviceAccount:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com \
-    --key-file-type=json; \
+    pgcloud init --skip-diagnostics; \
+    pgcloud iam service-accounts create ${SUSERNAME}; \
+    pgcloud iam service-accounts keys create \
+        $PWD/${ENV_NAME}-${SUSERNAME}.json \
+        --iam-account=serviceAccount:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com \
+        --key-file-type=json; \
+    pgcloud projects add-iam-policy-binding ${ENV_NAME}${PROJECT_SFX} \
+        --member serviceAccount:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com \
+        $ROLES; \
 done
 ```
