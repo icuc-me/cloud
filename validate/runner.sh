@@ -27,7 +27,7 @@ cleanup() {
     if [[ $(cat "$NEEDCLEAN") -eq 0 ]]
     then
         indent 2 "Cleaning up test environment (failure tollerated)"
-        make clean_test
+        make test_clean
         [[ "$?" -eq "0" ]] || indent 2 "WARNING: Test Environment cleanup failed, manual resource recover may be required"
     fi
     indent 2 "Removing temporary files"
