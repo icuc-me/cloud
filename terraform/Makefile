@@ -50,9 +50,7 @@ destroy: guard-ENV_NAME auto.tfvars
 		echo "Cowardly refusing to destroy prod environment"; \
 	elif [[ -n "$(ENV_NAME)" ]]; then \
 		cd "$(ENV_NAME)" && \
-			( TF_IN_AUTOMATION=1 terraform destroy -input=false -auto-approve || \
-			  echo "Destroying $(ENV_NAME) resources failed, manual cleanup required"; \
-			  exit 3; ) \
+			TF_IN_AUTOMATION=1 terraform destroy -input=false -auto-approve; \
 	fi
 
 .PHONY: teardown
@@ -61,9 +59,7 @@ teardown: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.au
 		echo "Cowardly refusing to teardown prod state."; \
 		exit 1; \
 	elif [[ -n "$(ENV_NAME)" ]]; then \
-		$(SRC_DIR)/bin/teardown.sh "$(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars" || \
-		( echo "Tearing down backend for $(ENV_NAME) failed, you may have to clean it up manually"; \
-		exit 2; ) \
+		bash $(SRC_DIR)/bin/teardown.sh "$(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars"; \
 	fi
 
 .PHONY: clean
