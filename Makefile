@@ -6,6 +6,7 @@ all: help
 help:
 	@echo '###########################################################################'
 	@echo 'Available Make Targets:'
+	@echo '###########################################################################'
 	@echo ''
 	@echo 'test_env - Deploy to test environment'
 	@echo 'stage_env - Deploy to staging environment'
@@ -19,6 +20,8 @@ help:
 	@echo "version - Return the canonical version number for repo's current state"
 	@echo 'image_name - Return the canonical name for current runtime container image'
 	@echo 'clean - remove temporary and generated files'
+	@echo ''
+	@echo 'N/B: Use of bin/make.sh for everything is assumed'
 	@echo '###########################################################################'
 
 VERCMD = git describe --abbrev=6 HEAD 2> /dev/null || echo 'TAG-REF-ERROR'
@@ -36,7 +39,7 @@ image_name:
 
 .PHONY: validate
 validate:
-	@validate/runner.sh
+	@bash validate/runner.sh
 
 .PHONY: %_env
 %_env:

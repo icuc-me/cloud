@@ -25,29 +25,10 @@ then
     install -o "$AS_ID" -g "$AS_ID" /etc/skel/.??* /home/$AS_USER
 fi
 
-RSYNC_CMD="rsync --stats --recursive --links \
-           --safe-links --sparse --checksum \
-           --executability --chmod=ug+w \
-           --exclude=secrets \
-           --exclude=.terraform \
-           --chown=$AS_ID:$AS_ID"
-
 echo "Recovering cached GOPATH contents"
-$RSYNC_CMD "/var/cache/go" "/home/$AS_USER"
-
-if [[ -r "/usr/src/secrets/README.md" ]]
-then
-    echo "Creating working copy of read-only source"
-    $RSYNC_CMD "/usr/src/" "$SRC_DIR"
-    echo "Linking to host secrets and terraform cache"
-    lnrwsrc secrets
-    lnrwsrc terraform/test/.terraform
-    lnrwsrc terraform/stage/.terraform
-    lnrwsrc terraform/prod/.terraform
-    SHELLCMD="$@"
-else
-    SHELLCMD="/usr/bin/bash --login -i"
-fi
+rsync --stats --recursive --links \
+    --safe-links --sparse \
+    "/var/cache/go" "/home/$AS_USER"
 
 # rsync --chown doesn't affect directories somehow(?)
 echo "Correcting permissions and configuring .bash_profile"
@@ -58,4 +39,4 @@ echo "export PATH=\"\$PATH:$SRC_DIR/bin\"" >> "/home/$AS_USER/.bash_profile"
 
 echo "Entering prepared environment"
 set -x
-exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -l -i -c "cd $SRC_DIR && $SHELLCMD"
+exec sudo --set-home --user "$AS_USER" --login --stdin /usr/bin/bash -l -i -c "cd $SRC_DIR && $@"

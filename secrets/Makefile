@@ -25,15 +25,15 @@ guard-%:
 	touch "$@"
 
 test-%.auto.tfvars: test-uuid
-	@[[ -r "$@" ]] || $(SRC_DIR)/bin/secrets.sh test
+	@[[ -r "$@" ]] || bash $(SRC_DIR)/bin/secrets.sh test
 	touch "$@"
 
 stage-%.auto.tfvars: stage-uuid test-uuid
-	@[[ -r "$@" ]] || $(SRC_DIR)/bin/secrets.sh stage test
+	@[[ -r "$@" ]] || bash $(SRC_DIR)/bin/secrets.sh stage test
 	touch "$@"
 
 prod-%.auto.tfvars: prod-uuid stage-uuid test-uuid
-	@[[ -r "$@" ]] || $(SRC_DIR)/bin/secrets.sh prod stage test
+	@[[ -r "$@" ]] || bash $(SRC_DIR)/bin/secrets.sh prod stage test
 	touch "$@"
 
 $(ENV_NAME)-runtime.auto.tfvars: guard-ENV_NAME $(ENV_NAME)-backend.auto.tfvars

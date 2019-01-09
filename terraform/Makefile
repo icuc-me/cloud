@@ -22,7 +22,7 @@ $(ENV_NAME)/%.auto.tfvars: $(SECRETS_DIR)/$(ENV_NAME)-%.auto.tfvars
 
 .PHONY: prepare
 prepare: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars
-	$(SRC_DIR)/bin/prepare.sh "$(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars"
+	bash $(SRC_DIR)/bin/prepare.sh "$(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars"
 
 .PHONY: init
 init: guard-ENV_NAME $(ENV_NAME)/.terraform/terraform.tfstate
