@@ -34,8 +34,8 @@ clean:
 .PHONY: .all_commited
 .all_commited: .gofmt
 	@echo "Verifying all repository changes have been commited"
-	git diff --exit-code &> /dev/null
-	git diff --cached --exit-code &> /dev/null
+	git diff --exit-code
+	git diff --cached --exit-code
 
 .PHONY: .commits_clean
 .commits_clean: .all_commited

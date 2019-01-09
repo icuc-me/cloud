@@ -9,8 +9,6 @@ TF_TEST_DIRPATH="$SRC_DIR/terraform/test"
 indent 4 "Checking basic test env terraform target was executed"
 for fname in \
     backend.auto.tfvars \
-    uuid.auto.tfvars \
-    provider.auto.tfvars \
     runtime.auto.tfvars \
     .terraform/terraform.tfstate \
     .terraform/plugins/linux_amd64/lock.json

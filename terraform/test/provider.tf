@@ -1,6 +1,6 @@
 provider "google" {
-    credentials = "${var.credentials}"
-    project = "${var.project}"
-    region = "${var.region}"
-    zone = "${var.zone}"
+    credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
+    project = "${var.TEST_SECRETS["PROJECT"]}"
+    region = "${var.TEST_SECRETS["REGION"]}"
+    zone = "${var.TEST_SECRETS["ZONE"]}"
 }

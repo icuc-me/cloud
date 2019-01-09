@@ -7,14 +7,10 @@
 
 set -e
 
-SCRIPT_FILENAME=${SCRIPT_FILENAME:-$(basename $(realpath "$0"))}
-SCRIPT_DIRPATH=${SCRIPT_DIRPATH:-$(dirname $(realpath "$0"))}
-SCRIPT_SUBDIR=${SCRIPT_SUBDIR:-terraform/$(basename "$SCRIPT_DIRPATH")}
-SRC_DIR=${SRC_DIR:-$(realpath "$SCRIPT_DIRPATH/../../")}
-source "$SRC_DIR/bin/lib.sh"
+source "$(dirname $0)/lib.sh"
 
-[[ -r "$SRC_DIR/terraform/$1" ]] || die "Must passs terraform backend configuration as parameter" 1
-BACKEND_FILEPATH="$SRC_DIR/terraform/$1"
+BACKEND_FILEPATH="$1"
+[[ -r "$BACKEND_FILEPATH" ]] || die "Must passs terraform backend configuration as parameter" 1
 
 tfvar_value() {
     cat "$BACKEND_FILEPATH" | grep -m 1 "$1" | sed -re "s/^$1\s*=\s*//g" | tr -d \'\"

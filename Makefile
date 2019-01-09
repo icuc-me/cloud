@@ -5,20 +5,23 @@ all: help
 .PHONY: help
 help:
 	@echo '###########################################################################'
-	@echo 'Valid Make Targets:'
+	@echo 'Available Make Targets:'
+	@echo '###########################################################################'
 	@echo ''
-	@echo 'validate - Execute automated test environment validation'
 	@echo 'test_env - Deploy to test environment'
 	@echo 'stage_env - Deploy to staging environment'
 	@echo 'prod_env - Deploy to production environment'
-	@echo 'image_name - Return the canonical name for current runtime container image'
+	@echo ''
+	@echo 'test_clean - Destroy test environment'
+	@echo 'stage_clean - Destroy staging environment'
+	@echo 'prod_clean - Reminder intelligence level'
+	@echo ''
+	@echo 'validate - Execute automated source and test-environment validation'
 	@echo "version - Return the canonical version number for repo's current state"
-	@echo ''
+	@echo 'image_name - Return the canonical name for current runtime container image'
 	@echo 'clean - remove temporary and generated files'
-	@echo 'clean_test - Destroy test environment'
-	@echo 'clean_stage - Destroy staging environment'
-	@echo 'clean_prod - Reminder of your intelligence level'
 	@echo ''
+	@echo 'N/B: Use of bin/make.sh for everything is assumed'
 	@echo '###########################################################################'
 
 VERCMD = git describe --abbrev=6 HEAD 2> /dev/null || echo 'TAG-REF-ERROR'
@@ -36,11 +39,10 @@ image_name:
 
 .PHONY: validate
 validate:
-	@validate/runner.sh
+	@bash validate/runner.sh
 
 .PHONY: %_env
 %_env:
-	@$(MAKE) -C secrets ENV_NAME=$*
 	@$(MAKE) -C terraform ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
 
 .PHONY: clean
@@ -48,12 +50,15 @@ clean:
 	@$(MAKE) -C secrets clean
 	@$(MAKE) -C terraform clean
 
-.PHONY: clean-prod
+.PHONY: prod_clean
 clean_prod:
 	$(error "I have a bag of hammers smarter than you")
 
-.PHONY: clean-%
-clean_%:
-	@$(MAKE) -C secrets ENV_NAME=$*
-	@$(MAKE) -C terraform destroy ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
-	@$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
+.PHONY: %_clean
+%_clean:
+	@if $(MAKE) -C terraform destroy ENV_NAME=$* SRC_VERSION=$(SRC_VERSION); then \
+		$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION); \
+	else \
+		$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION); \
+		exit 1; \
+	fi

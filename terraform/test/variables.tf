@@ -1,30 +1,36 @@
 
 
-# From provider.auto.tfvars, backend.auto.tfvars, uuid.auto.tfvars
-variable "credentials" {
-    description = "https://www.terraform.io/docs/providers/google/provider_reference.html#credentials"
-}
-variable "project" {
-    description = "https://www.terraform.io/docs/providers/google/provider_reference.html#project"
-}
-variable "region" {
-    description = "https://www.terraform.io/docs/providers/google/provider_reference.html#region"
-}
-variable "zone" {
-    description = "https://www.terraform.io/docs/providers/google/provider_reference.html#zone"
-}
-variable "bucket" {
-    description = "https://www.terraform.io/docs/backends/types/gcs.html#configuration-variables"
-}
-variable "env_uuid" {
-    description = "Unique Name associated but also loosely associated to env_name"
+# From top-level of runtime.auto.tfvars
+variable "UUID" {
+    type = "string"
+    description = "Unique ID loosely associated with ENV_NAME"
 }
 
 # From runtime.auto.tfvars
-variable "env_name" {
+variable "ENV_NAME" {
+    type = "string"
     description = "Name of environment to operating in (test, stage, prod)"
 }
 
-variable "src_version" {
+variable "SRC_VERSION" {
+    type = "string"
     description = "The version string of the source repository at runtime"
+}
+
+variable "TEST_SECRETS" {
+    type = "map"
+    description = "Subordinate test environment: CREDENTIALS, SUSERNAME, PROJECT, REGION, ZONE, BUCKET, and UUID values.  Note: Environment name keys are capitalized."
+    default = {}
+}
+
+variable "STAGE_SECRETS" {
+    type = "map"
+    description = "Subordinate stage environment: CREDENTIALS, SUSERNAME, PROJECT, REGION, ZONE, BUCKET, and UUID values.  Note: Environment name keys are capitalized."
+    default = {}
+}
+
+variable "PROD_SECRETS" {
+    type = "map"
+    description = "Subordinate prod environment: CREDENTIALS, SUSERNAME, PROJECT, REGION, ZONE, BUCKET, and UUID values.  Note: Environment name keys are capitalized."
+    default = {}
 }
