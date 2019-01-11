@@ -33,6 +33,8 @@ for all of the following are required.
 ```bash
 CREDENTIALS=  # Name of credentials JSON key file (from above)
 SUSERNAME=    # Service account name matching $CREDENTIALS
+STRONGBOX=    # URI to Strong Box
+STRONGKEY=    # Auth. key to Strong Box
 PROJECT=      # GCP project ID
 REGION=       # Default GCE region
 ZONE=         # Default GCE zone
