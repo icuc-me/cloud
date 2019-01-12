@@ -47,18 +47,24 @@ validate:
 
 .PHONY: clean
 clean:
-	@$(MAKE) -C terraform clean
-	@$(MAKE) -C secrets clean
+	$(MAKE) -C terraform clean
+	$(MAKE) -C secrets clean
 
 .PHONY: prod_clean
 clean_prod:
 	$(error "I have a bag of hammers smarter than you")
 
+.PHONY: _squeeky_%_clean
+_squeeky_%_clean:
+	@echo "WARNING: IRREVERSIBLY DESTROYING STATE OF $* ENVIRONMENT"
+	@read -t 10 -p "press enter or wait 10 seconds to continue, ctrl-c to abortg" || true
+	$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION);
+
 .PHONY: %_clean
 %_clean:
 	@if $(MAKE) -C terraform destroy ENV_NAME=$* SRC_VERSION=$(SRC_VERSION); then \
-		$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION); \
+		$(MAKE) _squeeky_$*_clean; \
 	else \
-		$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION); \
+		$(MAKE) _squeeky_$*_clean; \
 		exit 1; \
 	fi

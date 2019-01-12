@@ -27,7 +27,7 @@ prepare: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.aut
 .PHONY: init
 init: guard-ENV_NAME $(ENV_NAME)/.terraform/terraform.tfstate
 $(ENV_NAME)/.terraform/terraform.tfstate: guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars prepare
-	@cd "$(ENV_NAME)" && \
+	cd "$(ENV_NAME)" && \
 		TF_IN_AUTOMATION=1 terraform init -input=false \
 			-backend-config="backend.auto.tfvars" \
 			-force-copy -upgrade=true
@@ -36,12 +36,12 @@ $(ENV_NAME)/.terraform/terraform.tfstate: guard-ENV_NAME $(ENV_NAME)/backend.aut
 auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars $(ENV_NAME)/runtime.auto.tfvars
 
 $(ENV_NAME)/plan: guard-ENV_NAME init auto.tfvars
-	@cd "$(ENV_NAME)" && \
+	cd "$(ENV_NAME)" && \
 		TF_IN_AUTOMATION=1 terraform plan -input=false -out=./plan
 
 .PHONY: apply
 apply: guard-ENV_NAME $(ENV_NAME)/plan auto.tfvars
-	@cd "$(ENV_NAME)" && \
+	cd "$(ENV_NAME)" && \
 		TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve ./plan
 
 .PHONY: destroy

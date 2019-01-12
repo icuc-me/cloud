@@ -1,4 +1,4 @@
-// Default
+// Default for this environment
 
 provider "google" {
     version = "~> 1.20"
@@ -8,7 +8,7 @@ provider "google" {
     zone = "${var.TEST_SECRETS["ZONE"]}"
 }
 
-// Aliases
+// Aliases for all environments
 
 provider "google" {
     version = "~> 1.20"
