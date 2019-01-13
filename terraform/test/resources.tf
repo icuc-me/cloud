@@ -1,36 +1,27 @@
 
 locals {
     // N/B: Needs per-env. adjustment
-    reader_acls = [
-        "READER:user-${module.test_service_account.email}",  // test
-        "", // "READER:user-${module.stage_service_account.email}" // stage
-        "", // "READER:user-${module.prod_service_account.email}" // prod
-    ]
+    readers = {
+        test = ["serviceAccount:${module.test_service_account.email}"]
+        stage = []
+        prod = []
+    }
+
     // N/B: Needs per-env. adjustment
-    writer_acls = [
-        "", // "WRITER:user-${module.prod_service_account.email}" // prod
-        "", // "WRITER:user-${module.stage_service_account.email}" // stage
-        "WRITER:user-${module.test_service_account.email}",  // test
-    ]
+    writers {
+        test = ["serviceAccount:${module.test_service_account.email}"]
+        stage = []
+        prod = []
+    }
 }
 
 module "strongboxes" {
+    providers = { google = "google" }
     source = "./modules/strongboxes"
     env_name = "${var.ENV_NAME}"
-    // N/B: Needs per-env. adjustment
-    providers {
-        google = "google.test"
-    }
-    acls = {
-        test  =  ["${compact(concat( slice(local.reader_acls, 0, 1),
-                                     slice(local.writer_acls, 0, 3) ))}"],
-        stage  = ["${compact(concat( slice(local.reader_acls, 0, 2),
-                                     slice(local.writer_acls, 0, 2) ))}"],
-        prod  =  ["${compact(concat( slice(local.reader_acls, 0, 3),
-                                     slice(local.writer_acls, 0, 1) ))}"],
-    }
+    readers = "${local.readers}"
+    writers = "${local.writers}"
 }
-
 
 // ref: https://www.terraform.io/docs/providers/google/r/compute_address.html
 resource "google_compute_address" "gateway-ephemeral-ext" {
@@ -60,6 +51,7 @@ locals {
                                 google_compute_address.gateway-static-ext.*.address)}"
 }
 
+// ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_instance.html
 resource "google_compute_instance" "gateway-instance" {
     name = "gateway-${var.UUID}-${count.index}"
     machine_type = "f1-micro"
@@ -81,8 +73,4 @@ resource "google_compute_instance" "gateway-instance" {
             network_tier = "${var.ENV_NAME == "prod" ? "PREMIUM" : "STANDARD"}"
         }
     }
-}
-
-output "strong_boxes" {
-    value = "${module.strongboxes.uris}"
 }
