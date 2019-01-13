@@ -1,37 +1,27 @@
 
 locals {
-    strongbox_prefix = [
-        "test", "stage", "prod"
-    ]
-    strongbox_count = "${var.ENV_NAME == "prod" ? 3 : var.ENV_NAME == "stage" ? 2 : 1}"
-    service_account_acls = [
-        "READER:user-${module.test_service_account.email}",
-        "", // "READER:user-${module.stage_service_account.email}"
-        "", // "READER:user-${module.prod_service_account.email}"
-    ]
-    strongbox_acls = [
-        ["${slice(local.service_account_acls, 0, 1)}"],
-        ["${slice(local.service_account_acls, 0, 2)}"],
-        ["${slice(local.service_account_acls, 0, 3)}"]
-    ]
-}
+    // N/B: Needs per-env. adjustment
+    readers = {
+        test = ["serviceAccount:${module.test_service_account.email}"]
+        stage = []
+        prod = []
+    }
 
-//ref: https://www.terraform.io/docs/providers/google/r/storage_bucket.html
-resource "google_storage_bucket" "strongbox" {
-    count = "${local.strongbox_count}"
-    name = "${element(local.strongbox_prefix, count.index)}${uuid()}"
-    force_destroy = "${var.ENV_NAME == "prod" ? "false" : "true"}"
-    lifecycle = {
-        ignore_changes = "name"
+    // N/B: Needs per-env. adjustment
+    writers {
+        test = ["serviceAccount:${module.test_service_account.email}"]
+        stage = []
+        prod = []
     }
 }
 
-resource "google_storage_bucket_acl" "strongbox_acl" {
-    count = "${local.strongbox_count}"
-    bucket = "${google_storage_bucket.strongbox.*.name[count.index]}"
-    role_entity = ["${local.strongbox_acls[count.index]}"]
+module "strongboxes" {
+    providers = { google = "google" }
+    source = "./modules/strongboxes"
+    env_name = "${var.ENV_NAME}"
+    readers = "${local.readers}"
+    writers = "${local.writers}"
 }
-
 
 // ref: https://www.terraform.io/docs/providers/google/r/compute_address.html
 resource "google_compute_address" "gateway-ephemeral-ext" {
@@ -61,6 +51,7 @@ locals {
                                 google_compute_address.gateway-static-ext.*.address)}"
 }
 
+// ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_instance.html
 resource "google_compute_instance" "gateway-instance" {
     name = "gateway-${var.UUID}-${count.index}"
     machine_type = "f1-micro"
