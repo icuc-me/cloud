@@ -4,7 +4,9 @@ import sys
 import os
 import shlex
 from subprocess import check_output, Popen, CalledProcessError, PIPE, STDOUT
+from cStringIO import StringIO
 import simplejson as json
+from yaml import load
 
 
 CRYPTO_ALGO = "TWOFISH"
@@ -24,23 +26,29 @@ def validate_json(json_string):
                       skipkeys=True, allow_nan=False,
                       separators=(',',':'))
 
+def validate_yaml(yaml_string):
+    yaml_obj = load(StringIO(str(yaml_string)))
+    return json.dumps(yaml_obj,
+                      skipkeys=True, allow_nan=False,
+                      separators=(',',':'))
+
 def validate_input(query):
-    for required in ('credentials', 'strongkey'):
-        if required not in query:
-            errout('Required query key "{0}" not found in {1}'
-                   "".format(required, query.keys()))
-            sys.exit(1)
-    sanitized = dict(credentials=str(query['credentials']),
-                     strongkey=str(query['strongkey']))
+    if 'strongkey' not in query:
+        errout('Query JSON input must contain "strongkey" value, found: {0}'
+               "".format(query.keys()))
+        sys.exit(1)
+    else:
+        sanitized = dict(strongkey=str(query['strongkey']))
     if 'plaintext' in query:
         try:
-            sanitized['plaintext'] = validate_json(query['plaintext'])
+            sanitized['plaintext'] = validate_json(validate_yaml(query['plaintext']))
         except ValueError as xcept:
-            errout('Invalid JSON encoding of "plaintext" value: \'{0}\''
+            errout('Invalid YAML or JSON encoding of "plaintext" value: \'{0}\''
                     ''.format(str(query['plaintext'])))
             sys.exit(2)
-    elif 'strongbox' in query:
+    elif 'strongbox' in query and 'credentials' in query:
         sanitized['strongbox'] = str(query['strongbox'])
+        sanitized['credentials'] = str(query['credentials'])
     else:
         errout('ERROR: Expected JSON dictionary on stdin, having'
                ' keys/values for:\n       "credentials" and "strongkey"'

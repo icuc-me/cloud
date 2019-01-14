@@ -5,9 +5,19 @@ module "strongboxes" {
     source = "./modules/strongboxes"
     env_name_uuid = "${var.UUID}"
     readers = {test = [], stage = [], prod= []}
+    strongbox = "${var.TEST_SECRETS["STRONGBOX"]}"
+    strongkey = "${var.TEST_SECRETS["STRONGKEY"]}"
 }
 
-/* FIXME: TESTING
+module "strong_unbox" {
+    source = "./modules/strong_unbox"
+    credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
+    strongbox = "${var.TEST_SECRETS["STRONGBOX"]}"
+    strongkey = "${var.TEST_SECRETS["STRONGBOX"]}"
+}
+
+/*  FIXME: testing
+
 // ref: https://www.terraform.io/docs/providers/google/r/compute_address.html
 resource "google_compute_address" "gateway-ephemeral-ext" {
     name = "gateway-ephemeral-${var.UUID}-0"
