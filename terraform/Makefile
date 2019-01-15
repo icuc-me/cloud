@@ -28,29 +28,34 @@ prepare: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.aut
 init: guard-ENV_NAME $(ENV_NAME)/.terraform/terraform.tfstate
 $(ENV_NAME)/.terraform/terraform.tfstate: guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars prepare
 	cd "$(ENV_NAME)" && \
-		TF_IN_AUTOMATION=1 terraform init -input=false \
-			-backend-config="backend.auto.tfvars" \
-			-force-copy -upgrade=true
+	TF_IN_AUTOMATION=1 terraform init -input=false \
+		-backend-config="./backend.auto.tfvars" \
+		-force-copy -upgrade=true "./"
 
 .PHONY: auto.tfvars
 auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars $(ENV_NAME)/runtime.auto.tfvars
 
-$(ENV_NAME)/plan: guard-ENV_NAME init auto.tfvars
+.PHONY: validate
+validate: guard-ENV_NAME init auto.tfvars
 	cd "$(ENV_NAME)" && \
-		TF_IN_AUTOMATION=1 terraform plan -input=false -out=./plan
+	TF_IN_AUTOMATION=1 terraform validate "./"
+
+$(ENV_NAME)/plan: guard-ENV_NAME init auto.tfvars validate
+	cd "$(ENV_NAME)" && \
+	TF_IN_AUTOMATION=1 terraform plan -input=false -out=./plan "./"
 
 .PHONY: apply
-apply: guard-ENV_NAME $(ENV_NAME)/plan auto.tfvars
+apply: guard-ENV_NAME $(ENV_NAME)/plan
 	cd "$(ENV_NAME)" && \
-		TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve ./plan
+	TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve "./plan"
 
 .PHONY: destroy
-destroy: guard-ENV_NAME auto.tfvars
+destroy: guard-ENV_NAME init auto.tfvars
 	@if [[ "$(ENV_NAME)" =~ "prod" ]]; then \
 		echo "Cowardly refusing to destroy prod environment"; \
 	elif [[ -n "$(ENV_NAME)" ]]; then \
 		cd "$(ENV_NAME)" && \
-			TF_IN_AUTOMATION=1 terraform destroy -input=false -auto-approve; \
+		TF_IN_AUTOMATION=1 terraform destroy -input=false -auto-approve "./"; \
 	fi
 
 .PHONY: teardown

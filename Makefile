@@ -57,7 +57,7 @@ clean_prod:
 .PHONY: _squeeky_%_clean
 _squeeky_%_clean:
 	@echo "WARNING: IRREVERSIBLY DESTROYING STATE OF $* ENVIRONMENT"
-	@read -t 10 -p "press enter or wait 10 seconds to continue, ctrl-c to abortg" || true
+	@read -t 10 -p "press enter or wait 10 seconds to continue, ctrl-c to abort." || true
 	$(MAKE) -C terraform teardown ENV_NAME=$* SRC_VERSION=$(SRC_VERSION);
 
 .PHONY: %_clean
