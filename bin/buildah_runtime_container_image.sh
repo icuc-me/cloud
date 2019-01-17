@@ -218,7 +218,8 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
-    yum clean all
+    yum -y install make  # needed to import lib
+    yum -y clean all
     rm -rf /var/cache/yum
 elif [[ "$MAGIC" == "$_LAYER_2" ]]
 then

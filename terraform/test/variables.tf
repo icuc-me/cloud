@@ -1,4 +1,10 @@
 
+# From top-level backend.auto.tfvars
+variable "credentials" {}
+variable "project" {}
+variable "region" {}
+variable "bucket" {}
+variable "prefix" {}
 
 # From top-level of runtime.auto.tfvars
 variable "UUID" {

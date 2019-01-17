@@ -1,54 +1,56 @@
 
 provider "google" {}
 
-variable "env_name" {
-    description = "Name of the current environment (test, stage, or prod)"
+variable "env_name_uuid" {
+    description = "Unique id formed by the environment name, a '-', and a UUID"
 }
 
 variable "readers" {
-    description = "Map of env_name to list of storage.objectViewer identities"
-    type = "map"
-}
-
-variable "writers" {
-    description = "Map of env_name to list of storage.objectCreator identities"
+    description = "Map of env. names (test, stage, prod) to service account e-mails"
     type = "map"
 }
 
 locals {
-    env_names = ["test", "stage", "prod"]  // order is significant
-    // one bucket for this env, and one for each lower level env
-    strongbox_count = "${var.env_name == "prod" ? 3 : var.env_name == "stage" ? 2 : 1}"
+    env_name = "${element(split("-", var.env_name_uuid), 0)}"
+    env_uuid = "${element(split("-", var.env_name_uuid), 1)}"
+    non_prod_env_name_uuid = ["${local.env_name}", "${uuid()}"]
 }
 
-// ref: https://www.terraform.io/docs/providers/google/r/storage_bucket.html
-resource "google_storage_bucket" "strongbox" {
-    count = "${local.strongbox_count}"  // index into env_names
-    lifecycle = {
-        ignore_changes = "name"
+resource "google_storage_bucket" "boxbucket" {
+    name = "${local.env_name == "prod"
+              ? var.env_name_uuid
+              : join("-", local.non_prod_env_name_uuid)}" // must actually be unique
+    force_destroy = "${local.env_name == "prod"
+                       ? 0
+                       : 1}"
+    lifecycle {
+        ignore_changes = ["name"]
     }
-    name = "${element(local.env_names, count.index)}_strongbox_${uuid()}"
-    // prod bucket destruction should fail
-    force_destroy = "${var.env_name == "prod" ? "false" : "true"}"
 }
 
-// ref: https://www.terraform.io/docs/providers/google/r/storage_bucket_iam.html
-resource "google_storage_bucket_iam_binding" "reader_bindings" {
-    count = "${local.strongbox_count}"  // index into env_names
-    bucket = "${google_storage_bucket.strongbox.*.name[count.index]}"
-    role   = "roles/storage.objectViewer"
-    members = ["${var.readers[element(local.env_names, count.index)]}"]
+module "test_strongbox" {
+    providers = { google = "google" }
+    source = "./modules/strongbox"
+    bucket_name = "${google_storage_bucket.boxbucket.name}"
+    strongbox_name = "test_strongbox.bz2.pgp"
+    readers = "${var.readers["test"]}"
+    writers = []
 }
 
-resource "google_storage_bucket_iam_binding" "writer_bindings" {
-    count = "${local.strongbox_count}"  // index into env_names
-    bucket = "${google_storage_bucket.strongbox.*.name[count.index]}"
-    role   = "roles/storage.objectCreator"
-    members = ["${var.readers[element(local.env_names, count.index)]}"]
+module "stage_strongbox" {
+    providers = { google = "google" }
+    source = "./modules/strongbox"
+    bucket_name = "${google_storage_bucket.boxbucket.name}"
+    strongbox_name = "stage_strongbox.bz2.pgp"
+    readers = "${var.readers["stage"]}"
+    writers = []
 }
 
-output "uris" {
-    value = "${zipmap(slice(local.env_names, 0, local.strongbox_count),
-                      google_storage_bucket.strongbox.*.url)}"
-    sensitive = true
+module "prod_strongbox" {
+    providers = { google = "google" }
+    source = "./modules/strongbox"
+    bucket_name = "${google_storage_bucket.boxbucket.name}"
+    strongbox_name = "prod_strongbox.bz2.pgp"
+    readers = "${var.readers["prod"]}"
+    writers = []
 }

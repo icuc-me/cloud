@@ -1,28 +1,13 @@
 
-locals {
-    // N/B: Needs per-env. adjustment
-    readers = {
-        test = ["serviceAccount:${module.test_service_account.email}"]
-        stage = []
-        prod = []
-    }
-
-    // N/B: Needs per-env. adjustment
-    writers {
-        test = ["serviceAccount:${module.test_service_account.email}"]
-        stage = []
-        prod = []
-    }
-}
 
 module "strongboxes" {
     providers = { google = "google" }
     source = "./modules/strongboxes"
-    env_name = "${var.ENV_NAME}"
-    readers = "${local.readers}"
-    writers = "${local.writers}"
+    env_name_uuid = "${var.UUID}"
+    readers = {test = [], stage = [], prod= []}
 }
 
+/* FIXME: TESTING
 // ref: https://www.terraform.io/docs/providers/google/r/compute_address.html
 resource "google_compute_address" "gateway-ephemeral-ext" {
     name = "gateway-ephemeral-${var.UUID}-0"
@@ -74,3 +59,4 @@ resource "google_compute_instance" "gateway-instance" {
         }
     }
 }
+*/
