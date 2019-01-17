@@ -11,7 +11,11 @@ $ alias pgcloud='sudo podman run -it --rm -e AS_ID=$UID -e AS_USER=$USER --secur
 $ PROJECT_SFX=foobar
 $ SUSERNAME=fng
   # a lesser-privledged account is used for testing
-$ ROLES="--role roles/editor --role roles/storage.admin"
+$ ROLES="
+    --role roles/compute.admin
+    --role roles/compute.networkAdmin
+    --role roles/iam.serviceAccountUser
+    --role roles/storage.admin"
 
 $ for ENV_NAME in test stage prod; do \
     pgcloud init --skip-diagnostics; \
@@ -26,6 +30,14 @@ $ for ENV_NAME in test stage prod; do \
 done
 ```
 
+A handy command for listing roles bound to a service account is:
+
+```
+$ gcloud projects get-iam-policy ${ENV_NAME}${PROJECT_SFX} \
+--flatten="bindings[].members" --format='table(bindings.role)' \
+--filter="bindings.members:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com"
+```
+
 ## Contents of `*-secrets.sh`:
 
 Where `*` represents an environment name (test, stage, or prod), values
@@ -34,8 +46,8 @@ for all of the following are required.
 ```bash
 CREDENTIALS=  # Name of credentials JSON key file (from above)
 SUSERNAME=    # Service account name matching $CREDENTIALS
-STRONGBOX=    # URI to Strong Box
-STRONGKEY=    # Auth. key to Strong Box
+STRONGBOX=    # Name of the bucket containing strongbox file for this environment
+STRONGKEY=    # Encryption key securing contents of this env. strong box file
 PROJECT=      # GCP project ID
 REGION=       # Default GCE region
 ZONE=         # Default GCE zone
