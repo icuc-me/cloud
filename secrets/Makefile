@@ -1,8 +1,8 @@
 
 SRC_DIR=$(shell realpath "$$PWD/../")
-TEST_UUID=test$(shell uuidgen | cut -d - -f 1,4 | tr -d -)
-STAGE_UUID=stage6f0ea558b32c
-PROD_UUID=prod89db7eecb49d
+TEST_UUID=test-$(shell uuidgen | cut -d - -f 1,4 | tr -d -)
+STAGE_UUID=stage-6f0ea558b32c
+PROD_UUID=prod-89db7eecb49d
 
 .PHONY: all
 all: guard-ENV_NAME $(ENV_NAME)-uuid $(ENV_NAME)-backend.auto.tfvars $(ENV_NAME)-runtime.auto.tfvars
