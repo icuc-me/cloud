@@ -26,9 +26,14 @@ locals {
     non_prod_env_key = "TESTY-MC-TESTFACE"
 }
 
+module "strong_uri" {
+    source = "../stronguri"
+    strongbox = "${var.strongbox}"
+}
+
 resource "google_storage_bucket" "boxbucket" {
     name = "${local.env_name == "prod"
-              ? var.env_name_uuid
+              ? module.strong_uri.bucket
               : local.non_prod_env_name_uuid}" // must actually be unique
     force_destroy = "${local.env_name == "prod"
                        ? 0
