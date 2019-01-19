@@ -36,8 +36,8 @@ provider "google" {
 provider "google" {
     version = "~> 1.20"
     alias = "prod"
-    credentials = "${local.self["CREDENTIALS"]}"
-    project = "${local.self["PROJECT"]}"
-    region = "${local.self["REGION"]}"
-    zone = "${local.self["ZONE"]}"
+    credentials = "${var.PROD_SECRETS["CREDENTIALS"]}"
+    project = "${var.PROD_SECRETS["PROJECT"]}"
+    region = "${var.PROD_SECRETS["REGION"]}"
+    zone = "${var.PROD_SECRETS["ZONE"]}"
 }

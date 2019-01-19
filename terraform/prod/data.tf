@@ -1,6 +1,6 @@
 
 module "test_service_account" {
-    source = "../modules/service_account"
+    source = "./modules/service_account"
     providers {
         google = "google.test"
     }
@@ -8,7 +8,7 @@ module "test_service_account" {
 }
 
 module "stage_service_account" {
-    source = "../modules/service_account"
+    source = "./modules/service_account"
     providers {
         google = "google.stage"
     }
@@ -16,7 +16,7 @@ module "stage_service_account" {
 }
 
 module "prod_service_account" {
-    source = "../modules/service_account"
+    source = "./modules/service_account"
     providers {
         google = "google.prod"
     }
