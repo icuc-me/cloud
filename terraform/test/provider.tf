@@ -1,12 +1,17 @@
+provider "external" {
+    version = "~> 1.0"
+}
+
 // Default for this environment
 
 provider "google" {
     version = "~> 1.20"
-    credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
-    project = "${var.TEST_SECRETS["PROJECT"]}"
-    region = "${var.TEST_SECRETS["REGION"]}"
-    zone = "${var.TEST_SECRETS["ZONE"]}"
+    credentials = "${local.self["CREDENTIALS"]}"
+    project = "${local.self["PROJECT"]}"
+    region = "${local.self["REGION"]}"
+    zone = "${local.self["ZONE"]}"
 }
+
 
 // Aliases for all environments
 

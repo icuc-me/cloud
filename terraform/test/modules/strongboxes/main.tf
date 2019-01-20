@@ -26,9 +26,14 @@ locals {
     non_prod_env_key = "TESTY-MC-TESTFACE"
 }
 
+module "strong_uri" {
+    source = "../stronguri"
+    strongbox = "${var.strongbox}"
+}
+
 resource "google_storage_bucket" "boxbucket" {
     name = "${local.env_name == "prod"
-              ? var.env_name_uuid
+              ? module.strong_uri.bucket
               : local.non_prod_env_name_uuid}" // must actually be unique
     force_destroy = "${local.env_name == "prod"
                        ? 0
@@ -41,7 +46,7 @@ resource "google_storage_bucket" "boxbucket" {
 data "external" "test_contents" {
     program = ["python", "${path.module}/strongbox.py"]
     query = {
-        plaintext = "${file("${path.root}/test_strongbox.yml")}"
+        plaintext = "${file("${path.root}/test-strongbox.yml")}"
         strongbox = "${local.env_name == "prod" ? var.strongbox : local.non_prod_env_name_uuid}"
         strongkey = "${local.env_name == "prod" ? var.strongkey : local.non_prod_env_key}"
     }
@@ -50,7 +55,7 @@ data "external" "test_contents" {
 data "external" "stage_contents" {
     program = ["python", "${path.module}/strongbox.py"]
     query = {
-        plaintext = "${file("${path.root}/stage_strongbox.yml")}"
+        plaintext = "${file("${path.root}/stage-strongbox.yml")}"
         strongbox = "${local.env_name == "prod" ? var.strongbox : local.non_prod_env_name_uuid}"
         strongkey = "${local.env_name == "prod" ? var.strongkey : local.non_prod_env_key}"
     }
@@ -59,7 +64,7 @@ data "external" "stage_contents" {
 data "external" "prod_contents" {
     program = ["python", "${path.module}/strongbox.py"]
     query = {
-        plaintext = "${file("${path.root}/prod_strongbox.yml")}"
+        plaintext = "${file("${path.root}/prod-strongbox.yml")}"
         strongbox = "${local.env_name == "prod" ? var.strongbox : local.non_prod_env_name_uuid}"
         strongkey = "${local.env_name == "prod" ? var.strongkey : local.non_prod_env_key}"
     }
@@ -68,27 +73,27 @@ data "external" "prod_contents" {
 
 module "test_strongbox" {
     providers = { google = "google" }
-    source = "./modules/strongbox"
+    source = "../strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
-    strongbox_name = "test_strongbox.bz2.pgp"
+    strongbox_name = "test-strongbox.json.bz2.pgp"
     readers = "${var.readers["test"]}"
     box_content = "${data.external.test_contents.result["encrypted"]}"
 }
 
 module "stage_strongbox" {
     providers = { google = "google" }
-    source = "./modules/strongbox"
+    source = "../strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
-    strongbox_name = "stage_strongbox.bz2.pgp"
+    strongbox_name = "stage-strongbox.json.bz2.pgp"
     readers = "${var.readers["stage"]}"
     box_content = "${data.external.stage_contents.result["encrypted"]}"
 }
 
 module "prod_strongbox" {
     providers = { google = "google" }
-    source = "./modules/strongbox"
+    source = "../strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
-    strongbox_name = "prod_strongbox.bz2.pgp"
+    strongbox_name = "prod-strongbox.json.bz2.pgp"
     readers = "${var.readers["prod"]}"
     box_content = "${data.external.prod_contents.result["encrypted"]}"
 }

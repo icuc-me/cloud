@@ -19,6 +19,6 @@ output "filename" {
 }
 
 output "filename_suffix" {
-    value = "${ replace(local.components[3],"/(test_)|(stage_)|(prod_)/","") }"
+    value = "${ replace(local.components[3],"/(test-)|(stage-)|(prod-)/","") }"
     sensitive = true
 }
