@@ -43,7 +43,7 @@ resource "google_storage_object_acl" "strongbox_acl" {
     bucket = "${google_storage_bucket_object.strongbox.bucket}"
     object = "${google_storage_bucket_object.strongbox.name}"
     role_entity = ["${concat(formatlist("READER:user-%s", compact(var.readers)),
-                             formatlist("WRITER:user-%s",  compact(var.writers)))}"]
+                             formatlist("WRITER:user-%s", compact(var.writers)))}"]
 }
 
 output "uri" {

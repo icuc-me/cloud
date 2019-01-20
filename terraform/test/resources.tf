@@ -1,19 +1,26 @@
 
-
 module "strongboxes" {
     providers = { google = "google" }
     source = "./modules/strongboxes"
     env_name_uuid = "${var.UUID}"
-    readers = {test = [], stage = [], prod= []}
-    strongbox = "${var.TEST_SECRETS["STRONGBOX"]}"
-    strongkey = "${var.TEST_SECRETS["STRONGKEY"]}"
+    readers = {
+        test = [],
+        stage = [],
+        prod= []
+    }
+    strongbox = "${local.self["STRONGBOX"]}"
+    strongkey = "${local.self["STRONGKEY"]}"
 }
 
+/*
 module "strong_unbox" {
     source = "./modules/strong_unbox"
-    credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
-    strongbox = "${var.TEST_SECRETS["STRONGBOX"]}"
-    strongkey = "${var.TEST_SECRETS["STRONGBOX"]}"
+    credentials = "${local.self["CREDENTIALS"]}"
+    // Only way to add a dependency to a module block
+    strongbox = "${0 == 0
+                   ? local.self["STRONGBOX"]
+                   : module.strongboxes.uris[var.ENV_NAME]}"
+    strongkey = "${local.self["STRONGKEY"]}"
 }
 
 module "gateway" {
@@ -24,3 +31,4 @@ module "gateway" {
     env_name = "${var.ENV_NAME}"
     env_uuid = "${var.UUID}"
 }
+*/

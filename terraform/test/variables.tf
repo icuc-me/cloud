@@ -71,3 +71,8 @@ variable "PROD_SECRETS" {
         UUID = ""
     }
 }
+
+locals {
+    _src_version = { SRC_VERSION = "${var.SRC_VERSION}" }
+    self = "${merge(var.TEST_SECRETS, local._src_version)}"
+}
