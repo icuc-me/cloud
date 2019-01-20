@@ -55,3 +55,10 @@ BUCKET=       # Name of terraform backend bucket
 PREFIX=       # Folder in bucket to store state
 UUID=         # Unique ID for environment instance
 ```
+
+## Strongboxes
+
+All sensitive values not stored in the secrets scripts, are YAML encoded in three
+files - one per environment.  Each must contain the following values:
+
+* ``env_name``: name of the environment - validated against ``ENV_NAME`` at runtime
