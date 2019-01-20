@@ -12,7 +12,7 @@ module "strongboxes" {
     strongkey = "${local.self["STRONGKEY"]}"
 }
 
-/*
+/* NOT READY YET
 module "strong_unbox" {
     source = "./modules/strong_unbox"
     credentials = "${local.self["CREDENTIALS"]}"
@@ -22,7 +22,9 @@ module "strong_unbox" {
                    : module.strongboxes.uris[var.ENV_NAME]}"
     strongkey = "${local.self["STRONGKEY"]}"
 }
+*/
 
+/* NOT READY YET
 module "gateway" {
     source = "./modules/gateway"
     providers {

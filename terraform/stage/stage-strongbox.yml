@@ -1,3 +1,3 @@
 ---
 
-test: "testing value for stage in stage"
+env_name: "stage"
