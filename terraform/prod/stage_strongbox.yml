@@ -1,3 +1,1 @@
----
-
-env_name: stage
+../../secrets/stage_strongbox.yml

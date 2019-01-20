@@ -1,3 +1,1 @@
----
-
-env_name: test
+../../secrets/test_strongbox.yml
