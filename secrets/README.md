@@ -15,9 +15,12 @@ $ ROLES="
     --role roles/compute.admin
     --role roles/compute.networkAdmin
     --role roles/iam.serviceAccountUser
-    --role roles/storage.admin"
+    --role roles/storage.admin
+    --role roles/iam.serviceAccountAdmin"
 
-$ for ENV_NAME in test stage prod; do \
+$ SUPERSERVICE=$SUSERNAME@prod${PROJECT_SFX}.iam.gserviceaccount.com
+
+$ for ENV_NAME in prod stage test; do \
     pgcloud init --skip-diagnostics; \
     pgcloud iam service-accounts create ${SUSERNAME}; \
     pgcloud iam service-accounts keys create \
@@ -27,6 +30,9 @@ $ for ENV_NAME in test stage prod; do \
     pgcloud projects add-iam-policy-binding ${ENV_NAME}${PROJECT_SFX} \
         --member serviceAccount:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com \
         $ROLES; \
+    pgcloud projects add-iam-policy-binding ${ENV_NAME}${PROJECT_SFX} \
+        --member serviceAccount:${SUPERSERVICE} \
+        --role roles/resourcemanager.projectIamAdmin;
 done
 ```
 
