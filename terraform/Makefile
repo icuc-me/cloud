@@ -40,13 +40,13 @@ validate: guard-ENV_NAME init auto.tfvars
 	cd "$(ENV_NAME)" && \
 	TF_IN_AUTOMATION=1 terraform validate "./"
 
-$(ENV_NAME)/plan: guard-ENV_NAME init auto.tfvars validate
+$(ENV_NAME)/plan: guard-ENV_NAME guard-PHASE init auto.tfvars validate
 	cd "$(ENV_NAME)" && \
-	TF_IN_AUTOMATION=1 terraform plan -input=false -out=./plan "./"
-	@read -t 10 -p "press enter or wait 10 seconds to continue, ctrl-c to abort." || true
+	TF_IN_AUTOMATION=1 terraform plan -input=false --target=null_resource.phase_$(PHASE)  -out=./plan "./"
 
 .PHONY: apply
 apply: guard-ENV_NAME $(ENV_NAME)/plan
+	@read -t 10 -p "press enter or wait 10 seconds to continue, ctrl-c to abort." || true
 	cd "$(ENV_NAME)" && \
 	TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve "./plan"
 
