@@ -6,10 +6,10 @@ provider "external" {
 
 provider "google" {
     version = "~> 1.20"
-    credentials = "${local.self["CREDENTIALS"]}"
-    project = "${local.self["PROJECT"]}"
-    region = "${local.self["REGION"]}"
-    zone = "${local.self["ZONE"]}"
+    credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
+    project = "${var.STAGE_SECRETS["PROJECT"]}"
+    region = "${var.STAGE_SECRETS["REGION"]}"
+    zone = "${var.STAGE_SECRETS["ZONE"]}"
 }
 
 

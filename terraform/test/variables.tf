@@ -73,11 +73,11 @@ variable "PROD_SECRETS" {
 }
 
 locals {
+    self = "${merge(var.stage_SECRETS, local._src_version)}"
     _src_version = { SRC_VERSION = "${var.SRC_VERSION}" }
-    self = "${merge(var.TEST_SECRETS, local._src_version)}"
-    test_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for test env.
-    strongbox = "${var.ENV_NAME == "test"
-                   ? local.test_strongbox
+    mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for test env.
+    strongbox = "${var.ENV_NAME != "prod"
+                   ? local.mock_strongbox
                    : local.self["STRONGBOX"]}"
     strongbox_readers = {
         test = [],
@@ -91,7 +91,7 @@ locals {
         stage = "${var.ENV_NAME == "test"
                    ? "STAGY-MC-STAGEFACE"
                    : var.STAGE_SECRETS["STRONGKEY"]}"
-        prod = "${var.ENV_NAME == "test"
+        prod = "${var.ENV_NAME == "test" || var.ENV_NAME == "stage"
                   ? "PRODY-MC-PRODFACE"
                   : var.PROD_SECRETS["STRONGKEY"]}"
     }
