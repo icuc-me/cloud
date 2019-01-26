@@ -11,7 +11,7 @@ from yaml import load
 
 CRYPTO_ALGO = "TWOFISH"
 COMPRS_ALGO = "BZIP2"
-COMMON_GPG_ARGS = shlex.split("gpg --quiet --batch --armor"
+COMMON_GPG_ARGS = shlex.split("gpg2 --quiet --batch --armor"
                               " --cipher-algo={0}"
                               " --compress-algo={1}"
                               " --options=/dev/null"

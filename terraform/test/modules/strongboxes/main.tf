@@ -1,8 +1,13 @@
 
 provider "google" {}
 
-variable "env_name_uuid" {
-    description = "Unique id formed by the environment name, a '-', and a UUID"
+variable "strongbox" {
+    description = "Bucket uri containing strongbox files"
+}
+
+variable "strongkeys" {
+    description = "Encryption keys securing contents of strongbox file for each env (test, stage, prod)"
+    type = "map"
 }
 
 variable "readers" {
@@ -10,45 +15,28 @@ variable "readers" {
     type = "map"
 }
 
-variable "strongbox" {
-    description = "Bucket name containing strongbox file"
-}
-
-variable "strongkey" {
-    description = "Encryption key securing contents of strongbox file"
+variable "force_destroy" {
+    description = "Should the strongbox bucket be force-destroyed"
+    default = "0"
 }
 
 locals {
-    env_name = "${element(split("-", var.env_name_uuid), 0)}"
-    env_uuid = "${element(split("-", var.env_name_uuid), 1)}"
-    // Test and Stage Don't have write-access to production strongbox, use mock value
-    non_prod_env_name_uuid = "${local.env_name}-mock-${uuid()}"
-    non_prod_env_key = "TESTY-MC-TESTFACE"
-}
-
-module "strong_uri" {
-    source = "../stronguri"
-    strongbox = "${var.strongbox}"
+    delimiter = "/"
+    components = ["${split(local.delimiter, var.strongbox)}"]
+    boxbucket = "${local.components[2]}"
 }
 
 resource "google_storage_bucket" "boxbucket" {
-    name = "${local.env_name == "prod"
-              ? module.strong_uri.bucket
-              : local.non_prod_env_name_uuid}" // must actually be unique
-    force_destroy = "${local.env_name == "prod"
-                       ? 0
-                       : 1}"
-    lifecycle {
-        ignore_changes = ["name"]
-    }
+    name = "${local.boxbucket}"
+    force_destroy = "${var.force_destroy}"
 }
 
 data "external" "test_contents" {
     program = ["python", "${path.module}/strongbox.py"]
     query = {
         plaintext = "${file("${path.root}/test-strongbox.yml")}"
-        strongbox = "${local.env_name == "prod" ? var.strongbox : local.non_prod_env_name_uuid}"
-        strongkey = "${local.env_name == "prod" ? var.strongkey : local.non_prod_env_key}"
+        strongbox = "${var.strongbox}"
+        strongkey = "${var.strongkeys["test"]}"
     }
 }
 
@@ -56,8 +44,8 @@ data "external" "stage_contents" {
     program = ["python", "${path.module}/strongbox.py"]
     query = {
         plaintext = "${file("${path.root}/stage-strongbox.yml")}"
-        strongbox = "${local.env_name == "prod" ? var.strongbox : local.non_prod_env_name_uuid}"
-        strongkey = "${local.env_name == "prod" ? var.strongkey : local.non_prod_env_key}"
+        strongbox = "${var.strongbox}"
+        strongkey = "${var.strongkeys["stage"]}"
     }
 }
 
@@ -65,11 +53,10 @@ data "external" "prod_contents" {
     program = ["python", "${path.module}/strongbox.py"]
     query = {
         plaintext = "${file("${path.root}/prod-strongbox.yml")}"
-        strongbox = "${local.env_name == "prod" ? var.strongbox : local.non_prod_env_name_uuid}"
-        strongkey = "${local.env_name == "prod" ? var.strongkey : local.non_prod_env_key}"
+        strongbox = "${var.strongbox}"
+        strongkey = "${var.strongkeys["prod"]}"
     }
 }
-
 
 module "test_strongbox" {
     providers = { google = "google" }
