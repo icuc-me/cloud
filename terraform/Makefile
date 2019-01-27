@@ -29,8 +29,7 @@ init: guard-ENV_NAME $(ENV_NAME)/.terraform/terraform.tfstate
 $(ENV_NAME)/.terraform/terraform.tfstate: guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars prepare
 	cd "$(ENV_NAME)" && \
 	TF_IN_AUTOMATION=1 terraform init -input=false \
-		-backend-config="./backend.auto.tfvars" \
-		-force-copy -upgrade=true "./"
+		-backend-config="./backend.auto.tfvars" "./"
 
 .PHONY: auto.tfvars
 auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars $(ENV_NAME)/runtime.auto.tfvars
