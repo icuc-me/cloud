@@ -22,12 +22,3 @@ resource "google_service_account" "prod-service-user" {
     project = "${local.self["PROJECT"]}"
     provider = "google.prod"
 }
-
-/* NOT READY YET
-// ref: https://www.terraform.io/docs/providers/google/r/google_project_iam.html
-module "test_iam_bindings" {
-    source = "./modules/projects_iam_bindings"
-    project = "${var.TEST_SECRETS["PROJECT"]}"
-    role_members = "${module.strong_unbox.contents["test_iam_bindings"]}"
-}
-*/

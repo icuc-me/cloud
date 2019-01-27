@@ -1,7 +1,7 @@
 
 module "strongboxes" {
     source = "./modules/strongboxes"
-    providers { google = "google.stage" }
+    providers { google = "google" }
     readers = "${local.strongbox_readers}"
     strongbox = "${local.strongbox}"
     strongkeys = "${local.strongkeys}"
@@ -14,7 +14,7 @@ resource "null_resource" "phase_1" {
 
 module "strong_unbox" {
     source = "./modules/strong_unbox"
-    providers { google = "google.stage" }
+    providers { google = "google" }
     credentials = "${local.self["CREDENTIALS"]}"
     strongbox = "${module.strongboxes.uris[var.ENV_NAME]}"
     strongkey = "${local.strongkeys[var.ENV_NAME]}"
@@ -26,14 +26,14 @@ resource "null_resource" "phase_2" {
 
 module "test_project_iam_binding" {
     source = "./modules/project_iam_binding"
-    providers { google = "google.test" }
+    providers { google = "google" }
     env_name = "${var.ENV_NAME}"
     roles_members = "${module.strong_unbox.contents["test_roles_members_bindings"]}"
 }
 
 module "stage_project_iam_binding" {
     source = "./modules/project_iam_binding"
-    providers { google = "google.stage" }
+    providers { google = "google" }
     env_name = "${var.ENV_NAME}"
     roles_members = "${module.strong_unbox.contents["stage_roles_members_bindings"]}"
 }
