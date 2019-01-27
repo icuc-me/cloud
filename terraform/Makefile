@@ -2,6 +2,7 @@
 SRC_DIR=$(shell realpath "$$PWD/../")
 SECRETS_DIR=$(SRC_DIR)/secrets
 TERRAFORM_DIR=$(SRC_DIR)/terraform
+EXTRA_ARGS ?=
 
 .PHONY: all
 all: apply
@@ -39,9 +40,9 @@ validate: guard-ENV_NAME init auto.tfvars
 	cd "$(ENV_NAME)" && \
 	TF_IN_AUTOMATION=1 terraform validate "./"
 
-$(ENV_NAME)/plan: guard-ENV_NAME guard-PHASE init auto.tfvars validate
+$(ENV_NAME)/plan: guard-ENV_NAME init auto.tfvars validate
 	cd "$(ENV_NAME)" && \
-	TF_IN_AUTOMATION=1 terraform plan -input=false --target=null_resource.phase_$(PHASE)  -out=./plan "./"
+	TF_IN_AUTOMATION=1 terraform plan -input=false $(EXTRA_ARGS) -out=./plan "./"
 
 .PHONY: apply
 apply: guard-ENV_NAME $(ENV_NAME)/plan

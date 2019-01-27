@@ -85,10 +85,19 @@ module "prod_strongbox" {
     box_content = "${data.external.prod_contents.result["encrypted"]}"
 }
 
-output "uris" {
+resource "google_storage_bucket_iam_binding" "strongbox" {
+    bucket = "${google_storage_bucket.boxbucket.name}"
+    role = "roles/storage.objectViewer"
+    members = ["${formatlist("serviceAccount:%s",
+                             compact(concat(var.readers["test"],
+                                            var.readers["stage"],
+                                            var.readers["prod"])))}"]
+}
+
+output "filenames" {
     value = {
-        test = "${module.test_strongbox.uri}"
-        stage = "${module.stage_strongbox.uri}"
-        prod = "${module.prod_strongbox.uri}"
+        test  = "${basename(module.test_strongbox.uri)}"
+        stage = "${basename(module.stage_strongbox.uri)}"
+        prod  = "${basename(module.prod_strongbox.uri)}"
     }
 }

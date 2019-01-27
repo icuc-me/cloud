@@ -21,7 +21,7 @@ module "roles_members" {
 
 // ref: https://www.terraform.io/docs/providers/google/r/google_project_iam.html
 resource "google_project_iam_binding" "roles_members_bindings" {
-    count = "${var.env_name == "test"
+    count = "${var.env_name == "test" || var.env_name == "stage"
                ? 0
                : local.length}"
     role = "${element(module.roles_members.roles, count.index)}"

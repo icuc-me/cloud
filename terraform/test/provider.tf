@@ -6,7 +6,12 @@ provider "null" {
     version = "~> 2.0"
 }
 
+provider "template" {
+    version = "~> 2.0"
+}
+
 // Default for this environment
+
 provider "google" {
     version = "~> 1.20"
     credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
@@ -16,6 +21,7 @@ provider "google" {
 }
 
 // Aliases for all environments
+
 provider "google" {
     version = "~> 1.20"
     alias = "test"
