@@ -20,7 +20,7 @@ module "strong_unbox" {
     strongkey = "${local.strongkeys[var.ENV_NAME]}"
 }
 
-output "box_contents" { value = "${module.strong_unbox.contents}" }
+// output "box_contents" { value = "${module.strong_unbox.contents}" }
 
 resource "null_resource" "phase_2" {
     depends_on = ["module.strong_unbox"]
@@ -33,8 +33,8 @@ module "test_project_iam_binding" {
     roles_members = "${module.strong_unbox.contents["test_roles_members_bindings"]}"
 }
 
-output "test_roles" { value = "${module.test_project_iam_binding.roles}" }
-output "test_members" { value = "${module.test_project_iam_binding.members}" }
+// output "test_roles" { value = "${module.test_project_iam_binding.roles}" }
+// output "test_members" { value = "${module.test_project_iam_binding.members}" }
 
 module "stage_project_iam_binding" {
     source = "./modules/project_iam_binding"
@@ -43,8 +43,8 @@ module "stage_project_iam_binding" {
     roles_members = "${module.strong_unbox.contents["stage_roles_members_bindings"]}"
 }
 
-output "stage_roles" { value = "${module.stage_project_iam_binding.roles}" }
-output "stage_members" { value = "${module.stage_project_iam_binding.members}" }
+// output "stage_roles" { value = "${module.stage_project_iam_binding.roles}" }
+// output "stage_members" { value = "${module.stage_project_iam_binding.members}" }
 
 module "prod_project_iam_binding" {
     source = "./modules/project_iam_binding"
@@ -53,8 +53,8 @@ module "prod_project_iam_binding" {
     roles_members = "${module.strong_unbox.contents["prod_roles_members_bindings"]}"
 }
 
-output "prod_roles" { value = "${module.prod_project_iam_binding.roles}" }
-output "prod_members" { value = "${module.prod_project_iam_binding.members}" }
+// output "prod_roles" { value = "${module.prod_project_iam_binding.roles}" }
+// output "prod_members" { value = "${module.prod_project_iam_binding.members}" }
 
 /* NOT READY YET
 module "gateway" {
