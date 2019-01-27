@@ -37,7 +37,7 @@ resource "google_storage_bucket_object" "strongbox" {
 
 // ref: https://www.terraform.io/docs/providers/google/r/storage_object_acl.html
 resource "google_storage_object_acl" "strongbox_acl" {
-    count = "${length(compact(var.readers)) > 0 || length(compact(var.writers)) > 0
+    count = "${(length(compact(var.readers)) > 0) || (length(compact(var.writers)) > 0)
                ? 1
                : 0}"
     bucket = "${google_storage_bucket_object.strongbox.bucket}"
