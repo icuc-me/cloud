@@ -13,7 +13,7 @@ provider "template" {
 // Default for this environment
 
 provider "google" {
-    version = "~> 1.20"
+    alias = "stage"
     credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
     project = "${var.STAGE_SECRETS["PROJECT"]}"
     region = "${var.STAGE_SECRETS["REGION"]}"

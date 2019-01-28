@@ -31,7 +31,7 @@ resource "google_storage_bucket_object" "strongbox" {
     name   = "${var.strongbox_name}"
     content = "${var.box_content}"
     lifecycle {
-        ignore_changes = ["id"]
+        ignore_changes = ["content", "detect_md5hash"]
     }
 }
 

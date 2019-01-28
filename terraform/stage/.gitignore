@@ -1,3 +1,5 @@
-test-strongbox.yml
-stage-strongbox.yml
-prod-strongbox.yml
+*.yml
+apply
+init
+preload
+validate

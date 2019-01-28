@@ -100,4 +100,5 @@ output "filenames" {
         stage = "${basename(module.stage_strongbox.uri)}"
         prod  = "${basename(module.prod_strongbox.uri)}"
     }
+    sensitive = true
 }

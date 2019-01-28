@@ -1,5 +1,5 @@
 
-variable "strongbox" {
+variable "strongbox_uri" {
     description = "URI to strongbox, including bucket, path and file."
 }
 
@@ -16,7 +16,7 @@ data "external" "strongbox" {
     program = ["python", "${path.module}/strongbox.py"]
     query = {
         credentials = "${var.credentials}"
-        strongbox = "${var.strongbox}"
+        strongbox = "${var.strongbox_uri}"
         strongkey = "${var.strongkey}"
     }
 }
