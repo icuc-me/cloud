@@ -1,28 +1,47 @@
 
 // Resources used in all environments but not easily testable.
 // NEEDS PER-ENV MODIFICATION
-//
-// ref: https://www.terraform.io/docs/providers/google/r/google_service_account.html
-// resource "google_service_account" "test-service-user" {
-//     count = "${local.only_in_prod}"
-//     account_id   = "${var.TEST_SECRETS["SUSERNAME"]}"
-//     project = "${var.TEST_SECRETS["PROJECT"]}"
-//     provider = "google.test"
-//     lifecycle { prevent_destroy = true  }
+
+/**** TEST ****/
+module "test_service_account" {
+    source = "./modules/service_account"
+    providers { google = "google.test" }
+    env_name = "${var.ENV_NAME}"
+    susername = "${var.TEST_SECRETS["SUSERNAME"]}"
+}
+module "test_project_iam_binding" {
+    source = "./modules/project_iam_binding"
+    providers { google = "google.test" }
+    env_name = "${var.ENV_NAME}"
+    roles_members = "${module.strong_unbox.contents["test_roles_members_bindings"]}"
+}
+
+
+/**** STAGE ****/
+// module "stage_service_account" {
+//     source = "./modules/service_account"
+//     providers { google = "google.stage" }
+//     env_name = "${var.ENV_NAME}"
+//     susername = "${var.STAGE_SECRETS["SUSERNAME"]}"
 // }
-//
-// resource "google_service_account" "stage-service-user" {
-//     count = "${local.only_in_prod}"
-//     account_id   = "${var.STAGE_SECRETS["SUSERNAME"]}"
-//     project = "${var.STAGE_SECRETS["PROJECT"]}"
-//     provider = "google.stage"
-//     lifecycle { prevent_destroy = true  }
+// module "stage_project_iam_binding" {
+//     source = "./modules/project_iam_binding"
+//     providers { google = "google.stage" }
+//     env_name = "${var.ENV_NAME}"
+//     roles_members = "${module.strong_unbox.contents["stage_roles_members_bindings"]}"
 // }
-//
-// resource "google_service_account" "prod-service-user" {
-//     count = "${local.only_in_prod}"
-//     account_id   = "${var.PROD_SECRETS["SUSERNAME"]}"
-//     project = "${var.PROD_SECRETS["PROJECT"]}"
-//     provider = "google.prod"
-//     lifecycle { prevent_destroy = true  }
+
+
+/**** PROD ****/
+// module "prod_service_account" {
+//     source = "./modules/service_account"
+//     providers { google = "google.prod" }
+//     env_name = "${var.ENV_NAME}"
+//     susername = "${var.PROD_SECRETS["SUSERNAME"]}"
+// }
+// module "prod_project_iam_binding" {
+//     source = "./modules/project_iam_binding"
+//     providers { google = "google.prod" }
+//     env_name = "${var.ENV_NAME}"
+//     roles_members = "${module.strong_unbox.contents["prod_roles_members_bindings"]}"
 // }
