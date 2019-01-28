@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -80,11 +80,6 @@ def cat_string(key):
     os.close(write_fd)
     return os.fdopen(read_fd)
 
-# Encrypt with:
-# cat file.json | \
-#     gpg2 --batch --quiet --options /dev/null \
-#          --symmetric --cipher-algo CAMELLIA256 --armor --output - \
-#          --passphrase-fd 42 42<<<"$STRONGKEY"
 def encrypt(plain_pipe, key_pipe):
     gpg_args = list(COMMON_GPG_ARGS)
     gpg_args += ["--symmetric", "--passphrase-fd={0}".format(key_pipe.fileno()), "--output=-"]
@@ -112,5 +107,10 @@ if __name__ == "__main__":
              cat_string(query['strongkey']) as key_pipe:
 
             # Validate format and output as expected
-            plain_text = decrypt(crypt_pipe, key_pipe)
-            sys.stdout.write(validate_json(plain_text))
+            try:
+                plain_text = decrypt(crypt_pipe, key_pipe)
+                sys.stdout.write(validate_json(plain_text))
+            except CalledProcessError:
+                errout("Decryption of {} failed with key {}"
+                       "".format(query['strongbox'], query['strongkey']))
+                raise
