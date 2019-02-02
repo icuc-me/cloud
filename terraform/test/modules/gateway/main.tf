@@ -24,9 +24,15 @@ resource "google_compute_address" "gateway-static-ext" {
     count = "${var.env_name != "test" ? 1 : 0}"  // use gateway-ephemeral for test
 }
 
+// ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_network.html
+data "google_compute_network" "default" {
+    name = "default"
+}
+
 resource "google_compute_address" "gateway-internal" {
     name = "gateway-internal-${var.env_uuid}-0"
     address_type = "INTERNAL"
+    subnetwork = "${data.google_compute_network.default.self_link}"
     description = "Static internal address for gateway instance"
 }
 

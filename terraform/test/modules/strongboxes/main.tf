@@ -63,7 +63,7 @@ module "test_strongbox" {
     source = "../strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
     strongbox_name = "test-strongbox.json.bz2.pgp"
-    readers = "${var.readers["test"]}"
+    readers = "${compact(var.readers["test"])}"
     box_content = "${data.external.test_contents.result["encrypted"]}"
 }
 
@@ -72,7 +72,7 @@ module "stage_strongbox" {
     source = "../strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
     strongbox_name = "stage-strongbox.json.bz2.pgp"
-    readers = "${var.readers["stage"]}"
+    readers = "${compact(var.readers["stage"])}"
     box_content = "${data.external.stage_contents.result["encrypted"]}"
 }
 
@@ -81,7 +81,7 @@ module "prod_strongbox" {
     source = "../strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
     strongbox_name = "prod-strongbox.json.bz2.pgp"
-    readers = "${var.readers["prod"]}"
+    readers = "${compact(var.readers["prod"])}"
     box_content = "${data.external.prod_contents.result["encrypted"]}"
 }
 
@@ -100,4 +100,5 @@ output "filenames" {
         stage = "${basename(module.stage_strongbox.uri)}"
         prod  = "${basename(module.prod_strongbox.uri)}"
     }
+    sensitive = true
 }

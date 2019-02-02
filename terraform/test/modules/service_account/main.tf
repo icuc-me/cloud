@@ -9,6 +9,11 @@ variable "susername" {
     description = "Service account username to reference in provider"
 }
 
+variable "sdisplayname" {
+    description = "Display name to assign if creating service account"
+    default = ""
+}
+
 locals {
     is_prod = "${var.env_name == "prod"
                  ? 1
@@ -24,6 +29,7 @@ data "google_project" "current" {}
 resource "google_service_account" "service_user" {
     count = "${local.only_in_prod}"
     account_id   = "${var.susername}"
+    display_name = "${var.sdisplayname}"
     project = "${data.google_project.current.project_id}"
     lifecycle { prevent_destroy = true }
 }

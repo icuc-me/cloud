@@ -5,7 +5,7 @@ TERRAFORM_DIR=$(SRC_DIR)/terraform
 EXTRA_ARGS ?=
 
 .PHONY: all
-all: apply
+all: prepare deploy
 
 # Utility target for checking required parameters
 .PHONY: guard-%
@@ -15,8 +15,8 @@ guard-%:
 		exit 1; \
 	fi;
 
-$(SECRETS_DIR)/$(ENV_NAME)-%.auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME
-	$(MAKE) -C "$(SECRETS_DIR)" ENV_NAME=$(ENV_NAME)
+$(SECRETS_DIR)/$(ENV_NAME)-%.auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME guard-SRC_VERSION
+	$(MAKE) -C "$(SECRETS_DIR)" ENV_NAME=$(ENV_NAME) SRC_VERSION=$(SRC_VERSION)
 
 $(ENV_NAME)/%.auto.tfvars: $(SECRETS_DIR)/$(ENV_NAME)-%.auto.tfvars
 	ln -sf "$^" "$(TERRAFORM_DIR)/$@"
@@ -25,38 +25,20 @@ $(ENV_NAME)/%.auto.tfvars: $(SECRETS_DIR)/$(ENV_NAME)-%.auto.tfvars
 prepare: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars
 	bash $(SRC_DIR)/bin/prepare.sh "$(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars"
 
-.PHONY: init
-init: guard-ENV_NAME $(ENV_NAME)/.terraform/terraform.tfstate
-$(ENV_NAME)/.terraform/terraform.tfstate: guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars prepare
-	cd "$(ENV_NAME)" && \
-	TF_IN_AUTOMATION=1 terraform init -input=false \
-		-backend-config="./backend.auto.tfvars" "./"
-
 .PHONY: auto.tfvars
 auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars $(ENV_NAME)/runtime.auto.tfvars
 
-.PHONY: validate
-validate: guard-ENV_NAME init auto.tfvars
-	cd "$(ENV_NAME)" && \
-	TF_IN_AUTOMATION=1 terraform validate "./"
-
-$(ENV_NAME)/plan: guard-ENV_NAME init auto.tfvars validate
-	cd "$(ENV_NAME)" && \
-	TF_IN_AUTOMATION=1 terraform plan -input=false $(EXTRA_ARGS) -out=./plan "./"
-
-.PHONY: apply
-apply: guard-ENV_NAME $(ENV_NAME)/plan
-	@read -t 10 -p "press enter or wait 10 seconds to continue, ctrl-c to abort." || true
-	cd "$(ENV_NAME)" && \
-	TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve "./plan"
+deploy: auto.tfvars
+	$(MAKE) -C $(ENV_NAME)
 
 .PHONY: destroy
-destroy: guard-ENV_NAME init auto.tfvars
+destroy: guard-ENV_NAME auto.tfvars
 	@if [[ "$(ENV_NAME)" =~ "prod" ]]; then \
 		echo "Cowardly refusing to destroy prod environment"; \
+		exit 1; \
 	elif [[ -n "$(ENV_NAME)" ]]; then \
-		cd "$(ENV_NAME)" && \
-		TF_IN_AUTOMATION=1 terraform destroy -input=false -auto-approve "./"; \
+		$(MAKE) -C $(ENV_NAME) destroy \
+			|| true; \
 	fi
 
 .PHONY: teardown
@@ -65,13 +47,11 @@ teardown: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.au
 		echo "Cowardly refusing to teardown prod state."; \
 		exit 1; \
 	elif [[ -n "$(ENV_NAME)" ]]; then \
-		bash $(SRC_DIR)/bin/teardown.sh "$(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars"; \
+		bash $(SRC_DIR)/bin/teardown.sh "$(SECRETS_DIR)/$(ENV_NAME)-backend.auto.tfvars" \
+			|| true; \
 	fi
 
 .PHONY: clean
 clean:
-	# ALL environments
-	-rm -fv {test,stage,prod}/plan
-	-rm -fv {test,stage,prod}/*tfstate*
-	-rm -fv {test,stage,prod}/{backend,runtime}.auto.tfvars
-	-rm -rvf {test,stage,prod}/.terraform/*
+	-for env_name in test stage prod; do \
+		$(MAKE) -C $$env_name clean; done

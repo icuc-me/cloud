@@ -1,7 +1,4 @@
 
-// Resources used in all environments but not easily testable.
-// NEEDS PER-ENV MODIFICATION
-
 /**** TEST ****/
 module "test_service_account" {
     source = "./modules/service_account"
@@ -45,3 +42,41 @@ module "test_project_iam_binding" {
 //     env_name = "${var.ENV_NAME}"
 //     roles_members = "${module.strong_unbox.contents["prod_roles_members_bindings"]}"
 // }
+
+// Required as workaround until https://github.com/hashicorp/terraform/issues/4149
+resource "null_resource" "preload" {
+    depends_on = [
+        // NEEDS PER-ENV MODIFICATION
+        "module.test_service_account",
+        // "module.stage_service_account",
+        // "module.prod_service_account"
+    ]
+}
+
+module "strongboxes" {
+    source = "./modules/strongboxes"
+    providers { google = "google" }
+    readers = "${local.strongbox_readers}"
+    strongbox = "${local.is_prod == 1
+                   ? local.self["STRONGBOX"]
+                   : local.mock_strongbox}"
+    strongkeys = "${local.strongkeys}"
+    force_destroy = "${local.is_prod == 1
+                       ? 0
+                       : 1}"
+}
+
+module "strong_unbox" {
+    source = "./modules/strong_unbox"
+    providers { google = "google" }
+    credentials = "${local.self["CREDENTIALS"]}"
+    strongbox_uri = "${local.self["STRONGBOX"]}/${module.strongboxes.filenames[var.ENV_NAME]}"
+    strongkey = "${local.self["STRONGKEY"]}"
+}
+
+module "gateway" {
+    source = "./modules/gateway"
+    providers { google = "google" }
+    env_name = "${var.ENV_NAME}"
+    env_uuid = "${var.UUID}"
+}

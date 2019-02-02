@@ -43,7 +43,6 @@ validate:
 
 .PHONY: %_env
 %_env:
-	@$(MAKE) -C terraform EXTRA_ARGS=-target=null_resource.preload ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
 	@$(MAKE) -C terraform ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
 
 .PHONY: clean
