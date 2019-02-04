@@ -43,9 +43,7 @@ validate:
 
 .PHONY: %_env
 %_env:
-	@$(MAKE) -C terraform PHASE=1 ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
-	@$(MAKE) -C terraform PHASE=2 ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
-	@$(MAKE) -C terraform PHASE=3 ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
+	@$(MAKE) -C terraform ENV_NAME=$* SRC_VERSION=$(SRC_VERSION)
 
 .PHONY: clean
 clean:

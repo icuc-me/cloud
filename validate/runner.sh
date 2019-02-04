@@ -6,6 +6,7 @@ source "$(dirname $0)/lib.sh"
 
 RESULT=$(mktemp -p '' $(basename $SCRIPT_FILENAME)_RESULT_XXXXXX)
 NEEDCLEAN=$(mktemp -p '' $(basename $SCRIPT_FILENAME)_NEEDCLEAN_XXXXXX)
+echo 0 | tee "$NEEDCLEAN" > "$RESULT"
 
 notgood() {
     if [[ $(cat "$RESULT") -eq "0" ]]
@@ -24,7 +25,7 @@ good() {
 cleanup() {
     cd "$SRC_DIR"
     indent 1 "Cleaning up"
-    if [[ $(cat "$NEEDCLEAN") -eq 0 ]]
+    if [[ $(cat "$NEEDCLEAN") -ne "0" ]]
     then
         indent 2 "Cleaning up test environment"
         make test_clean || \
@@ -58,7 +59,8 @@ then
     indent 2 "Creating test environment (skip with --lintonly)"
     cd "$SRC_DIR"
     make test_env
-    echo "$?" | tee "$NEEDCLEAN" > "$RESULT"
+    echo "$?" > "$RESULT"
+    echo 1 > "$NEEDCLEAN"
 
     if good
     then
@@ -87,7 +89,7 @@ then
 
     else
         indent 2 "Failed to create test environment"
-        echo 2
+        exit 2
     fi
 else
     indent 1 "Failed verify or lint check"

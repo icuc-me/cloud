@@ -2,16 +2,23 @@ provider "external" {
     version = "~> 1.0"
 }
 
+provider "null" {
+    version = "~> 2.0"
+}
+
+provider "template" {
+    version = "~> 2.0"
+}
+
 // Default for this environment
 
 provider "google" {
-    version = "~> 1.20"
+    alias = "stage"
     credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
     project = "${var.STAGE_SECRETS["PROJECT"]}"
     region = "${var.STAGE_SECRETS["REGION"]}"
     zone = "${var.STAGE_SECRETS["ZONE"]}"
 }
-
 
 // Aliases for all environments
 

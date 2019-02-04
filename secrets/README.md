@@ -68,3 +68,14 @@ All sensitive values not stored in the secrets scripts, are YAML encoded in thre
 files - one per environment.  Each must contain the following values:
 
 * ``env_name``: name of the environment - validated against ``ENV_NAME`` at runtime
+* ``suser_display_name``: Full name / description to assign when creating the main service accounts
+  for each project (test, stage, prod)
+* ``test_roles_members_bindings`` - see below
+* ``stage_roles_members_bindings`` - see below
+* ``prod_roles_members_bindings`` - Terraform 0.11 cannot accept anything except
+  but effectively these are each dictionaries containing a list of strongs.
+  The dictionaries are separated by `;`, the key and value by '=', and list items by ','.
+  Keys should be the names of canned or custom Google IAM roles.  Items are a list
+  of identities assigned to the role.  See the
+  [terraform google_project_iam_binding documentation](https://www.terraform.io/docs/providers/google/r/google_project_iam.html#google_project_iam_binding)
+  for the required identity format.

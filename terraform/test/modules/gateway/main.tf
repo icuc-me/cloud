@@ -24,9 +24,15 @@ resource "google_compute_address" "gateway-static-ext" {
     count = "${var.env_name != "test" ? 1 : 0}"  // use gateway-ephemeral for test
 }
 
+// ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_network.html
+data "google_compute_network" "default" {
+    name = "default"
+}
+
 resource "google_compute_address" "gateway-internal" {
     name = "gateway-internal-${var.env_uuid}-0"
     address_type = "INTERNAL"
+    subnetwork = "${data.google_compute_network.default.self_link}"
     description = "Static internal address for gateway instance"
 }
 
@@ -51,11 +57,7 @@ resource "google_compute_instance" "gateway-instance" {
     can_ip_forward = "true"
     network_interface {
         network = "default"
-        network_ip = "${google_compute_address.gateway-internal.0.address}"
-    }
-    network_interface {
-        network = "default"
-        network_ip = "${google_compute_address.gateway-internal.1.address}"
+        network_ip = "${google_compute_address.gateway-internal.address}"
         access_config {
             nat_ip = "${element(local._gateway_nat_ip, 0)}"
             network_tier = "${var.env_name == "prod" ? "PREMIUM" : "STANDARD"}"
@@ -70,5 +72,10 @@ output "internal-gateway-link" {
 
 output "internal-gateway-ip" {
     value = "${google_compute_instance.gateway-instance.network_interface.0.network_ip}"
+    sensitive = true
+}
+
+output "external-gateway-ip" {
+    value = "${google_compute_instance.gateway-instance.network_interface.0.access_config.0.nat_ip}"
     sensitive = true
 }

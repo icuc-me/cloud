@@ -73,26 +73,38 @@ variable "PROD_SECRETS" {
 }
 
 locals {
-    self = "${merge(var.STAGE_SECRETS, local._src_version)}"
+    is_test = "${var.ENV_NAME == "test"
+                 ? 1
+                 : 0}"
+    is_stage = "${var.ENV_NAME == "stage"
+                  ? 1
+                  : 0}"
+    is_prod = "${var.ENV_NAME == "prod"
+                 ? 1
+                 : 0}"
+    only_in_prod = "${local.is_prod
+                      ? 1
+                      : 0}"
     _src_version = { SRC_VERSION = "${var.SRC_VERSION}" }
-    mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for test env.
-    strongbox = "${var.ENV_NAME != "prod"
-                   ? local.mock_strongbox
-                   : local.self["STRONGBOX"]}"
-    strongbox_readers = {
-        test = [],
+    self = "${merge(var.STAGE_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
+
+    strongbox_readers = { // NEEDS PER-ENV MODIFICATION
+        test = ["${module.stage_service_account.email}"],
         stage = [],
         prod= []
     }
+
     strongkeys = {
-        test = "${var.ENV_NAME == "test"
-                  ? "TESTY-MC-TESTFACE"
-                  : var.TEST_SECRETS["STRONGKEY"]}"
-        stage = "${var.ENV_NAME == "test"
-                   ? "STAGY-MC-STAGEFACE"
-                   : var.STAGE_SECRETS["STRONGKEY"]}"
-        prod = "${var.ENV_NAME == "test" || var.ENV_NAME == "stage"
-                  ? "PRODY-MC-PRODFACE"
-                  : var.PROD_SECRETS["STRONGKEY"]}"
+        test = "${local.is_prod == 1
+                  ? var.TEST_SECRETS["STRONGKEY"]
+                  : "TESTY-MC-TESTFACE"}",
+        stage = "${local.is_prod == 1
+                   ? var.STAGE_SECRETS["STRONGKEY"]
+                   : "STAGY-MC-STAGEFACE"}",
+        prod = "${local.is_prod == 1
+                  ? var.PROD_SECRETS["STRONGKEY"]
+                  : "PRODY-MC-PRODFACE"}"
     }
+
+    mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for test env.
 }

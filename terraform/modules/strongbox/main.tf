@@ -30,20 +30,22 @@ resource "google_storage_bucket_object" "strongbox" {
     bucket = "${var.bucket_name}"
     name   = "${var.strongbox_name}"
     content = "${var.box_content}"
-    lifecycle {
-        ignore_changes = ["id"]
-    }
+}
+
+locals {
+    role_entity = ["${concat(formatlist("READER:user-%s", compact(var.readers)),
+                             formatlist("WRITER:user-%s", compact(var.writers)))}"]
+    not_empty = "${length(local.role_entity) > 0
+                   ? 1
+                   : 0}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/storage_object_acl.html
 resource "google_storage_object_acl" "strongbox_acl" {
-    count = "${(length(compact(var.readers)) > 0) || (length(compact(var.writers)) > 0)
-               ? 1
-               : 0}"
+    count = "${local.not_empty}"
     bucket = "${google_storage_bucket_object.strongbox.bucket}"
     object = "${google_storage_bucket_object.strongbox.name}"
-    role_entity = ["${concat(formatlist("READER:user-%s", compact(var.readers)),
-                             formatlist("WRITER:user-%s", compact(var.writers)))}"]
+    role_entity = ["${local.role_entity}"]
 }
 
 output "uri" {
