@@ -79,6 +79,6 @@ output "external-gateway-ip" {
 }
 
 output "internal-gateway-ip" {
-    value = "${google_compute_instance.gateway-instance.network_interface.1.network_ip}"
+    value = "${google_compute_instance.gateway-instance.network_interface.0.network_ip}"
     sensitive = true
 }

@@ -30,9 +30,6 @@ resource "google_storage_bucket_object" "strongbox" {
     bucket = "${var.bucket_name}"
     name   = "${var.strongbox_name}"
     content = "${var.box_content}"
-    lifecycle {
-        ignore_changes = ["content", "detect_md5hash"]
-    }
 }
 
 locals {
