@@ -1,4 +1,3 @@
-
 variable "default_tcp_ports" {
     type = "list"
     description = "List of TCP ports or port-ranges to permit through default network firewall"
@@ -33,6 +32,8 @@ resource "google_compute_subnetwork" "default" {
     name = "default"
     ip_cidr_range = "${var.public_cidr}"
     network = "${google_compute_network.default.self_link}"
+    private_ip_google_access = "true"  // Allow access to google APIs
+    lifecycle { ignore_changes = ["ip_cidr_range"] }
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/compute_firewall.html
@@ -75,6 +76,7 @@ resource "google_compute_subnetwork" "private" {
     ip_cidr_range = "${var.private_cidr}"
     network = "${google_compute_network.private.self_link}"
     private_ip_google_access = "true"  // Allow access to google APIs
+    lifecycle { ignore_changes = ["ip_cidr_range"] }
 }
 
 resource "google_compute_firewall" "private-allow-in" {
