@@ -74,19 +74,10 @@ module "strong_unbox" {
     strongkey = "${local.self["STRONGKEY"]}"
 }
 
-module "mangle_cidr" {  // prevents multiple test networks from colliding
-    source = "./modules/mangle_cidr"
-    env_name = "${var.ENV_NAME}"
-    env_uuid = "${var.UUID}"
-    public_cidr = "${module.strong_unbox.contents["public_cidr"]}"
-    private_cidr = "${module.strong_unbox.contents["private_cidr"]}"
-}
-
 module "project_networks" {
     source = "./modules/project_networks"
     providers { google = "google" }
-    public_cidr = "${module.mangle_cidr.public_cidr}"
-    private_cidr = "${module.mangle_cidr.private_cidr}"
+    env_uuid = "${var.UUID}"
     default_tcp_ports = ["${compact(split(",",module.strong_unbox.contents["tcp_fw_ports"]))}"]
     default_udp_ports = ["${compact(split(",",module.strong_unbox.contents["udp_fw_ports"]))}"]
 }

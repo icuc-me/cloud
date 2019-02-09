@@ -15,6 +15,7 @@ variable "private_subnetwork" {
     description = "The self-link of the private-facing subnetwork"
 }
 
+// Ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_subnetwork.html
 data "google_compute_subnetwork" "public" {
     name = "${var.public_subnetwork}"
 }

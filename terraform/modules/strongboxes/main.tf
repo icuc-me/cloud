@@ -32,7 +32,7 @@ resource "google_storage_bucket" "boxbucket" {
 }
 
 data "external" "test_contents" {
-    program = ["python3", "${path.module}/strongbox.py"]
+    program = ["env", "${path.module}/strongbox.py"]
     query = {
         plaintext = "${file("${path.root}/test-strongbox.yml")}"
         strongbox = "${var.strongbox}"
@@ -41,7 +41,7 @@ data "external" "test_contents" {
 }
 
 data "external" "stage_contents" {
-    program = ["python3", "${path.module}/strongbox.py"]
+    program = ["env", "${path.module}/strongbox.py"]
     query = {
         plaintext = "${file("${path.root}/stage-strongbox.yml")}"
         strongbox = "${var.strongbox}"
@@ -50,7 +50,7 @@ data "external" "stage_contents" {
 }
 
 data "external" "prod_contents" {
-    program = ["python3", "${path.module}/strongbox.py"]
+    program = ["env", "${path.module}/strongbox.py"]
     query = {
         plaintext = "${file("${path.root}/prod-strongbox.yml")}"
         strongbox = "${var.strongbox}"
