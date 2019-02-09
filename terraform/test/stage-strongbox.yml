@@ -15,6 +15,5 @@ stage_roles_members_bindings: >-
     roles/compute.admin=some young guy,other dude;
     roles/storage.admin=other dude, super-man;
 
-private_cidr: "b.c.d.e/f"
 tcp_fw_ports: "hg"
 udp_fw_ports: "gh"

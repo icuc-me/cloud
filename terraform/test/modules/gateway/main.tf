@@ -15,6 +15,7 @@ variable "private_subnetwork" {
     description = "The self-link of the private-facing subnetwork"
 }
 
+// Ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_subnetwork.html
 data "google_compute_subnetwork" "public" {
     name = "${var.public_subnetwork}"
 }
@@ -24,16 +25,16 @@ data "google_compute_subnetwork" "private" {
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/compute_address.html
-resource "google_compute_address" "gateway-ephemeral-ext" {
-    name = "gateway-ephemeral-${var.env_uuid}-0"
+resource "google_compute_address" "gateway-ephemeral-external" {
+    name = "gateway-external-${var.env_uuid}-${count.index}"
     address_type = "EXTERNAL"
     description = "Ephemeral external address for test gateway"
     network_tier = "STANDARD"
     count = "${var.env_name == "test" ? 1 : 0}"
 }
 
-resource "google_compute_address" "gateway-static-ext" {
-    name = "gateway-external-${var.env_uuid}-0"
+resource "google_compute_address" "gateway-static-external" {
+    name = "gateway-external-${var.env_uuid}-${count.index}"
     address_type = "EXTERNAL"
     description = "Static external address for production and staging gateway"
     network_tier = "${var.env_name == "prod" ? "PREMIUM" : "STANDARD"}"  // save a little money
@@ -41,7 +42,7 @@ resource "google_compute_address" "gateway-static-ext" {
 }
 
 resource "google_compute_address" "gateway" {
-    count = 2  // 0: public;  1: private
+    count = 2  // 0: public subnet;  1: private subnet
     name = "gateway-internal-${var.env_uuid}-${count.index}"
     address_type = "INTERNAL"
     subnetwork = "${count.index == 0
@@ -54,8 +55,8 @@ resource "google_compute_address" "gateway" {
 }
 
 locals {
-    _gateway_nat_ip = "${concat(google_compute_address.gateway-ephemeral-ext.*.address,
-                                google_compute_address.gateway-static-ext.*.address)}"
+    _gateway_nat_ip = "${concat(google_compute_address.gateway-ephemeral-external.*.address,
+                                google_compute_address.gateway-static-external.*.address)}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_instance.html
@@ -97,7 +98,7 @@ output "external_ip" {
     sensitive = true
 }
 
-output "internal_ip" {
+output "private_ip" {
     value = "${google_compute_instance.gateway-instance.network_interface.1.network_ip}"
     sensitive = true
 }

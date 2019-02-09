@@ -19,6 +19,5 @@ prod_roles_members_bindings: >-
     roles/storage.admin=other dude, super-man;
     roles/compute.admin=some young guy,other dude;
 
-private_cidr: "c.d.e.f/g"
 tcp_fw_ports: "zz"
 udp_fw_ports: "th"
