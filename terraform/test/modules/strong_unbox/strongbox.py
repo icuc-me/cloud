@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import sys
 import os
 import shlex
-from subprocess import check_output, Popen, CalledProcessError, PIPE, STDOUT
-from cStringIO import StringIO
+from subprocess import check_output, CalledProcessError, PIPE, STDOUT
+from io import StringIO
 import simplejson as json
 from yaml import load
 
@@ -60,7 +60,7 @@ def validate_input(query):
 def activate_credentials(credentials):
     args = shlex.split("gcloud auth activate-service-account --key-file={0}".format(credentials))
     try:
-        output = check_output(args, stderr=STDOUT)
+        output = str(check_output(args, stderr=STDOUT, close_fds=False))
         return output
     except CalledProcessError as xcpt:  # credentials already activated
         errout('WARNING: {0}: {1}'.format(xcpt.cmd, xcpt.output))
@@ -69,26 +69,29 @@ def activate_credentials(credentials):
 
 def cat_bucket(uri):
     read_fd, write_fd = os.pipe()
-    os.write(write_fd, check_output(shlex.split("gsutil cat {0}".format(uri))))
+    args = shlex.split("gsutil cat {0}".format(uri))
+    os.write(write_fd, check_output(args, close_fds=False))
     os.close(write_fd)
-    return os.fdopen(read_fd)
+    os.set_inheritable(read_fd, True)
+    return os.fdopen(read_fd, mode='rt', encoding='utf-8')
 
 
 def cat_string(key):
     read_fd, write_fd = os.pipe()
-    os.write(write_fd, str(key))
+    os.write(write_fd, bytes(key, 'utf-8'))
     os.close(write_fd)
-    return os.fdopen(read_fd)
+    os.set_inheritable(read_fd, True)
+    return os.fdopen(read_fd, mode='rt', encoding='utf-8')
 
 def encrypt(plain_pipe, key_pipe):
     gpg_args = list(COMMON_GPG_ARGS)
     gpg_args += ["--symmetric", "--passphrase-fd={0}".format(key_pipe.fileno()), "--output=-"]
-    return check_output(gpg_args, stdin=plain_pipe)
+    return check_output(gpg_args, stdin=plain_pipe.fileno(), close_fds=False)
 
 def decrypt(crypt_pipe, key_pipe):
     gpg_args = list(COMMON_GPG_ARGS)
     gpg_args += ["--decrypt", "--passphrase-fd={0}".format(key_pipe.fileno()), "--output=-"]
-    return check_output(gpg_args, stdin=crypt_pipe)
+    return check_output(gpg_args, stdin=crypt_pipe.fileno(), close_fds=False)
 
 
 if __name__ == "__main__":

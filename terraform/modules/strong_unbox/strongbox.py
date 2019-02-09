@@ -4,7 +4,7 @@ import sys
 import os
 import shlex
 from subprocess import check_output, Popen, CalledProcessError, PIPE, STDOUT
-from cStringIO import StringIO
+from io import StringIO
 import simplejson as json
 from yaml import load
 
@@ -69,26 +69,27 @@ def activate_credentials(credentials):
 
 def cat_bucket(uri):
     read_fd, write_fd = os.pipe()
-    os.write(write_fd, check_output(shlex.split("gsutil cat {0}".format(uri))))
+    args = shlex.split("gsutil cat {0}".format(uri))
+    os.write(write_fd, bytes(check_output(args), 'utf-8'))
     os.close(write_fd)
     return os.fdopen(read_fd)
 
 
 def cat_string(key):
     read_fd, write_fd = os.pipe()
-    os.write(write_fd, str(key))
+    os.write(write_fd, bytes(str(key), 'utf-8'))
     os.close(write_fd)
     return os.fdopen(read_fd)
 
 def encrypt(plain_pipe, key_pipe):
     gpg_args = list(COMMON_GPG_ARGS)
     gpg_args += ["--symmetric", "--passphrase-fd={0}".format(key_pipe.fileno()), "--output=-"]
-    return check_output(gpg_args, stdin=plain_pipe)
+    return check_output(gpg_args, stdin=plain_pipe.fileno())
 
 def decrypt(crypt_pipe, key_pipe):
     gpg_args = list(COMMON_GPG_ARGS)
     gpg_args += ["--decrypt", "--passphrase-fd={0}".format(key_pipe.fileno()), "--output=-"]
-    return check_output(gpg_args, stdin=crypt_pipe)
+    return check_output(gpg_args, stdin=crypt_pipe.fileno())
 
 
 if __name__ == "__main__":
