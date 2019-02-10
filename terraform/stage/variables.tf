@@ -89,7 +89,7 @@ locals {
     self = "${merge(var.STAGE_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
 
     strongbox_readers = { // NEEDS PER-ENV MODIFICATION
-        test = ["${module.stage_service_account.email}"],
+        test = ["${module.test_service_account.email}"],
         stage = [],
         prod= []
     }

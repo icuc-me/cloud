@@ -31,6 +31,7 @@ rsync --stats --recursive --links \
     "/var/cache/go" "/home/$AS_USER"
 
 # rsync --chown doesn't affect directories somehow(?)
+mkdir -p "/home/$AS_USER/.gnupg"
 echo "Correcting permissions and configuring .bash_profile"
 chown -R $AS_ID:$AS_ID "/home/$AS_USER" &> /dev/null || true  # ignore any ro errors
 install -o "$AS_ID" -g "$AS_ID" -m 0664 "$SRC_DIR/.bash_profile" "/home/$AS_USER/"

@@ -25,13 +25,10 @@ set_tfvars() {
 }
 
 init_gcloud() {
-    if [[ -r $HOME/.config/gcloud/configurations/config_default ]]
-    then
-        echo "gcloud already configured"
-    else
-        gcloud auth activate-service-account --key-file="$credentials"
-        gcloud config set project "$project"
-    fi
+    set +e
+    gcloud auth activate-service-account --key-file="$credentials"
+    gcloud config set project "$project"
+    set -e
 }
 
 create_bucket() {

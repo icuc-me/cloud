@@ -14,6 +14,7 @@ _LAYER_5="a4028aa0"  # entrypoint
 MAGIC="${MAGIC:-$_HOST}"
 INSTALL_RPMS=$(echo \
     "PyYAML \
+    python34-PyYAML \
     curl \
     findutils \
     yajl \
@@ -24,6 +25,8 @@ INSTALL_RPMS=$(echo \
     make \
     nmap-ncat \
     python-simplejson \
+    python34-simplejson \
+    python36 \
     rsync \
     sshpass \
     sudo \
@@ -243,9 +246,9 @@ then
     mkdir bin
     curl -LsS https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh
     echo "Caching build dependencies (could take a few minutes)"
-    go get -v github.com/onsi/ginkgo/ginkgo
-    go get -v github.com/onsi/gomega/...
-    go get -v github.com/gruntwork-io/terratest/modules/terraform
+    #go get -v github.com/onsi/ginkgo/ginkgo
+    #go get -v github.com/onsi/gomega/...
+    #go get -v github.com/gruntwork-io/terratest/modules/terraform
 elif [[ "$MAGIC" == "$_LAYER_5" ]]
 then
     echo "Installing entrypoint script"
