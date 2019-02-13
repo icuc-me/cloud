@@ -4,3 +4,4 @@ verify
 lint
 smoke
 validate
+validate.test

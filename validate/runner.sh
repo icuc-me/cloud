@@ -4,6 +4,7 @@ set -e
 
 source "$(dirname $0)/lib.sh"
 
+STATUS="ERROR"
 RESULT=$(mktemp -p '' $(basename $SCRIPT_FILENAME)_RESULT_XXXXXX)
 NEEDCLEAN=$(mktemp -p '' $(basename $SCRIPT_FILENAME)_NEEDCLEAN_XXXXXX)
 echo 0 | tee "$NEEDCLEAN" > "$RESULT"
@@ -35,6 +36,8 @@ cleanup() {
     rm -f "$RESULT"
     rm -f "$NEEDCLEAN"
     indent 2 "WARNING: 'make clean' has not been run"
+    echo
+    indent 1 "$STATUS"
 }
 
 set +e
@@ -56,6 +59,7 @@ fi
 
 if good && [[ "$1" != "--lintonly" ]]
 then
+    STATUS="FAIL: -  |  PASS: lint"
     indent 2 "Creating test environment (skip with --lintonly)"
     cd "$SRC_DIR"
     make test_env
@@ -64,6 +68,7 @@ then
 
     if good
     then
+        STATUS="FAIL: -  |  PASS: lint create"
         indent 3 "Smoke testing test environment"
         cd "$SCRIPT_DIRPATH"
         make smoke
@@ -71,27 +76,33 @@ then
 
         if good
         then
+            STATUS="FAIL: -  |  PASS: lint create smoke"
             indent 3 "Test environment smoke testing: PASS"
 
             indent 4 "Validating test environment"
             make validate
             if good
             then
+                STATUS="FAIL: -  |  PASS: lint create smoke validate"
                 indent 4 "Test environment validation: PASS"
             else
+                STATUS="FAIL: validate  |  PASS: lint create smoke"
                 indent 4 "Tests environment validation: FAIL"
                 exit 4
             fi
         else
+            STATUS="FAIL: smoke  |  PASS: lint create"
             indent 3 "Test environment smoke testing: FAIL"
             exit 3
         fi
 
     else
+        STATUS="FAIL: create  |  PASS: lint"
         indent 2 "Failed to create test environment"
         exit 2
     fi
 else
+    STATUS="FAIL: lint  |  PASS: -"
     indent 1 "Failed verify or lint check"
     exit 1
 fi

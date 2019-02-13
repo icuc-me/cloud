@@ -49,6 +49,7 @@ validate:
 clean:
 	$(MAKE) -C terraform clean
 	$(MAKE) -C secrets clean
+	$(MAKE) -C validate clean
 
 .PHONY: prod_clean
 clean_prod:
