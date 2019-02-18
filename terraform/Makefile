@@ -1,4 +1,5 @@
-
+S_PHASE=1
+N_PHASES=4
 SRC_DIR=$(shell realpath "$$PWD/../")
 SECRETS_DIR=$(SRC_DIR)/secrets
 TERRAFORM_DIR=$(SRC_DIR)/terraform
@@ -15,8 +16,8 @@ guard-%:
 		exit 1; \
 	fi;
 
-$(SECRETS_DIR)/$(ENV_NAME)-%.auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME guard-SRC_VERSION
-	$(MAKE) -C "$(SECRETS_DIR)" ENV_NAME=$(ENV_NAME) SRC_VERSION=$(SRC_VERSION)
+$(SECRETS_DIR)/$(ENV_NAME)-%.auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME
+	$(MAKE) -C "$(SECRETS_DIR)" ENV_NAME=$(ENV_NAME)
 
 $(ENV_NAME)/%.auto.tfvars: $(SECRETS_DIR)/$(ENV_NAME)-%.auto.tfvars
 	ln -sf "$^" "$(TERRAFORM_DIR)/$@"
@@ -29,8 +30,15 @@ prepare: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.aut
 .PHONY: auto.tfvars
 auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars $(ENV_NAME)/runtime.auto.tfvars
 
+.PHONY: deploy
 deploy: auto.tfvars
-	$(MAKE) -C $(ENV_NAME)
+	@for phase in $$(seq $(S_PHASE) $(N_PHASES)); \
+	do \
+		echo -e "\e[1;36;41m############################################################\e[0m"; \
+		echo "                      Deploy phase $$phase of $(N_PHASES)"; \
+		echo -e "\e[1;36;41m############################################################\e[0m"; \
+		$(MAKE) -C $(ENV_NAME) PHASE=$$phase; \
+	done;
 
 .PHONY: destroy
 destroy: guard-ENV_NAME auto.tfvars
@@ -38,8 +46,13 @@ destroy: guard-ENV_NAME auto.tfvars
 		echo "Cowardly refusing to destroy prod environment"; \
 		exit 1; \
 	elif [[ -n "$(ENV_NAME)" ]]; then \
-		$(MAKE) -C $(ENV_NAME) destroy \
-			|| true; \
+		for phase in $$(seq $(N_PHASES) -1 1); \
+		do \
+			echo -e "############################################################"; \
+			echo -e "                      \e[1;36;41mDestroy phase $$phase\e[0m"; \
+			echo -e "############################################################"; \
+			$(MAKE) -C $(ENV_NAME) destroy PHASE=$$phase || true; \
+		done; \
 	fi
 
 .PHONY: teardown
@@ -55,4 +68,5 @@ teardown: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.au
 .PHONY: clean
 clean:
 	-for env_name in test stage prod; do \
-		$(MAKE) -C $$env_name clean; done
+		$(MAKE) -C $$env_name clean; \
+		rm -f $$env_name/*.auto.tfvars; done

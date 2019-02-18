@@ -70,6 +70,8 @@ files - one per environment.  Each must contain the following values:
 * ``env_name``: name of the environment - validated against ``ENV_NAME`` at runtime
 * ``suser_display_name``: Full name / description to assign when creating the main service accounts
   for each project (test, stage, prod)
+* ``ci_susername``: Service account username for use by automated testing.
+* ``ci_suser_display_name``: Human-friendly name for bot account
 * ``test_roles_members_bindings`` - see below
 * ``stage_roles_members_bindings`` - see below
 * ``prod_roles_members_bindings`` - Terraform 0.11 cannot accept anything except
