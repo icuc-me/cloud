@@ -1,4 +1,4 @@
-@FirstTest
+@First
 Feature: Environment variable-baesd authN/authZ
     To validate a deployed environment,
     as a robot, I need to authenticate and be authorized

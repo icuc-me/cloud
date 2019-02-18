@@ -21,6 +21,7 @@ SRC_DIR=$(shell realpath "../")
 # TODO: OVERIDE this from value provided by CI system
 ANCESTOR_BRANCH_COMMIT?=$(shell git merge-base origin/master HEAD)
 SEED=$(shell date +%s)
+TESTVERBOSE?=0
 
 .PHONY: clean
 clean:
@@ -92,14 +93,9 @@ validate: .pathok .gofmt ../secrets/test-backend.auto.tfvars validate.test
 		GOOGLE_APPLICATION_CREDENTIALS="$(shell awk -F \" -e '/credentials = "/{print $$2}' ../secrets/test-backend.auto.tfvars)" \
 		GOOGLE_PROJECT_ID="$(shell awk -F \" -e '/project = "/{print $$2}' ../secrets/test-backend.auto.tfvars)" \
 		./validate.test \
+			$(shell test $(TESTVERBOSE) -eq 0 || echo "-test.v") \
+			-test.parallel=1 \
 			-godog.random=$(SEED) \
 			-godog.strict \
-			-godog.format=pretty \
-			-godog.stop-on-failure \
-			-godog.tags="@FirstTest" && \
-		./validate.test \
-			-godog.random=$(SEED) \
-			-godog.strict \
-			-godog.format=pretty \
-			-godog.stop-on-failure \
-			-godog.tags="~@FirstTest"
+			-godog.format=progress \
+			-godog.concurrency=4

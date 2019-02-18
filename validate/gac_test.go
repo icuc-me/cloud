@@ -20,20 +20,23 @@ const (
 	pidEnvVarName = "GOOGLE_PROJECT_ID"
 )
 
-var (
-	gEnvVars = map[string]string{
-		gacEnvVarName: "",
-		pidEnvVarName: "",
-	}
+type gacT struct {
+	gEnvVars             map[string]string
 	googleCreds          *google.Credentials
 	googleComputeClient  *http.Client
 	googleComputeService *compute.Service
 	accessScopes         []string
 	instNames            *list.List
-)
+}
+
+var gac gacT
 
 func init() {
-	accessScopes = []string{compute.ComputeReadonlyScope}
+	gac.accessScopes = []string{compute.ComputeReadonlyScope}
+	gac.gEnvVars = map[string]string{
+		gacEnvVarName: "",
+		pidEnvVarName: "",
+	}
 }
 
 func theEnvironmentVariable(arg1 string) error {
@@ -41,12 +44,12 @@ func theEnvironmentVariable(arg1 string) error {
 	if err != nil {
 		return err
 	}
-	gEnvVars[arg1] = value
+	gac.gEnvVars[arg1] = value
 	return nil
 }
 
 func iExamineTheContents(arg1 string) error {
-	value, present := gEnvVars[arg1]
+	value, present := gac.gEnvVars[arg1]
 	if !present {
 		return fmt.Errorf("unknown environment variable '%s': '%s'", arg1, value)
 	}
@@ -64,11 +67,11 @@ func iFindTheContents(arg1, arg2 string) error {
 	switch arg1 {
 	case pidEnvVarName:
 		matched = true
-		value = gEnvVars[pidEnvVarName]
+		value = gac.gEnvVars[pidEnvVarName]
 		eDetail = validatePIDEnvVar(value, arg2)
 	case gacEnvVarName:
 		matched = true
-		value = gEnvVars[gacEnvVarName]
+		value = gac.gEnvVars[gacEnvVarName]
 		eDetail = validateGACEnvVarName(value, arg2)
 	}
 	if !matched {
@@ -82,31 +85,32 @@ func iFindTheContents(arg1, arg2 string) error {
 
 // Ref: https://godoc.org/golang.org/x/oauth2/google#DefaultClient
 func iCallTheGoogleCredentialsFromJSONMethod() error {
-	data, err := ioutil.ReadFile(gEnvVars[gacEnvVarName])
+	data, err := ioutil.ReadFile(gac.gEnvVars[gacEnvVarName])
 	if err != nil {
 		return err
 	}
-	creds, err := google.CredentialsFromJSON(context.Background(), data, accessScopes...)
+	goDogGoT.Logf("Loaded JSON credentials")
+	creds, err := google.CredentialsFromJSON(context.Background(), data, gac.accessScopes...)
 	if err != nil {
 		log.Fatal(err)
 	}
-	creds.ProjectID = gEnvVars[pidEnvVarName]
-	googleCreds = creds
+	creds.ProjectID = gac.gEnvVars[pidEnvVarName]
+	gac.googleCreds = creds
 	return nil
 }
 
 func iCallTheOauthNewClient(arg1 int) error {
-	googleComputeClient = oauth2.NewClient(context.Background(), googleCreds.TokenSource)
+	gac.googleComputeClient = oauth2.NewClient(context.Background(), gac.googleCreds.TokenSource)
 	return nil
 }
 
 func iCanCallTheComputeNewMethod() error {
-	svc, err := compute.New(googleComputeClient)
+	svc, err := compute.New(gac.googleComputeClient)
 	if err != nil {
 		return err
 	}
-	googleComputeService = svc
-	googleComputeService.UserAgent = fmt.Sprintf("%s %s %s",
+	gac.googleComputeService = svc
+	gac.googleComputeService.UserAgent = fmt.Sprintf("%s %s %s",
 		"go",
 		"github.com/icuc-me/cloud.git/validate",
 		clientVersion)
@@ -114,13 +118,15 @@ func iCanCallTheComputeNewMethod() error {
 }
 
 func iAmAbleToRetrieveAListOfInstancesFromAllZones() error {
-	instNames = list.New()
-	call := googleComputeService.Instances.AggregatedList(googleCreds.ProjectID)
+	gac.instNames = list.New()
+	call := gac.googleComputeService.Instances.AggregatedList(gac.googleCreds.ProjectID)
+	goDogGoT.Logf("Obtained search handle")
 	err := call.Pages(context.Background(), func(page *compute.InstanceAggregatedList) error {
 		for scopeName, scopes := range page.Items {
+			goDogGoT.Logf("\tChecking %s", scopeName)
 			for _, instance := range scopes.Instances {
-				instNames.PushBack(instance.Name)
-				fmt.Printf("\tFound zone %s: instance %s\n", scopeName, instance.Name)
+				gac.instNames.PushBack(instance.Name)
+				goDogGoT.Logf("\t\tFound %s", instance.Name)
 			}
 		}
 		return nil
@@ -132,8 +138,8 @@ func iAmAbleToRetrieveAListOfInstancesFromAllZones() error {
 }
 
 func theListOfInstancesIsNotEmpty() error {
-	if instNames != nil {
-		if instNames.Len() < 1 {
+	if gac.instNames != nil {
+		if gac.instNames.Len() < 1 {
 			return fmt.Errorf("did not find any compute instances")
 		}
 		return nil
