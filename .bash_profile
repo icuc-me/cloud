@@ -5,7 +5,7 @@ if [ -f ~/.bashrc ]; then
 fi
 
 export HOMEBIN="$HOME/bin"
-export GOPATH="$HOME/go"
+export GOPATH="$HOME/go:/usr/lib/golang:/var/cache/go"
 export GOBIN="$GOPATH/bin"
 export SRCBIN="$SRC_DIR/bin"
 export PATH="/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$HOMEBIN:$GOBIN:$SRCBIN"

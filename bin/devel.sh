@@ -17,6 +17,15 @@ check_usage() {
         die "Error retrieving image name" 3
     elif ! sudo podman images $IMAGE_NAME &> /dev/null
     then
+        IMAGE_TAG=$(echo "$IMAGE_NAME" | cut -d : -f 2)
+        IMAGE_BASE=$(echo "$IMAGE_NAME" | cut -d : -f 1)
+        # Not critical but may save some time
+        for fullname in $IMAGE_BASE:$_LAYER_1 $IMAGE_BASE:$_LAYER_2 $IMAGE_BASE:$_LAYER_3 $IMAGE_BASE:$_LAYER_4 $IMAGE_BASE:$_LAYER_5
+        do
+           sudo podman pull $fullname &
+        done
+        wait || true
+
         sudo podman pull $IMAGE_NAME || \
             $SCRIPT_DIRPATH/buildah_runtime_container_image.sh || \
             die "Error accessing image $IMAGE_NAME"

@@ -5,12 +5,6 @@ set -e
 source "$(dirname $0)/lib.sh"
 
 # Allows packing multiple scripts into one file
-_HOST="9d5a6ad6"
-_LAYER_1="ee51f9f0"  # repos + updates
-_LAYER_2="93e0e02f"  # packaged deps
-_LAYER_3="23cc6743"  # unpackaged deps
-_LAYER_4="0e491b98"  # configuration
-_LAYER_5="a4028aa0"  # entrypoint
 MAGIC="${MAGIC:-$_HOST}"
 INSTALL_RPMS=$(echo \
     "PyYAML \
@@ -21,6 +15,7 @@ INSTALL_RPMS=$(echo \
     git \
     google-cloud-sdk \
     golang \
+    golang-godoc \
     golang-docs \
     make \
     nmap-ncat \
@@ -32,6 +27,7 @@ INSTALL_RPMS=$(echo \
     sudo \
     unzip \
     vim \
+    vim-go \
     wget" | sed -r -e 's/\s+/ /g')
 
 TERRAFORM_URL="https://releases.hashicorp.com/terraform/0.11.11/terraform_0.11.11_linux_amd64.zip"
@@ -147,7 +143,7 @@ then
         die "Error retrieving image name" 5
     fi
 
-    LAYER_AGE="$(image_age layer_1:$_LAYER_1)"
+    LAYER_AGE="$(image_age $IMAGE_BASE:$_LAYER_1)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 28]"
     CHANGED=0
     rebuild_cache_layer 1 \
@@ -155,57 +151,57 @@ then
         "IGNORED" "IGNORED" \
         "$INSTALL_RPMS" \
         "$CHANGED" \
-        "build_layer docker://centos:7 layer_1 $_LAYER_1"
+        "build_layer docker://centos:7 $IMAGE_BASE $_LAYER_1"
 
-    LAYER_AGE="$(image_age layer_2:$_LAYER_2)"
+    LAYER_AGE="$(image_age $IMAGE_BASE:$_LAYER_2)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 14]"
-    LAYER_MAJ_VER="$(image_version layer_2:$_LAYER_2 | cut -d . -f 1)"
-    LAYER_PACKAGES="$(image_packages layer_2:$_LAYER_2)"
+    LAYER_MAJ_VER="$(image_version $IMAGE_BASE:$_LAYER_2 | cut -d . -f 1)"
+    LAYER_PACKAGES="$(image_packages $IMAGE_BASE:$_LAYER_2)"
     rebuild_cache_layer 2 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_MAJ_VER" "$VERSION_MAJ" \
         "$LAYER_PACKAGES" "$CHANGED" \
-        "build_layer layer_1:$_LAYER_1 layer_2 $_LAYER_2"
+        "build_layer $IMAGE_BASE:$_LAYER_1 $IMAGE_BASE $_LAYER_2"
 
-    LAYER_AGE="$(image_age layer_3:$_LAYER_3)"
+    LAYER_AGE="$(image_age $IMAGE_BASE:$_LAYER_3)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 7]"
-    LAYER_MAJ_MIN_VER="$(image_version layer_3:$_LAYER_3 | cut -d . -f 1-2)"
+    LAYER_MAJ_MIN_VER="$(image_version $IMAGE_BASE:$_LAYER_3 | cut -d . -f 1-2)"
     rebuild_cache_layer 3 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_MAJ_MIN_VER" "$VERSION_MAJ_MIN" \
         "$INSTALL_RPMS" "$CHANGED" \
-        "build_layer layer_2:$_LAYER_2 layer_3 $_LAYER_3"
+        "build_layer $IMAGE_BASE:$_LAYER_2 $IMAGE_BASE $_LAYER_3"
 
-    LAYER_AGE="$(image_age layer_4:$_LAYER_4)"
+    LAYER_AGE="$(image_age $IMAGE_BASE:$_LAYER_4)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 3]"
-    LAYER_MAJ_MIN_REV_VER="$(image_version layer_4:$_LAYER_4 | cut -d . -f 1-3 | cut -d - -f 1)"
+    LAYER_MAJ_MIN_REV_VER="$(image_version $IMAGE_BASE:$_LAYER_4 | cut -d . -f 1-3 | cut -d - -f 1)"
     rebuild_cache_layer 4 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_MAJ_MIN_REV_VER" "$VERSION_MAJ_MIN_REV" \
         "$INSTALL_RPMS" "$CHANGED" \
-        "build_layer layer_3:$_LAYER_3 layer_4 $_LAYER_4
+        "build_layer $IMAGE_BASE:$_LAYER_3 $IMAGE_BASE $_LAYER_4
         --entrypoint=[\"/root/bin/as_user.sh\"]"
 
-    LAYER_AGE="$(image_age layer_5:$_LAYER_5)"
+    LAYER_AGE="$(image_age $IMAGE_BASE:$_LAYER_5)"
     LAYER_MAX_AGE="$[60 * 60 * 24 * 1]"
-    LAYER_VER="$(image_version layer_5:$_LAYER_5)"
+    LAYER_VER="$(image_version $IMAGE_BASE:$_LAYER_5)"
     rebuild_cache_layer 5 \
         "$LAYER_AGE" "$LAYER_MAX_AGE" \
         "$LAYER_VER" "$VERSION" \
         "$INSTALL_RPMS" "$CHANGED" \
-        "build_layer layer_4:$_LAYER_4 layer_5 $_LAYER_5"
+        "build_layer $IMAGE_BASE:$_LAYER_4 $IMAGE_BASE $_LAYER_5"
 
-    if ((CHANGED)) || ! sudo podman images $IMAGE_NAME &> /dev/null
+    if ((CHANGED)) || ! sudo podman images $IMAGE_BASE &> /dev/null
     then
-        sudo podman rm $IMAGE_NAME 2> /dev/null || true
+        sudo podman rm $IMAGE_BASE 2> /dev/null || true
         trap cleanup EXIT
-        sudo podman tag layer_5:$_LAYER_5 $IMAGE_NAME
+        sudo podman tag $IMAGE_BASE:$_LAYER_5 $IMAGE_BASE:$IMAGE_TAG
         trap - EXIT
     else
         echo "Skipping tag of layer 4"
     fi
 
-    echo "Image ready for use: $IMAGE_NAME"
+    echo "Image ready for use: $IMAGE_BASE:$IMAGE_TAG"
 
 elif [[ "$MAGIC" == "$_LAYER_1" ]]
 then
@@ -246,9 +242,9 @@ then
     mkdir bin
     curl -LsS https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh
     echo "Caching build dependencies (could take a few minutes)"
-    #go get -v github.com/onsi/ginkgo/ginkgo
-    #go get -v github.com/onsi/gomega/...
-    #go get -v github.com/gruntwork-io/terratest/modules/terraform
+    cd $SRC_DIR/validate
+    go mod download
+    wait
 elif [[ "$MAGIC" == "$_LAYER_5" ]]
 then
     echo "Installing entrypoint script"

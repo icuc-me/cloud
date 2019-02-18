@@ -26,7 +26,7 @@ then
 fi
 
 echo "Recovering cached GOPATH contents"
-rsync --stats --recursive --links \
+rsync --recursive --links \
     --safe-links --sparse \
     "/var/cache/go" "/home/$AS_USER"
 
