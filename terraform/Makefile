@@ -30,8 +30,11 @@ prepare: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.aut
 .PHONY: auto.tfvars
 auto.tfvars: guard-SECRETS_DIR guard-ENV_NAME $(ENV_NAME)/backend.auto.tfvars $(ENV_NAME)/runtime.auto.tfvars
 
+$(ENV_NAME)/n_phases: guard-ENV_NAME guard-N_PHASES
+	echo "$(N_PHASES)" > "$@"
+
 .PHONY: deploy
-deploy: auto.tfvars
+deploy: auto.tfvars $(ENV_NAME)/n_phases
 	@for phase in $$(seq $(S_PHASE) $(N_PHASES)); \
 	do \
 		echo -e "\e[1;36;41m############################################################\e[0m"; \
@@ -69,4 +72,4 @@ teardown: guard-ENV_NAME guard-SECRETS_DIR $(SECRETS_DIR)/$(ENV_NAME)-backend.au
 clean:
 	-for env_name in test stage prod; do \
 		$(MAKE) -C $$env_name clean; \
-		rm -f $$env_name/*.auto.tfvars; done
+		rm -f $$env_name/*.auto.tfvars $$env_name/n_phases; done

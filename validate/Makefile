@@ -18,10 +18,17 @@ GOPATH=$(shell go env GOPATH))
 GOBIN=$(shell go env GOBIN))
 PROJECT=github.com/icuc-me/cloud/validate
 SRC_DIR=$(shell realpath "../")
+TF_CFG_DIR=$(SRC_DIR)/terraform/test
 # TODO: OVERIDE this from value provided by CI system
 ANCESTOR_BRANCH_COMMIT?=$(shell git merge-base origin/master HEAD)
 SEED=$(shell date +%s)
-TESTVERBOSE?=0
+
+VERBOSE?=0
+ifeq ($(VERBOSE),0)
+GODOGARGS=-godog.format=progress -godog.concurrency=4
+else
+GODOGARGS=-test.v -godog.format=pretty -godog.concurrency=1
+endif
 
 .PHONY: clean
 clean:
@@ -63,12 +70,14 @@ validate.test: .pathok .gofmt
 # ref: https://github.com/alecthomas/gometalinter
 lint: .pathok .gofmt validate.test
 	gometalinter \
-		--line-length=140 --misspell-locale=en.US --tests --aggregate --enable-gc \
+		--line-length=140 --misspell-locale=en.US --tests --aggregate --enable-gc --cyclo-over=20 \
 		--disable=megacheck \
 		--disable=gochecknoinits \
 		--disable=unparam \
 		--disable=varcheck \
 		--disable=structcheck \
+		--exclude='requiredOutputKeys.+global variable' \
+		--exclude='envVars.+global variable' \
 		--exclude='validate_test.go.+file is not goimported' \
 		--exclude='test_utils.go.+is unused' \
 		--exclude='cannot find package' \
@@ -77,6 +86,7 @@ lint: .pathok .gofmt validate.test
 		--exclude='gOOGLE_APPLICATION_CREDENTIALS.+should be' \
 		--exclude='underscores.+GOOGLE_APPLICATION_CREDENTIALS' \
 		--exclude='underscores.+GOOGLE_PROJECT_ID' \
+		--exclude='underscores.+N_phases' \
 		./...
 	@touch lint
 
@@ -92,10 +102,8 @@ validate: .pathok .gofmt ../secrets/test-backend.auto.tfvars validate.test
 	env \
 		GOOGLE_APPLICATION_CREDENTIALS="$(shell awk -F \" -e '/credentials = "/{print $$2}' ../secrets/test-backend.auto.tfvars)" \
 		GOOGLE_PROJECT_ID="$(shell awk -F \" -e '/project = "/{print $$2}' ../secrets/test-backend.auto.tfvars)" \
+		TF_CFG_DIR=$(TF_CFG_DIR) \
 		./validate.test \
-			$(shell test $(TESTVERBOSE) -eq 0 || echo "-test.v") \
 			-test.parallel=1 \
 			-godog.random=$(SEED) \
-			-godog.strict \
-			-godog.format=progress \
-			-godog.concurrency=4
+			$(GODOGARGS)

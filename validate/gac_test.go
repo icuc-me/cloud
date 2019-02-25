@@ -5,96 +5,64 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"strings"
 
 	"github.com/DATA-DOG/godog"
+	"github.com/gruntwork-io/terratest/modules/logger"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 )
 
-const (
-	clientVersion = "1.0"
-	gacEnvVarName = "GOOGLE_APPLICATION_CREDENTIALS"
-	pidEnvVarName = "GOOGLE_PROJECT_ID"
-)
-
-type gacT struct {
-	gEnvVars             map[string]string
+var gac struct {
 	googleCreds          *google.Credentials
 	googleComputeClient  *http.Client
 	googleComputeService *compute.Service
 	accessScopes         []string
 	instNames            *list.List
+	gacIsGood            bool
 }
-
-var gac gacT
 
 func init() {
 	gac.accessScopes = []string{compute.ComputeReadonlyScope}
-	gac.gEnvVars = map[string]string{
+	envVars = map[string]string{
 		gacEnvVarName: "",
 		pidEnvVarName: "",
 	}
+	gac.gacIsGood = false
 }
 
 func theEnvironmentVariable(arg1 string) error {
-	value, err := fullEnvVar(arg1)
-	if err != nil {
-		return err
-	}
-	gac.gEnvVars[arg1] = value
-	return nil
+	return knownEnvVar(arg1)
 }
 
-func iExamineTheContents(arg1 string) error {
-	value, present := gac.gEnvVars[arg1]
-	if !present {
-		return fmt.Errorf("unknown environment variable '%s': '%s'", arg1, value)
+func theEnvVarContents(arg1, arg2 string) error {
+	var err error
+	arg1 = strings.TrimSpace(arg1)
+	arg2 = strings.TrimSpace(arg2)
+	if envVars[arg1], err = fullEnvVar(arg1); err != nil {
+		return validateEnvVar(envVars[arg1], arg2)
 	}
-	if len(value) < 1 {
-		return fmt.Errorf("'%s' contains empty string", arg1)
-	}
-	return nil
-}
-
-func iFindTheContents(arg1, arg2 string) error {
-	var eDetail string
-	var matched bool
-	value := "undefined value"
-
-	switch arg1 {
-	case pidEnvVarName:
-		matched = true
-		value = gac.gEnvVars[pidEnvVarName]
-		eDetail = validatePIDEnvVar(value, arg2)
-	case gacEnvVarName:
-		matched = true
-		value = gac.gEnvVars[gacEnvVarName]
-		eDetail = validateGACEnvVarName(value, arg2)
-	}
-	if !matched {
-		eDetail = "unknown value"
-	}
-	if eDetail != "" {
-		return fmt.Errorf("%s: %s", eDetail, value)
-	}
-	return nil
+	return err
 }
 
 // Ref: https://godoc.org/golang.org/x/oauth2/google#DefaultClient
 func iCallTheGoogleCredentialsFromJSONMethod() error {
-	data, err := ioutil.ReadFile(gac.gEnvVars[gacEnvVarName])
+	var err error
+	var data []byte
+	var creds *google.Credentials
+
+	data, err = ioutil.ReadFile(envVars[gacEnvVarName])
 	if err != nil {
 		return err
 	}
-	goDogGoT.Logf("Loaded JSON credentials")
-	creds, err := google.CredentialsFromJSON(context.Background(), data, gac.accessScopes...)
+	logger.Logf(goDogGoT, "Loaded JSON credentials")
+	creds, err = google.CredentialsFromJSON(context.Background(), data, gac.accessScopes...)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	creds.ProjectID = gac.gEnvVars[pidEnvVarName]
+	creds.ProjectID = envVars[pidEnvVarName]
 	gac.googleCreds = creds
 	return nil
 }
@@ -118,17 +86,27 @@ func iCanCallTheComputeNewMethod() error {
 }
 
 func iAmAbleToRetrieveAListOfInstancesFromAllZones() error {
+	if err := theListOfInstancesIsNotEmpty(); err == nil {
+		return nil
+	}
 	gac.instNames = list.New()
+	if gac.googleCreds == nil {
+		return fmt.Errorf("Google API Credientials are undefined")
+	}
+	if gac.googleCreds.ProjectID == "" {
+		return fmt.Errorf("project ID is undefined")
+	}
 	call := gac.googleComputeService.Instances.AggregatedList(gac.googleCreds.ProjectID)
-	goDogGoT.Logf("Obtained search handle")
+	logger.Logf(goDogGoT, "Obtained search handle")
 	err := call.Pages(context.Background(), func(page *compute.InstanceAggregatedList) error {
 		for scopeName, scopes := range page.Items {
-			goDogGoT.Logf("\tChecking %s", scopeName)
 			for _, instance := range scopes.Instances {
 				gac.instNames.PushBack(instance.Name)
-				goDogGoT.Logf("\t\tFound %s", instance.Name)
+				logger.Logf(goDogGoT, "\tChecking %s", scopeName)
+				logger.Logf(goDogGoT, "\t\tFound %s", instance.Name)
 			}
 		}
+		gac.gacIsGood = true
 		return nil
 	})
 	if err != nil {
@@ -147,14 +125,20 @@ func theListOfInstancesIsNotEmpty() error {
 	return fmt.Errorf("list of instance names unexpectedly empty")
 }
 
-func FeatureContext(s *godog.Suite) {
+func iKnowICanInteractWithTheGoogleAPIs() error {
+	if gac.gacIsGood {
+		return nil
+	}
+	return fmt.Errorf("no working oauth client or api service defined")
+}
+
+func GacFeatureContext(s *godog.Suite) {
 	s.Step(`^the environment variable "([^"]*)"$`, theEnvironmentVariable)
-	s.Step(`^I examine the "([^"]*)" contents$`, iExamineTheContents)
-	s.Step(`^I find the "([^"]*)" contents "([^"]*)"$`, iFindTheContents)
+	s.Step(`^the env\. var\. "([^"]*)" contents "([^"]*)"$`, theEnvVarContents)
 	s.Step(`^I call the google\.CredentialsFromJSON method$`, iCallTheGoogleCredentialsFromJSONMethod)
 	s.Step(`^I call the oauth(\d+)\.NewClient$`, iCallTheOauthNewClient)
 	s.Step(`^I can call the compute\.New method$`, iCanCallTheComputeNewMethod)
 	s.Step(`^I am able to retrieve a list of instances from all zones$`, iAmAbleToRetrieveAListOfInstancesFromAllZones)
 	s.Step(`^the list of instances is not empty$`, theListOfInstancesIsNotEmpty)
-
+	s.Step(`^I know I can interact with the google APIs$`, iKnowICanInteractWithTheGoogleAPIs)
 }

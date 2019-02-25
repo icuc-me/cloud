@@ -9,6 +9,31 @@ import (
 	"strings"
 )
 
+const (
+	clientVersion = "1.0"
+	gacEnvVarName = "GOOGLE_APPLICATION_CREDENTIALS"
+	pidEnvVarName = "GOOGLE_PROJECT_ID"
+	tfCfgDir      = "TF_CFG_DIR"
+	phaseFname    = "n_phases"
+)
+
+var envVars map[string]string
+var requiredOutputKeys = [...]string{
+	"gateway_external_ip",
+	"gateway_private_ip",
+	"private_network",
+	"public_network",
+	"strongbox_uris",
+	"uuid",
+}
+
+func knownEnvVar(name string) error {
+	if name == gacEnvVarName || name == pidEnvVarName || name == tfCfgDir {
+		return nil
+	}
+	return fmt.Errorf("unknown environment variable '%s'", name)
+}
+
 func fullEnvVar(name string) (value string, err error) {
 	var present bool
 	var fullValue string
@@ -24,52 +49,55 @@ func fullEnvVar(name string) (value string, err error) {
 	return value, err
 }
 
-func validatePIDEnvVar(value, test string) string {
+func validateEnvVar(value, test string) error {
 	switch test {
 	case "are 6 to 30 lowercase letters, digits, or hyphens":
 		if len(value) < 6 || len(value) > 30 {
-			return "shorter than 6 or longer than 30"
+			return fmt.Errorf("shorter than 6 or longer than 30")
 		}
 		if strings.ToLower(value) != value {
-			return "not lowercase"
+			return fmt.Errorf("not lowercase")
 		}
 		validPID := regexp.MustCompile(`^[a-z0-9\-]+$`)
 		if !validPID.Match([]byte(value)) {
-			return "not lowercase letters, digits or hyphens"
+			return fmt.Errorf("not lowercase letters, digits or hyphens")
 		}
-		return ""
+		return nil
 	case "begin with a letter":
 		validPID := regexp.MustCompile(`^[a-z]`)
 		if !validPID.Match([]byte(value)) {
-			return "not lowercase letter"
+			return fmt.Errorf("not lowercase letter")
 		}
-		return ""
+		return nil
 	case "do not end with a hyphen":
 		validPID := regexp.MustCompile(`-$`)
 		if validPID.Match([]byte(value)) {
-			return "ends in hyphen"
+			return fmt.Errorf("ends in hyphen")
 		}
-		return ""
-	}
-	return fmt.Sprintf("undefined test '%s'", test)
-}
-
-func validateGACEnvVarName(value, test string) string {
-	if test == "are the path to a readable file" {
+		return nil
+	case "are the path to a readable file":
 		gacFile, err := os.Open(value)
-		if err == nil {
-			gacJSON := json.NewDecoder(gacFile)
-			for complexity := 0; true; complexity++ {
-				var i interface{}
-				jerr := gacJSON.Decode(&i)
-				if jerr == io.EOF && complexity > 0 {
-					return ""
-				} else if jerr == io.EOF {
-					return fmt.Sprintf("expected non-empty json in %s", value)
-				}
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, value)
+		}
+		gacJSON := json.NewDecoder(gacFile)
+		for nDecodes := 0; true; nDecodes++ {
+			var i interface{}
+			jerr := gacJSON.Decode(&i)
+			if jerr == io.EOF && nDecodes > 0 {
+				return nil
+			} else if jerr == io.EOF {
+				return fmt.Errorf("expected non-empty json in %s", value)
 			}
 		}
-		return fmt.Sprintf("%s: %s", err, value)
+		return fmt.Errorf("%s: %s", err, value)
+	case "referrs to a directory":
+		if info, err := os.Stat(value); os.IsNotExist(err) {
+			return err
+		} else if info.IsDir() {
+			return nil
+		}
+		return fmt.Errorf("not a directory: %s", value)
 	}
-	return fmt.Sprintf("undefined test '%s'", test)
+	return fmt.Errorf("undefined test '%s'", test)
 }

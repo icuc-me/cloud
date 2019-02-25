@@ -235,12 +235,14 @@ then
     install -D -m 755 ./terraform /usr/local/bin/
 elif [[ "$MAGIC" == "$_LAYER_4" ]]
 then
-    echo "Installing Go Meta Linter"
     export GOPATH=/var/cache/go
     mkdir -p "$GOPATH"
     cd "$GOPATH"
     mkdir bin
+    echo "Installing Go Meta Linter"
     curl -LsS https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh
+    echo "Installing Go Dog"
+    go get github.com/DATA-DOG/godog/cmd/godog
     echo "Caching build dependencies (could take a few minutes)"
     cd $SRC_DIR/validate
     go mod download
