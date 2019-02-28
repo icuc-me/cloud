@@ -6,6 +6,9 @@ env_name: "prod"
 
 suser_display_name: "Sal Eiseman"
 
+ci_suser_display_name: "CI Automation Account"
+ci_susernamer: "ciuser01"
+
 # Terraform 0.11 cannot accept anything except strings
 test_roles_members_bindings: >-
     roles/compute.admin=some young guy,other dude;

@@ -18,15 +18,15 @@ data "google_compute_regions" "available" {}
 
 data "google_client_config" "current" {}
 
-module "subnet_cidrs" {
-    source = "../subnet_cidrs"
-    env_uuid = "${var.env_uuid}"
-    count = "${local.nr_regions * 2}"
+locals {
+    regions = ["${sort(compact(data.google_compute_regions.available.names))}"]
+    nr_regions = "${length(local.regions)}"
 }
 
-locals {
-    regions = ["${data.google_compute_regions.available.names}"]
-    nr_regions = "${length(local.regions)}"
+module "subnet_cidrs" {
+    source = "./subnet_cidrs"
+    count = "${local.nr_regions * 2}"
+    env_uuid = "${var.env_uuid}"
 }
 
 /**** PUBLIC ****/
@@ -46,12 +46,11 @@ resource "google_compute_subnetwork" "default" {
     ip_cidr_range = "${element(module.subnet_cidrs.set, count.index)}"
     network = "${google_compute_network.default.self_link}"
     private_ip_google_access = "true"  // Allow access to google APIs
-    // lifecycle { ignore_changes = ["ip_cidr_range"] }
 }
 
 // possible not all resources were created
 data "google_compute_subnetwork" "default" {
-    count = "${length(google_compute_subnetwork.default.*.name)}"
+    count = "${local.nr_regions}"
     name = "${google_compute_subnetwork.default.*.name[count.index]}"
     region = "${google_compute_subnetwork.default.*.region[count.index]}"
 }
@@ -63,8 +62,8 @@ resource "google_compute_firewall" "default-in" {
     direction = "INGRESS"
 
     allow { protocol = "icmp" }
-    allow { protocol = "tcp" ports = ["${var.default_tcp_ports}"] }
-    allow { protocol = "udp" ports = ["${var.default_udp_ports}"] }
+    allow { protocol = "tcp" ports = ["${sort(var.default_tcp_ports)}"] }
+    allow { protocol = "udp" ports = ["${sort(var.default_udp_ports)}"] }
 }
 
 resource "google_compute_firewall" "default-out" {
@@ -74,12 +73,12 @@ resource "google_compute_firewall" "default-out" {
 
     destination_ranges = ["0.0.0.0/0"]
 
+    allow { protocol = "ah" }
+    allow { protocol = "esp" }
     allow { protocol = "icmp" }
+    allow { protocol = "sctp" }
     allow { protocol = "tcp" }
     allow { protocol = "udp" }
-    allow { protocol = "esp" }
-    allow { protocol = "ah" }
-    allow { protocol = "sctp" }
 }
 
 /**** PRIVATE ****/
@@ -98,12 +97,11 @@ resource "google_compute_subnetwork" "private" {
     ip_cidr_range = "${element(module.subnet_cidrs.set, local.nr_regions + count.index)}"
     network = "${google_compute_network.private.self_link}"
     private_ip_google_access = "true"  // Allow access to google APIs
-    // lifecycle { ignore_changes = ["ip_cidr_range"] }
 }
 
 // possible not all resources were created
 data "google_compute_subnetwork" "private" {
-    count = "${length(google_compute_subnetwork.private.*.name)}"
+    count = "${local.nr_regions}"
     name = "${google_compute_subnetwork.private.*.name[count.index]}"
     region = "${google_compute_subnetwork.private.*.region[count.index]}"
 }
@@ -115,14 +113,14 @@ resource "google_compute_firewall" "private-allow-in" {
     direction = "INGRESS"
 
     // subnetwork cidr range definitions lifecycle ignored but rule must be correct
-    source_ranges = ["${data.google_compute_subnetwork.private.*.ip_cidr_range}"]
+    source_ranges = ["${sort(data.google_compute_subnetwork.private.*.ip_cidr_range)}"]
 
+    allow { protocol = "ah" }
+    allow { protocol = "esp" }
     allow { protocol = "icmp" }
+    allow { protocol = "sctp" }
     allow { protocol = "tcp" }
     allow { protocol = "udp" }
-    allow { protocol = "esp" }
-    allow { protocol = "ah" }
-    allow { protocol = "sctp" }
 }
 
 resource "google_compute_firewall" "private-allow-out" {
@@ -132,12 +130,12 @@ resource "google_compute_firewall" "private-allow-out" {
 
     destination_ranges = ["0.0.0.0/0"]
 
+    allow { protocol = "ah" }
+    allow { protocol = "esp" }
     allow { protocol = "icmp" }
+    allow { protocol = "sctp" }
     allow { protocol = "tcp" }
     allow { protocol = "udp" }
-    allow { protocol = "esp" }
-    allow { protocol = "ah" }
-    allow { protocol = "sctp" }
 }
 
 locals {

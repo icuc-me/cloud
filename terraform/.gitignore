@@ -1,7 +1,0 @@
-*/.terraform/**
-*/backend.auto.tfvars
-*/uuid.auto.tfvars
-*/provider.auto.tfvars
-*/runtime.auto.tfvars
-*/plan
-*/*tfstate*

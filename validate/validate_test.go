@@ -47,7 +47,8 @@ func OrderedTest(first bool, t *testing.T) {
 	}
 	goDogGoT = t
 	status := godog.RunWithOptions("godogs", func(s *godog.Suite) {
-		FeatureContext(s)
+		GacFeatureContext(s)
+		WorkspaceFeatureContext(s)
 	}, opt)
 	if status > 0 {
 		t.FailNow()

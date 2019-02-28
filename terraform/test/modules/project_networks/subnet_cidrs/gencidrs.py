@@ -1,7 +1,14 @@
 #!/bin/env python3
 
+"""
+Given a seed and count, output a uniform list of pseudo-random cidrs
+
+Input must be a JSON map with values for the keys 'seed_string' and 'count'.
+Output will be a JSON map with a single 'csv' key containing the cidr list.
+The output list is guaranteed to be uniform, given identical input seed and count.
+"""
+
 import sys
-import fcntl
 import io
 import binascii
 import random
@@ -31,34 +38,14 @@ class CidrCache:
 
     def __init__(self, string_seed):
         self.used_cidrs = set()
-
-        try:
-            self.cachefile = io.open("/tmp/.cidrcache", "rt+")
-        except FileNotFoundError:
-            self.cachefile = io.open("/tmp/.cidrcache", "xt+")
-
+        # Rules for generating each cidr's set of bits
         self.cidr_sets = (set([10]),
                           set(range(0,128)) | set(range(129, 256)), # 128 is reserved
                           set(range(0,128)) | set(range(129, 256)), # 128 is reserved
                           set(range(0,128)) | set(range(129, 256)), # 128 is reserved
                           set([26]))
-
         crc32 = binascii.crc32(bytes(seed_string, encoding='utf-8')) & 0xFFFFFFFF
         self.random = random.Random(crc32)
-
-    def fill(self):
-        fcntl.flock(self.cachefile, fcntl.LOCK_EX)  # blocking
-        for line in self.cachefile.readlines():
-            line = ipaddress.IPv4Network(line.strip()).with_prefixlen
-            self.used_cidrs.add(line)
-
-    def flush(self, add_cidrs):
-        self.cachefile.seek(0)
-        self.cachefile.truncate(0)
-        self.used_cidrs |= set(add_cidrs)
-        for cidr in self.used_cidrs:
-            self.cachefile.write('{}\n'.format(cidr))
-        fcntl.flock(self.cachefile, fcntl.LOCK_UN)
 
     def _rand_cidr(self):
         cidr_bytes = [self.random.choice(tuple(self.cidr_sets[n])) for n in range(5)]
@@ -87,8 +74,6 @@ class CidrCache:
 if __name__ == "__main__":
     count, seed_string = validate_input(json.load(sys.stdin))
     cache = CidrCache(seed_string)
-    cache.fill()
     cidrs = [cache.getone() for n in range(count)]
     sys.stdout.write(json.dumps(dict(csv=",".join(cidrs)), skipkeys=True,
                                 allow_nan=False, separators=(',',':')))
-    cache.flush(cidrs)
