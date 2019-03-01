@@ -10,11 +10,6 @@ variable "strongkeys" {
     type = "map"
 }
 
-variable "readers" {
-    description = "Map of env. names (test, stage, prod) to service account e-mails"
-    type = "map"
-}
-
 variable "force_destroy" {
     description = "Should the strongbox bucket be force-destroyed"
     default = "0"
@@ -34,8 +29,7 @@ resource "google_storage_bucket" "boxbucket" {
 data "external" "test_contents" {
     program = ["env", "${path.module}/strongbox.py"]
     query = {
-        plaintext = "${file("${path.root}/test-strongbox.yml")}"
-        strongbox = "${var.strongbox}"
+        plaintext = "${file("${path.root}/../test-strongbox.yml")}"
         strongkey = "${var.strongkeys["test"]}"
     }
 }
@@ -43,8 +37,7 @@ data "external" "test_contents" {
 data "external" "stage_contents" {
     program = ["env", "${path.module}/strongbox.py"]
     query = {
-        plaintext = "${file("${path.root}/stage-strongbox.yml")}"
-        strongbox = "${var.strongbox}"
+        plaintext = "${file("${path.root}/../stage-strongbox.yml")}"
         strongkey = "${var.strongkeys["stage"]}"
     }
 }
@@ -52,53 +45,40 @@ data "external" "stage_contents" {
 data "external" "prod_contents" {
     program = ["env", "${path.module}/strongbox.py"]
     query = {
-        plaintext = "${file("${path.root}/prod-strongbox.yml")}"
-        strongbox = "${var.strongbox}"
+        plaintext = "${file("${path.root}/../prod-strongbox.yml")}"
         strongkey = "${var.strongkeys["prod"]}"
     }
 }
 
 module "test_strongbox" {
     providers = { google = "google" }
-    source = "../strongbox"
+    source = "./strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
     strongbox_name = "test-strongbox.json.bz2.pgp"
-    readers = "${compact(var.readers["test"])}"
     box_content = "${data.external.test_contents.result["encrypted"]}"
 }
 
 module "stage_strongbox" {
     providers = { google = "google" }
-    source = "../strongbox"
+    source = "./strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
     strongbox_name = "stage-strongbox.json.bz2.pgp"
-    readers = "${compact(var.readers["stage"])}"
     box_content = "${data.external.stage_contents.result["encrypted"]}"
 }
 
 module "prod_strongbox" {
     providers = { google = "google" }
-    source = "../strongbox"
+    source = "./strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
     strongbox_name = "prod-strongbox.json.bz2.pgp"
-    readers = "${compact(var.readers["prod"])}"
     box_content = "${data.external.prod_contents.result["encrypted"]}"
 }
 
-resource "google_storage_bucket_iam_binding" "strongbox" {
-    bucket = "${google_storage_bucket.boxbucket.name}"
-    role = "roles/storage.objectViewer"
-    members = ["${formatlist("serviceAccount:%s",
-                             compact(concat(var.readers["test"],
-                                            var.readers["stage"],
-                                            var.readers["prod"])))}"]
-}
-
-output "filenames" {
+output "uris" {
     value = {
-        test  = "${basename(module.test_strongbox.uri)}"
-        stage = "${basename(module.stage_strongbox.uri)}"
-        prod  = "${basename(module.prod_strongbox.uri)}"
+        test  = "${module.test_strongbox.uri}"
+        stage = "${module.stage_strongbox.uri}"
+        prod  = "${module.prod_strongbox.uri}"
     }
     sensitive = true
 }

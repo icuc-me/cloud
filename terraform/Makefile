@@ -40,7 +40,7 @@ deploy: auto.tfvars $(ENV_NAME)/n_phases
 		echo -e "\e[1;36;41m############################################################\e[0m"; \
 		echo "                      Deploy phase $$phase of $(N_PHASES)"; \
 		echo -e "\e[1;36;41m############################################################\e[0m"; \
-		$(MAKE) -C $(ENV_NAME) PHASE=$$phase; \
+		$(MAKE) -C $(ENV_NAME) PHASE=$$phase || exit 29; \
 	done;
 
 .PHONY: destroy

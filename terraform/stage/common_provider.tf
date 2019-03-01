@@ -14,10 +14,10 @@ provider "template" {
 
 provider "google" {
     version = "~> 1.20"
-    credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
-    project = "${var.STAGE_SECRETS["PROJECT"]}"
-    region = "${var.STAGE_SECRETS["REGION"]}"
-    zone = "${var.STAGE_SECRETS["ZONE"]}"
+    credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
+    project = "${var.TEST_SECRETS["PROJECT"]}"
+    region = "${var.TEST_SECRETS["REGION"]}"
+    zone = "${var.TEST_SECRETS["ZONE"]}"
 }
 
 // Aliases for all environments

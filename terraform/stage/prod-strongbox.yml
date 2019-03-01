@@ -1,0 +1,26 @@
+---
+
+# N/B: TEST VALUES: NOT ACTUALLY USED
+
+env_name: "prod"
+
+suser_display_name: "Simpson Doh"
+
+ci_suser_display_name: "CI Automation User"
+ci_susernamer: "ciuser03"
+
+# Terraform 0.11 cannot accept anything except strings
+test_roles_members_bindings: >-
+    roles/compute.admin=some young guy,other dude;
+    roles/storage.admin=other dude, super-man;
+
+stage_roles_members_bindings: >-
+    roles/compute.admin=some young guy,other dude;
+    roles/storage.admin=other dude, super-man;
+
+prod_roles_members_bindings: >-
+    roles/storage.admin=other dude, super-man;
+    roles/compute.admin=some young guy,other dude;
+
+tcp_fw_ports: "rr"
+udp_fw_ports: "gg"
