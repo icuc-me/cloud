@@ -23,10 +23,10 @@ output "test_service_account" {
 //     create = "${local.is_prod}"
 // }
 //
-//output "stage_service_account" {
-//    value = "${module.stage_service_account.email}"
-//    sensitive = true
-//}
+// output "stage_service_account" {
+//     value = "${module.stage_service_account.email}"
+//     sensitive = true
+// }
 
 /**** PROD ****/
 // module "prod_service_account" {
@@ -37,10 +37,10 @@ output "test_service_account" {
 //     create = "${local.is_prod}"
 // }
 //
-//output "prod_service_account" {
-//    value = "${module.prod_service_account.email}"
-//    sensitive = true
-//}
+// output "prod_service_account" {
+//     value = "${module.prod_service_account.email}"
+//     sensitive = true
+// }
 
 output "uuid" {
     value = "${var.UUID}"
