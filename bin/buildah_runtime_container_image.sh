@@ -241,8 +241,29 @@ then
     mkdir bin
     echo "Installing Go Meta Linter"
     curl -LsS https://raw.githubusercontent.com/alecthomas/gometalinter/master/scripts/install.sh | sh
-    echo "Installing Go Dog"
-    go get github.com/DATA-DOG/godog/cmd/godog
+    echo "Installing go tooling"
+    for name in github.com/DATA-DOG/godog/cmd/godog \
+                github.com/zmb3/gogetdoc \
+                golang.org/x/tools/cmd/guru \
+                golang.org/x/lint/golint \
+                github.com/davidrjenni/reftools/cmd/fillstruct \
+                github.com/rogpeppe/godef \
+                github.com/fatih/motion \
+                github.com/kisielk/errcheck \
+                github.com/mdempsky/gocode \
+                github.com/josharian/impl \
+                github.com/koron/iferr \
+                github.com/jstemmer/gotags \
+                golang.org/x/tools/cmd/gorename \
+                golang.org/x/tools/cmd/goimports \
+                github.com/stamblerre/gocode \
+                github.com/fatih/gomodifytags \
+                honnef.co/go/tools/cmd/keyify \
+                github.com/klauspost/asmfmt/cmd/asmfmt
+    do
+        go get $name
+    done
+
     echo "Caching build dependencies (could take a few minutes)"
     cd $SRC_DIR/validate
     go mod download

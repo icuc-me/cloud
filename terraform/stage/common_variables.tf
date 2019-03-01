@@ -31,6 +31,7 @@ variable "TEST_SECRETS" {
         CREDENTIALS = ""
         SUSERNAME = ""
         PROJECT = ""
+        PREFIX = ""
         STRONGBOX = ""
         STRONGKEY = ""
         REGION = ""
@@ -47,6 +48,7 @@ variable "STAGE_SECRETS" {
         CREDENTIALS = ""
         SUSERNAME = ""
         PROJECT = ""
+        PREFIX = ""
         STRONGBOX = ""
         STRONGKEY = ""
         REGION = ""
@@ -63,6 +65,7 @@ variable "PROD_SECRETS" {
         CREDENTIALS = ""
         SUSERNAME = ""
         PROJECT = ""
+        PREFIX = ""
         STRONGBOX = ""
         STRONGKEY = ""
         REGION = ""
@@ -86,13 +89,11 @@ locals {
                       ? 1
                       : 0}"
     _src_version = { SRC_VERSION = "${var.SRC_VERSION}" }
+    // self = "${merge(var.TEST_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
     self = "${merge(var.STAGE_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
+    // self = "${merge(var.PHASE_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
 
-    strongbox_readers = { // NEEDS PER-ENV MODIFICATION
-        test = ["${module.test_service_account.email}"],
-        stage = [],
-        prod= []
-    }
+    mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for test env.
 
     strongkeys = {
         test = "${local.is_prod == 1
@@ -105,6 +106,4 @@ locals {
                   ? var.PROD_SECRETS["STRONGKEY"]
                   : "PRODY-MC-PRODFACE"}"
     }
-
-    mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for test env.
 }
