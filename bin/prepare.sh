@@ -43,7 +43,7 @@ create_bucket() {
 teardown_bucket() {
     if gsutil ls | grep "$bucket"
     then
-        gsutil rm -arf gs://$bucket
+        gsutil -m rm -arf gs://$bucket
     else
         echo "Bucket $bucket doesn't exist"
     fi

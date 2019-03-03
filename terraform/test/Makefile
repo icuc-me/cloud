@@ -3,7 +3,7 @@ _DOT_PHASE=.$(_PHASE)
 _PLAN_TXT=$(_DOT_PHASE)/plan.output
 SRCFILES=$(shell ls -1 $(_PHASE)*.tf common*.tf *.yml)
 
-all: $(_DOT_PHASE)/apply
+all: guard-PHASE $(_DOT_PHASE)/apply
 
 $(_DOT_PHASE): guard-PHASE backend.auto.tfvars
 	mkdir -p "$@"

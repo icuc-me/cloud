@@ -14,5 +14,11 @@ test_roles_members_bindings: >-
     roles/compute.admin=some young guy,other dude;
     roles/storage.admin=other dude, super-man;
 
+env_readers: >-
+    test=value1a,value1b,xxxx,value1c,xxxx;
+    stage=value2a,xxxx,value2b,xxxx,value2c;
+    prod=value3a,value3b,xxxx,value3c;
+    test=this_value_should_not_be_processed;
+
 tcp_fw_ports: "gg"
 udp_fw_ports: "hh"
