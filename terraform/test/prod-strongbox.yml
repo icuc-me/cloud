@@ -22,5 +22,11 @@ prod_roles_members_bindings: >-
     roles/storage.admin=other dude, super-man;
     roles/compute.admin=some young guy,other dude;
 
+env_readers: >-
+    stage=value1a,value1b,xxxx,value1c,xxxx;
+    prod=value2a,xxxx,value2b,xxxx,value2c;
+    stage=this_value_should_not_be_processed;
+    test=value3a,value3b,xxxx,value3c;
+
 tcp_fw_ports: "zz"
 udp_fw_ports: "th"

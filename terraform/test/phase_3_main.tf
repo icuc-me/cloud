@@ -14,49 +14,13 @@ locals {
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
 }
 
-
-// TODO: move to phase 1 and make passive outside of prod
-//       + get strongbox readers-list from strongbox
-
-/* NEEDS PER-ENV MODIFICATION */
 module "test_ci_svc_act" {
     source = "./modules/service_account"
     providers { google = "google.test" }
     env_name = "${var.ENV_NAME}"
-    // Fake names could conflict outside of prod
-    susername = "${local.strongbox_contents["ci_susername"]}${var.ENV_NAME == "prod"
-                                                              ? ""
-                                                              : "-"}${var.ENV_NAME == "prod"
-                                                                      ? ""
-                                                                      : var.UUID}"
+    susername = "${local.strongbox_contents["ci_susername"]}"
     sdisplayname = "${local.strongbox_contents["ci_suser_display_name"]}"
-    create = "1"
-}
-// module "stage_ci_svc_act" {
-//     source = "./modules/service_account"
-//     providers { google = "google.stage" }
-//     env_name = "${var.ENV_NAME}"
-//     susername = "${local.strongbox_contents["ci_susername"]}"
-//     sdisplayname = "${local.strongbox_contents["ci_suser_display_name"]}"
-//     create = "1"
-// }
-// module "prod_ci_svc_act" {
-//     source = "./modules/service_account"
-//     providers { google = "google.prod" }
-//     env_name = "${var.ENV_NAME}"
-//     susername = "${local.strongbox_contents["ci_susername"]}"
-//     sdisplayname = "${local.strongbox_contents["ci_suser_display_name"]}"
-//     create = "1"
-// }
-
-output "ci_svc_acts" {
-    value = {
-        /* NEEDS PER-ENV MODIFICATION */
-        test = "${module.test_ci_svc_act.email}"
-        // stage = "${module.stage_ci_svc_act.email}"
-        // prod = "${module.prod_ci_svc_act.email}"
-    }
-    sensitive = true
+    create = "${local.is_prod}"
 }
 
 module "project_networks" {

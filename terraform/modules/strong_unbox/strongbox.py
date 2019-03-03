@@ -114,6 +114,6 @@ if __name__ == "__main__":
                 plain_text = decrypt(crypt_pipe, key_pipe)
                 sys.stdout.write(validate_json(plain_text))
             except CalledProcessError:
-                errout("Decryption of {} failed with key {}"
-                       "".format(query['strongbox'], query['strongkey']))
+                errout("Decryption of {} failed"
+                       "".format(query['strongbox']))
                 raise

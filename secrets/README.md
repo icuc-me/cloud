@@ -75,9 +75,13 @@ files - one per environment.  Each must contain the following values:
 * ``test_roles_members_bindings`` - see below
 * ``stage_roles_members_bindings`` - see below
 * ``prod_roles_members_bindings`` - Terraform 0.11 cannot accept anything except
-  but effectively these are each dictionaries containing a list of strongs.
+  strings.  These are each encoded dictionaries containing a list of strings.
   The dictionaries are separated by `;`, the key and value by '=', and list items by ','.
   Keys should be the names of canned or custom Google IAM roles.  Items are a list
   of identities assigned to the role.  See the
   [terraform google_project_iam_binding documentation](https://www.terraform.io/docs/providers/google/r/google_project_iam.html#google_project_iam_binding)
   for the required identity format.
+* ``env_readers`` - Similar format to ``prod_roles_members_bindings`` above.  A
+  string-encoded dictionary containing three keys: `test`, `stage`, and `prod`.  Each
+  with a (possibly empty) list in CSV format, of service account identities which should
+  be granted read access to the cooresponding strongbox.

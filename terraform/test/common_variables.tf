@@ -93,7 +93,7 @@ locals {
     // self = "${merge(var.STAGE_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
     // self = "${merge(var.PHASE_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
 
-    mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for test env.
+    mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for testing
 
     strongkeys = {
         test = "${local.is_prod == 1

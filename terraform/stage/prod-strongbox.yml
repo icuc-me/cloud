@@ -4,10 +4,10 @@
 
 env_name: "prod"
 
-suser_display_name: "Simpson Doh"
+suser_display_name: "Sal Eiseman"
 
-ci_suser_display_name: "CI Automation User"
-ci_susernamer: "ciuser03"
+ci_suser_display_name: "CI Automation Account"
+ci_susernamer: "ciuser01"
 
 # Terraform 0.11 cannot accept anything except strings
 test_roles_members_bindings: >-
@@ -22,5 +22,11 @@ prod_roles_members_bindings: >-
     roles/storage.admin=other dude, super-man;
     roles/compute.admin=some young guy,other dude;
 
-tcp_fw_ports: "rr"
-udp_fw_ports: "gg"
+env_readers: >-
+    stage=value1a,value1b,xxxx,value1c,xxxx;
+    prod=value2a,xxxx,value2b,xxxx,value2c;
+    stage=this_value_should_not_be_processed;
+    test=value3a,value3b,xxxx,value3c;
+
+tcp_fw_ports: "zz"
+udp_fw_ports: "th"
