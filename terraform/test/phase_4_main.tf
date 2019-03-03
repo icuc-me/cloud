@@ -37,20 +37,9 @@ module "strongbox_acls" {
     set_acls = "${local.is_prod}"
     // mock strongbox URIs, unless env == prod
     strongbox_uris = "${data.terraform_remote_state.phase_2.strongbox_uris}"
-    env_readers = "${local.mock_strongbox_contents["env_readers"]}"
-/*
     env_readers = "${local.is_prod == 1
                      ? local.strongbox_contents["env_readers"]
                      : local.mock_strongbox_contents["env_readers"]}"
-*/
-}
-
-output "debug1" {
-    value = "${module.strongbox_acls.strongbox_acls}"
-}
-
-output "debug2" {
-    value = "${module.strongbox_acls.boxbucket_acls}"
 }
 
 /* NEEDS PER-ENV MODIFICATION */
