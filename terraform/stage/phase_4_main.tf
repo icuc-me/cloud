@@ -24,22 +24,33 @@ data "terraform_remote_state" "phase_3" {
 }
 
 locals {
+    // Actual strongbox contents
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
-    strongbox_uris = "${data.terraform_remote_state.phase_2.strongbox_uris}"
-    ci_svc_acts = "${data.terraform_remote_state.phase_3.ci_svc_acts}"
-    /* NEEDS PER-ENV MODIFICATION */
-    strongbox_readers = {
-        test = ["${local.ci_svc_acts["test"]}"],
-        stage = ["${local.ci_svc_acts["stage"]}"],
-        prod = [],
-    }
+
+    // matches strongbox_contents when env == prod
+    mock_strongbox_contents = "${data.terraform_remote_state.phase_2.mock_strongbox_contents}"
 }
 
-module "strongboxes_acls" {
-    source = "./modules/strongboxes_acls"
+module "strongbox_acls" {
+    source = "./modules/strongbox_acls"
     providers { google = "google" }
-    strongbox_uris = "${local.strongbox_uris}"
-    readers = "${local.strongbox_readers}"
+    set_acls = "${local.is_prod}"
+    // mock strongbox URIs, unless env == prod
+    strongbox_uris = "${data.terraform_remote_state.phase_2.strongbox_uris}"
+    env_readers = "${local.mock_strongbox_contents["env_readers"]}"
+/*
+    env_readers = "${local.is_prod == 1
+                     ? local.strongbox_contents["env_readers"]
+                     : local.mock_strongbox_contents["env_readers"]}"
+*/
+}
+
+output "debug1" {
+    value = "${module.strongbox_acls.strongbox_acls}"
+}
+
+output "debug2" {
+    value = "${module.strongbox_acls.boxbucket_acls}"
 }
 
 /* NEEDS PER-ENV MODIFICATION */

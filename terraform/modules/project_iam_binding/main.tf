@@ -13,8 +13,8 @@ locals {
 }
 
 module "roles_members" {
-    source = "../roles_members"
-    roles_members = ["${local.roles_members}"]
+    source = "../keys_values"
+    keys_values = ["${local.roles_members}"]
     length = "${local.length}"
 }
 
@@ -24,14 +24,14 @@ resource "google_project_iam_binding" "roles_members_bindings" {
     count = "${var.env_name == "test" || var.env_name == "stage"
                ? 0
                : local.length}"
-    role = "${element(module.roles_members.roles, count.index)}"
-    members = ["${split(",", trimspace(element(module.roles_members.members, count.index)))}"]
+    role = "${element(module.roles_members.keys, count.index)}"
+    members = ["${split(",", trimspace(element(module.roles_members.values, count.index)))}"]
 }
 
 output "roles" {
-    value = ["${module.roles_members.roles}"]
+    value = ["${module.roles_members.keys}"]
 }
 
 output "members" {
-    value = ["${module.roles_members.members}"]
+    value = ["${module.roles_members.values}"]
 }
