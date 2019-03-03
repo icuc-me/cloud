@@ -10,7 +10,7 @@ provider "template" {
     version = "~> 2.0"
 }
 
-// Default for this environment
+// Default for this environment  - NEEDS PER-ENV MODIFICATION
 
 provider "google" {
     version = "~> 1.20"

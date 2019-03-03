@@ -1,7 +1,6 @@
-test-strongbox.yml
-stage-strongbox.yml
-prod-strongbox.yml
-apply
-init
-preload
-validate
+backend.auto.tfvars
+runtime.auto.tfvars
+phase_?
+.phase_?
+.terraform
+n_phases
