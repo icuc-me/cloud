@@ -1,37 +1,22 @@
-
-variable "env_name" {
-    description = "Name of the current environment (test, stage, prod)"
-}
-
 variable "roles_members" {
-    description = "Encoded map of list of strings.  Maps separated by ';', Key/value separated by '=', value list items separated by ','."
+    description = "Format accepted by map_csv module"
 }
 
-locals {
-    roles_members = ["${compact(split(";", trimspace(var.roles_members)))}"]
-    length = "${length(local.roles_members)}"
+variable "create" {
+    description = "Create and manage the IAM roles 1 or not 0 (default)"
+    default = "0"
 }
 
 module "roles_members" {
-    source = "../keys_values"
-    keys_values = ["${local.roles_members}"]
-    length = "${local.length}"
+    source = "../map_csv"
+    string = "${var.roles_members}"
 }
-
 
 // ref: https://www.terraform.io/docs/providers/google/r/google_project_iam.html
 resource "google_project_iam_binding" "roles_members_bindings" {
-    count = "${var.env_name == "test" || var.env_name == "stage"
-               ? 0
-               : local.length}"
+    count = "${var.create != 0
+               ? length(module.roles_members.keys)
+               : 0}"
     role = "${element(module.roles_members.keys, count.index)}"
-    members = ["${split(",", trimspace(element(module.roles_members.values, count.index)))}"]
-}
-
-output "roles" {
-    value = ["${module.roles_members.keys}"]
-}
-
-output "members" {
-    value = ["${module.roles_members.values}"]
+    members = ["${element(module.roles_members.values, count.index)}"]
 }

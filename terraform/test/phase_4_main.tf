@@ -46,19 +46,16 @@ module "strongbox_acls" {
 module "test_project_iam_binding" {
     source = "./modules/project_iam_binding"
     providers { google = "google.test" }
-    env_name = "${var.ENV_NAME}"
     roles_members = "${local.strongbox_contents["test_roles_members_bindings"]}"
 }
 // module "stage_project_iam_binding" {
 //     source = "./modules/project_iam_binding"
 //     providers { google = "google.stage" }
-//     env_name = "${var.ENV_NAME}"
 //     roles_members = "${local.strongbox_contents["stage_roles_members_bindings"]}"
 // }
 // module "prod_project_iam_binding" {
 //     source = "./modules/project_iam_binding"
 //     providers { google = "google.prod" }
-//     env_name = "${var.ENV_NAME}"
 //     roles_members = "${local.strongbox_contents["prod_roles_members_bindings"]}"
 // }
 
