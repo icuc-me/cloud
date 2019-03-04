@@ -5,6 +5,7 @@ set -e
 source $(dirname $0)/lib.sh
 
 MODKEY="NEEDS PER-ENV MODIFICATION"
+EXCLUDE='--exclude="*.yml" --exclude="common_provider.tf" --exclude="common_*_variables.tf" --exclude=".gitignore"'
 
 case "$1" in
     test)
@@ -24,7 +25,7 @@ make -C "$SRC_DIR/validate" .commits_clean
 
 TEMPDIR="$(mktemp -p '' -d ${SCRIPT_FILENAME}_XXXX)"
 trap "rm -rf $TEMPDIR" EXIT
-rsync --archive --links "$TF_DIR/$SRC" "$TEMPDIR/"
+rsync --archive --links $EXCLUDE "$TF_DIR/$SRC" "$TEMPDIR/"
 
 modfiles() {
     cd "$TEMPDIR"
@@ -47,7 +48,7 @@ do
     fi
 done
 
-rsync --progress --archive --links --delete --exclude="*.yml" "$TEMPDIR/$SRC/"  "$TF_DIR/$DST/"
+rsync --progress --archive --links --delete $EXCLUDE "$TEMPDIR/$SRC/"  "$TF_DIR/$DST/"
 
 if ((ROLLMOD)) && [[ -d "$TF_DIR/$DST/modules" ]]
 then
