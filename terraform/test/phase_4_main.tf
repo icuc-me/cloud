@@ -25,16 +25,17 @@ data "terraform_remote_state" "phase_3" {
 
 locals {
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
-    mock_strongbox_contents = "${data.terraform_remote_state.phase_2.mock_strongbox_contents}"
+    // In test & stage, this will be mock-uri's
+    strongbox_uris = "${data.terraform_remote_state.phase_2.strongbox_uris}"
 }
 
+// Set access controls on buckets and objects.  Mock buckets used in test & stage
 module "strongbox_acls" {
     source = "./modules/strongbox_acls"
     providers { google = "google" }
-    set_acls = "${local.is_prod}"  // don't set anything outside of prod
-    // when ENV_NAME == prod: mock_strongbox == strongbox
-    strongbox_uris = "${data.terraform_remote_state.phase_2.mock_strongbox_uris}"
-    env_readers = "${local.mock_strongbox_contents["env_readers"]}"
+    set_acls = "1"
+    strongbox_uris = "${local.strongbox_uris}"
+    env_readers = "${local.strongbox_contents["env_readers"]}"
 }
 
 output "strongbox_acls" {
@@ -42,6 +43,7 @@ output "strongbox_acls" {
         object_readers = "${module.strongbox_acls.object_readers}"
         bucket_readers = "${module.strongbox_acls.bucket_readers}"
     }
+    sensitive = true
 }
 
 /* NEEDS PER-ENV MODIFICATION */

@@ -12,7 +12,7 @@ variable "sdisplayname" {
 
 variable "create" {
     description = "Create and manage the account 1 or not 0 (default)"
-    default = "0"
+    default = "1"
 }
 
 data "google_project" "current" {}
