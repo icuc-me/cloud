@@ -10,8 +10,21 @@ module "strongboxes" {
                        : 1}"
 }
 
+output "mock_strongbox_uris" {
+    value = {
+        test = "${module.strongboxes.uris["test"]}"
+        stage = "${module.strongboxes.uris["stage"]}"
+        prod = "${module.strongboxes.uris["prod"]}"
+    }
+    sensitive = false
+}
+
 output "strongbox_uris" {
-    value = "${module.strongboxes.uris}"
+    value = {
+        test = "${var.TEST_SECRETS["STRONGBOX"]}/${module.strongboxes.filenames["test"]}"
+        stage = "${var.STAGE_SECRETS["STRONGBOX"]}/${module.strongboxes.filenames["stage"]}"
+        prod = "${var.PROD_SECRETS["STRONGBOX"]}/${module.strongboxes.filenames["prod"]}"
+    }
     sensitive = true
 }
 
@@ -20,7 +33,7 @@ module "strong_unbox" {
     providers { google = "google" }
     credentials = "${local.self["CREDENTIALS"]}"
     // Actual strongbox URI (not mock)
-    strongbox_uri = "${local.self["STRONGBOX"]}/${basename(module.strongboxes.uris[var.ENV_NAME])}"
+    strongbox_uri = "${local.self["STRONGBOX"]}/${module.strongboxes.filenames[var.ENV_NAME]}"
     strongkey = "${local.self["STRONGKEY"]}"
 }
 
@@ -40,7 +53,7 @@ module "mock_strong_unbox" {
 
 output "mock_strongbox_contents" {
     value = "${module.mock_strong_unbox.contents}"
-    sensitive = true
+    sensitive = false
 }
 
 output "uuid" {

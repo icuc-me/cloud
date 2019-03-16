@@ -1,10 +1,6 @@
 
 provider "google" {}
 
-variable "env_name" {
-    description = "Name of the current environment (test, stage, or prod)"
-}
-
 variable "susername" {
     description = "Service account username to reference in provider"
 }
@@ -24,7 +20,7 @@ data "google_project" "current" {}
 // ref: https://www.terraform.io/docs/providers/google/r/google_service_account.html
 resource "google_service_account" "service_user" {
     count = "${var.create}"
-    account_id   = "${var.susername}"
+    account_id = "${var.susername}"
     display_name = "${var.sdisplayname}"
     project = "${data.google_project.current.project_id}"
 }

@@ -12,14 +12,18 @@ data "terraform_remote_state" "phase_2" {
 
 locals {
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
+    mock_strongbox_contents = "${data.terraform_remote_state.phase_2.mock_strongbox_contents}"
 }
 
 module "test_ci_svc_act" {
     source = "./modules/service_account"
     providers { google = "google.test" }
-    env_name = "${var.ENV_NAME}"
-    susername = "${local.strongbox_contents["ci_susername"]}"
-    sdisplayname = "${local.strongbox_contents["ci_suser_display_name"]}"
+    susername = "${local.is_prod == 1
+                   ? local.strongbox_contents["ci_susername"]
+                   : local.mock_strongbox_contents["ci_susername"]}"
+    sdisplayname = "${local.is_prod == 1
+                      ? local.strongbox_contents["ci_suser_display_name"]
+                      : local.mock_strongbox_contents["ci_suser_display_name"]}"
     create = "${local.is_prod}"
 }
 

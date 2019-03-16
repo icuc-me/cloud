@@ -24,3 +24,8 @@ output "uri" {
     value = "gs://${var.bucket_name}/${var.strongbox_name}"
     sensitive = true
 }
+
+output "filename" {
+    value = "${var.strongbox_name}"
+    sensitive = true
+}

@@ -24,22 +24,24 @@ data "terraform_remote_state" "phase_3" {
 }
 
 locals {
-    // Actual strongbox contents
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
-
-    // matches strongbox_contents when env == prod
     mock_strongbox_contents = "${data.terraform_remote_state.phase_2.mock_strongbox_contents}"
 }
 
 module "strongbox_acls" {
     source = "./modules/strongbox_acls"
     providers { google = "google" }
-    set_acls = "${local.is_prod}"
-    // mock strongbox URIs, unless env == prod
-    strongbox_uris = "${data.terraform_remote_state.phase_2.strongbox_uris}"
-    env_readers = "${local.is_prod == 1
-                     ? local.strongbox_contents["env_readers"]
-                     : local.mock_strongbox_contents["env_readers"]}"
+    set_acls = "${local.is_prod}"  // don't set anything outside of prod
+    // when ENV_NAME == prod: mock_strongbox == strongbox
+    strongbox_uris = "${data.terraform_remote_state.phase_2.mock_strongbox_uris}"
+    env_readers = "${local.mock_strongbox_contents["env_readers"]}"
+}
+
+output "strongbox_acls" {
+    value = {
+        object_readers = "${module.strongbox_acls.object_readers}"
+        bucket_readers = "${module.strongbox_acls.bucket_readers}"
+    }
 }
 
 /* NEEDS PER-ENV MODIFICATION */
@@ -47,16 +49,21 @@ module "test_project_iam_binding" {
     source = "./modules/project_iam_binding"
     providers { google = "google.test" }
     roles_members = "${local.strongbox_contents["test_roles_members_bindings"]}"
+    create = "${local.is_prod}"
 }
+
 // module "stage_project_iam_binding" {
 //     source = "./modules/project_iam_binding"
 //     providers { google = "google.stage" }
 //     roles_members = "${local.strongbox_contents["stage_roles_members_bindings"]}"
+//     create = "${local.is_prod}"
 // }
+//
 // module "prod_project_iam_binding" {
 //     source = "./modules/project_iam_binding"
 //     providers { google = "google.prod" }
 //     roles_members = "${local.strongbox_contents["prod_roles_members_bindings"]}"
+//     create = "${local.is_prod}"
 // }
 
 output "uuid" {
