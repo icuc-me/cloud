@@ -17,11 +17,9 @@ VERSION_MAJ_MIN="$(echo $VERSION | cut -d . -f 1-2)"
 VERSION_MAJ="$(echo $VERSION | cut -d . -f 1)"
 # Container layer magic values
 _HOST="9d5a6ad6"
-_LAYER_1="ee51f9f0"  # repos + updates
-_LAYER_2="93e0e02f"  # packaged deps
-_LAYER_3="23cc6743"  # unpackaged deps
-_LAYER_4="0e491b98"  # configuration
-_LAYER_5="a4028aa0"  # entrypoint
+_LAYER_1="ee51f9f0"  # repos + updates + packaged deps
+_LAYER_2="23cc6743"  # unpackaged deps + configuration + entrypoint
+_LAYER_3="0e491b98"  # entrypoint
 
 die() {
     echo -e "$1"
