@@ -1,26 +1,28 @@
-module "strongboxes" {
-    source = "./modules/strongboxes"
-    providers { google = "google" }
-    strongbox = "${local.is_prod == 1
-                   ? local.self["STRONGBOX"]
-                   : local.mock_strongbox}"
-    strongkeys = "${local.strongkeys}"
-    force_destroy = "${local.is_prod == 1
-                       ? 0
-                       : 1}"
+data "terraform_remote_state" "phase_1" {
+    backend = "gcs"
+    config {
+        credentials = "${local.self["CREDENTIALS"]}"
+        project = "${local.self["PROJECT"]}"
+        region = "${local.self["REGION"]}"
+        bucket = "${local.self["BUCKET"]}"
+        prefix = "${local.self["PREFIX"]}"
+    }
+    workspace = "phase_1"
 }
 
-output "strongbox_uris" {
-    value = "${module.strongboxes.uris}"
-    sensitive = true
+locals {
+    // In test & stage, this will be mock-uri's
+    strongbox_uris = "${data.terraform_remote_state.phase_1.strongbox_uris}"
+    strongbox_filenames = "${data.terraform_remote_state.phase_1.strongbox_filenames}"
 }
 
+// Actual decryption of this environments secrets
 module "strong_unbox" {
     source = "./modules/strong_unbox"
     providers { google = "google" }
     credentials = "${local.self["CREDENTIALS"]}"
     // Actual strongbox URI (not mock)
-    strongbox_uri = "${local.self["STRONGBOX"]}/${basename(module.strongboxes.uris[var.ENV_NAME])}"
+    strongbox_uri = "${local.self["STRONGBOX"]}/${local.strongbox_filenames[var.ENV_NAME]}"
     strongkey = "${local.self["STRONGKEY"]}"
 }
 
@@ -29,18 +31,20 @@ output "strongbox_contents" {
     sensitive = true
 }
 
+// Verifies decryption works
 module "mock_strong_unbox" {
     source = "./modules/strong_unbox"
     providers { google = "google" }
     credentials = "${local.self["CREDENTIALS"]}"
     // Mock strongbox unless env == prod
-    strongbox_uri = "${module.strongboxes.uris[var.ENV_NAME]}"
+    strongbox_uri = "${local.strongbox_uris[var.ENV_NAME]}"
     strongkey = "${local.strongkeys[var.ENV_NAME]}"
 }
 
+// Verifies contents
 output "mock_strongbox_contents" {
     value = "${module.mock_strong_unbox.contents}"
-    sensitive = true
+    sensitive = false
 }
 
 output "uuid" {

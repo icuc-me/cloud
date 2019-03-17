@@ -14,15 +14,16 @@ locals {
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
 }
 
+// CI Automation service account for testing all environments
 module "test_ci_svc_act" {
     source = "./modules/service_account"
-    providers { google = "google.test" }
-    env_name = "${var.ENV_NAME}"
+    providers { google = "google" }
     susername = "${local.strongbox_contents["ci_susername"]}"
     sdisplayname = "${local.strongbox_contents["ci_suser_display_name"]}"
     create = "${local.is_prod}"
 }
 
+// VPC subnetworks and firewalls required by all instances and containers
 module "project_networks" {
     source = "./modules/project_networks"
     providers { google = "google" }
@@ -41,6 +42,7 @@ output "private_network" {
     sensitive = true
 }
 
+// Main firewall and VPN for filtering external traffic to internal subnetwork
 module "gateway" {
     source = "./modules/gateway"
     providers { google = "google" }

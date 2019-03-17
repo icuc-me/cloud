@@ -7,12 +7,7 @@ variable "strongbox_uris" {
 }
 
 variable "env_readers" {
-    description = <<EOF
-Encoded map of list of strings.  Map keys are env. names (test, stage, prod), separated by ';'.
-Map values separated from keys by '=', and must be a non-empty list in CSV form, containing
-valid service-account identities to grant read-access to the cooresponding strongbox
-bucket for the environment (test, stage, or prod)
-EOF
+    description = "Format accepted by map_csv module"
 }
 
 variable "set_acls" {
@@ -20,20 +15,29 @@ variable "set_acls" {
     default = "0"
 }
 
+module "env_readers" {
+    source = "../map_csv"
+    string = "${var.env_readers}"
+}
+
 locals {
-    env_names = ["test", "stage", "prod"]
-    d = "/"  // hard to escape
+    d = "/"
     c = ","
+    env_names = ["test", "stage", "prod"]
 }
 
 data "template_file" "bucket_names" {
     count = 3
-    template = "${element(split(local.d, lookup(var.strongbox_uris, local.env_names[count.index])), 2)}"
+    template = "${element(split(local.d,
+                                lookup(var.strongbox_uris,
+                                       local.env_names[count.index])),
+                          2)}"
 }
 
 data "template_file" "object_names" {
     count = 3
     // easier than slicing
+    // replace(string, search, replace)
     template = "${replace(lookup(var.strongbox_uris, local.env_names[count.index]),
                           format("gs:%s%s%s%s",
                                  local.d,
@@ -43,56 +47,58 @@ data "template_file" "object_names" {
                           "")}"
 }
 
-module "env_readers" {
-    source = "../keys_values"
-    keys_values = ["${compact(split(";", trimspace(var.env_readers)))}"]
-    length = 3
-}
-
-locals {
-    env_readers = "${zipmap(module.env_readers.keys, module.env_readers.values)}"
-}
-
 data "template_file" "id_csv" {
     count = 3
-    template = "${lookup(local.env_readers, local.env_names[count.index])}"
+    template = "${join(local.c,
+                       compact(distinct(split(local.c,
+                                              lookup(module.env_readers.transmogrified,
+                                                     local.env_names[count.index])))))}"
+}
+
+module "filter_parallel" {
+    source = "../filter_parallel"
+    k_csv = "${join(local.c, data.template_file.object_names.*.rendered)}"
+    v_csv = "${join(local.c, data.template_file.id_csv.*.rendered)}"
+    v_re = "^\\s*$"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/storage_object_acl.html
 resource "google_storage_object_acl" "strongbox_acl" {
     count = "${var.set_acls == 1
-               ? 3
+               ? module.filter_parallel.count
                : 0}"
     bucket = "${element(data.template_file.bucket_names.*.rendered, count.index)}"
-    object= "${element(data.template_file.object_names.*.rendered, count.index)}"
+    object= "${element(module.filter_parallel.keys, count.index)}"
     role_entity = ["${formatlist("READER:user-%s",
-                                 compact(distinct(split(local.c,
-                                                        element(data.template_file.id_csv.*.rendered,
-                                                                count.index)))))}"]
+                                 split(local.c,
+                                       element(module.filter_parallel.values,
+                                               count.index)))}"]
 }
 
-output "strongbox_acls" {
+output "object_readers" {
     value = "${zipmap(data.template_file.object_names.*.rendered,
                       data.template_file.id_csv.*.rendered)}"
-    sensitive = true
+    // sensitive = true
+    sensitive = false
 }
 
 locals {
-    unique_buckets = "${distinct(data.template_file.bucket_names.*.rendered)}"
+    unique_buckets = ["${distinct(data.template_file.bucket_names.*.rendered)}"]
 }
 
 data "template_file" "bucket_readers" {
-    count = "${length(local.unique_buckets)}"
-    // keys do not have to be unique
+    count = 1   // value cannot be computed: "${length(local.unique_buckets)}"
+    // template_files all rendered in same order (test, stage, prod)
+    // keys (second item) do not have to be unique, all are used
     template = "${join(local.c, matchkeys(data.template_file.id_csv.*.rendered,
                                           data.template_file.bucket_names.*.rendered,
                                           list(local.unique_buckets[count.index])))}"
 }
 
 data "template_file" "unique_bucket_readers" {
-    count = "${length(local.unique_buckets)}"
+    count = 1  // value cannot be computed: "${length(local.unique_buckets)}"
     template = "${join(local.c,
-                       compact(distinct(split(local.c,
+                       distinct(compact(split(local.c,
                                               element(data.template_file.bucket_readers.*.rendered,
                                                       count.index)))))}"
 }
@@ -104,13 +110,15 @@ resource "google_storage_bucket_iam_binding" "strongbox" {
                : 0}"
     bucket = "${element(local.unique_buckets, count.index)}"
     role = "roles/storage.objectViewer"
-    members = ["${split(local.c,
-                        element(data.template_file.unique_bucket_readers.*.rendered,
-                                count.index))}"]
+    members = ["${formatlist("serviceAccount:%s",
+                             split(local.c,
+                                   element(data.template_file.unique_bucket_readers.*.rendered,
+                                           count.index)))}"]
 }
 
-output "boxbucket_acls" {
+output "bucket_readers" {
     value = "${zipmap(local.unique_buckets,
                       data.template_file.unique_bucket_readers.*.rendered)}"
-    sensitive = true
+    // sensitive = true
+    sensitive = false
 }

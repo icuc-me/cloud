@@ -89,9 +89,6 @@ locals {
                       ? 1
                       : 0}"
     _src_version = { SRC_VERSION = "${var.SRC_VERSION}" }
-    // self = "${merge(var.TEST_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
-    self = "${merge(var.STAGE_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
-    // self = "${merge(var.PHASE_SECRETS, local._src_version)}" // NEEDS PER-ENV MODIFICATION
 
     mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for testing
 
