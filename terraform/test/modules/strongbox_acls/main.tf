@@ -55,16 +55,23 @@ data "template_file" "id_csv" {
                                                      local.env_names[count.index])))))}"
 }
 
+module "filter_parallel" {
+    source = "../filter_parallel"
+    k_csv = "${join(local.c, data.template_file.object_names.*.rendered)}"
+    v_csv = "${join(local.c, data.template_file.id_csv.*.rendered)}"
+    v_re = "^\\s*$"
+}
+
 // ref: https://www.terraform.io/docs/providers/google/r/storage_object_acl.html
 resource "google_storage_object_acl" "strongbox_acl" {
     count = "${var.set_acls == 1
-               ? 3
+               ? module.filter_parallel.count
                : 0}"
     bucket = "${element(data.template_file.bucket_names.*.rendered, count.index)}"
-    object= "${element(data.template_file.object_names.*.rendered, count.index)}"
+    object= "${element(module.filter_parallel.keys, count.index)}"
     role_entity = ["${formatlist("READER:user-%s",
                                  split(local.c,
-                                       element(data.template_file.id_csv.*.rendered,
+                                       element(module.filter_parallel.values,
                                                count.index)))}"]
 }
 
@@ -91,7 +98,7 @@ data "template_file" "bucket_readers" {
 data "template_file" "unique_bucket_readers" {
     count = "${length(local.unique_buckets)}"
     template = "${join(local.c,
-                       compact(distinct(split(local.c,
+                       distinct(compact(split(local.c,
                                               element(data.template_file.bucket_readers.*.rendered,
                                                       count.index)))))}"
 }
@@ -103,9 +110,10 @@ resource "google_storage_bucket_iam_binding" "strongbox" {
                : 0}"
     bucket = "${element(local.unique_buckets, count.index)}"
     role = "roles/storage.objectViewer"
-    members = ["${split(local.c,
-                        element(data.template_file.unique_bucket_readers.*.rendered,
-                                count.index))}"]
+    members = ["${formatlist("serviceAccount:%s",
+                             split(local.c,
+                                   element(data.template_file.unique_bucket_readers.*.rendered,
+                                           count.index)))}"]
 }
 
 output "bucket_readers" {
