@@ -3,6 +3,9 @@ _DOT_PHASE=.$(_PHASE)
 _PLAN_TXT=$(_DOT_PHASE)/plan.output
 SRCFILES=$(shell ls -1 $(_PHASE)*.tf common*.tf *.yml)
 
+# Set 1 to force needless apply
+FORCE_APPLY=0
+
 all: guard-PHASE $(_DOT_PHASE)/apply
 
 $(_DOT_PHASE): guard-PHASE backend.auto.tfvars
@@ -20,7 +23,7 @@ $(_DOT_PHASE)/plan.bin: guard-PHASE $(_DOT_PHASE) runtime.auto.tfvars test-stron
 
 .PHONY: $(_DOT_PHASE)/apply
 $(_DOT_PHASE)/apply: guard-PHASE $(_DOT_PHASE)/plan.bin $(SRCFILES)
-	@if ! grep -q 'No changes. Infrastructure is up-to-date.' "$(_PLAN_TXT)"; then \
+	@if test "$(FORCE_APPLY)" != "0" || ! grep -q 'No changes. Infrastructure is up-to-date.' "$(_PLAN_TXT)"; then \
 		read -t 10 -p "$(_PHASE) Pause: press enter, wait 10 seconds to continue, or ctrl-c to abort."; \
 		TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve "$(_DOT_PHASE)/plan.bin"; \
 	else \

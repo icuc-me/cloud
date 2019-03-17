@@ -82,3 +82,12 @@ output "uris" {
     }
     sensitive = true
 }
+
+output "filenames" {
+    value = {
+        test  = "${module.test_strongbox.filename}"
+        stage = "${module.stage_strongbox.filename}"
+        prod  = "${module.prod_strongbox.filename}"
+    }
+    sensitive = true
+}
