@@ -12,11 +12,16 @@ module "roles_members" {
     string = "${var.roles_members}"
 }
 
+locals {
+    c = ","
+}
+
 // ref: https://www.terraform.io/docs/providers/google/r/google_project_iam.html
 resource "google_project_iam_binding" "roles_members_bindings" {
     count = "${var.create != 0
                ? length(module.roles_members.keys)
                : 0}"
     role = "${element(module.roles_members.keys, count.index)}"
-    members = ["${element(module.roles_members.values, count.index)}"]
+    members = ["${distinct(compact(split(local.c,
+                                         element(module.roles_members.values, count.index))))}"]
 }

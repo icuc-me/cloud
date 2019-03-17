@@ -87,7 +87,7 @@ locals {
 }
 
 data "template_file" "bucket_readers" {
-    count = "${length(local.unique_buckets)}"
+    count = 1   // value cannot be computed: "${length(local.unique_buckets)}"
     // template_files all rendered in same order (test, stage, prod)
     // keys (second item) do not have to be unique, all are used
     template = "${join(local.c, matchkeys(data.template_file.id_csv.*.rendered,
@@ -96,7 +96,7 @@ data "template_file" "bucket_readers" {
 }
 
 data "template_file" "unique_bucket_readers" {
-    count = "${length(local.unique_buckets)}"
+    count = 1  // value cannot be computed: "${length(local.unique_buckets)}"
     template = "${join(local.c,
                        distinct(compact(split(local.c,
                                               element(data.template_file.bucket_readers.*.rendered,
