@@ -5,7 +5,7 @@ set -e
 source $(dirname $0)/lib.sh
 
 MODKEY="NEEDS PER-ENV MODIFICATION"
-EXCLUDE='--exclude="*.yml" --exclude="common_provider.tf" --exclude="common_*_variables.tf" --exclude=".gitignore"'
+EXCLUDE='--exclude="*-strongbox.yml" --exclude="common_provider.tf" --exclude="common_*_variables.tf" --exclude=".gitignore"'
 
 case "$1" in
     test)
