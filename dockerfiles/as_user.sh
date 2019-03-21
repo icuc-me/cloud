@@ -28,7 +28,12 @@ fi
 echo "Recovering cached GOPATH contents"
 rsync --recursive --links \
     --safe-links --sparse \
-    "/var/cache/go" "/home/$AS_USER"
+    "/usr/src/go" "/home/$AS_USER"
+
+echo "Recovering cached GOCACHE contents"
+rsync --recursive --links \
+    --safe-links --sparse \
+    "/var/cache/go" "/home/$AS_USER/.cache"
 
 # rsync --chown doesn't affect directories somehow(?)
 mkdir -p "/home/$AS_USER/.gnupg"

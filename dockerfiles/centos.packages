@@ -1,0 +1,26 @@
+"@Development Tools"
+buildah
+curl
+findutils
+git
+gcc
+golang
+golang-docs
+golang-godoc
+google-cloud-sdk
+make
+nmap-ncat
+openssh-clients
+podman
+python36
+python36-PyYAML
+rh-git29
+rsync
+sshpass
+sudo
+unzip
+vim
+vim-go
+wget
+which
+yajl

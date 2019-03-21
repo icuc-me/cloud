@@ -12,7 +12,7 @@ BACKENDFN="$BACKEND-backend.auto.tfvars"
 RUNTIMEFN="$BACKEND-runtime.auto.tfvars"
 TMPDIR=$(mktemp -d -p '' ${SCRIPT_FILENAME}_XXXX)
 cleanup() {
-    echo "Cleaning up"
+    echo "Cleaning temporary directory"
     rm -rf "$TMPDIR"
 }
 trap cleanup EXIT
@@ -29,6 +29,7 @@ check_missing() {
 gen_backend() {
     [[ -n "$1" ]] || die "Missing backend environment name" 4
     export ENV="$1"
+    export UUID="$(cat $ENV-uuid)"
     source "${ENV}-secrets.sh"
     echo "Generating Backend configuration for $ENV environment"
     cat << EOF > "$TMPDIR/$BACKENDFN"
@@ -48,6 +49,7 @@ EOF
 gen_runtime_head() {
     [[ -n "$1" ]] || die "Missing head runtime environment name" 8
     export ENV="$1"
+    export UUID="$(cat $ENV-uuid)"
     echo "Generating runtime configuration for $ENV environment"
     source "${ENV}-secrets.sh"
     cat << EOF > "$TMPDIR/$RUNTIMEFN"
@@ -71,6 +73,7 @@ gen_runtime_body() {
 gen_runtime_body_map() {
     [[ -n "$1" ]] || die "Missing body-map runtime environment name" 11
     export ENV="$1"
+    export UUID="$(cat $ENV-uuid)"
     source "${ENV}-secrets.sh"
     cat << EOF >> "$TMPDIR/$RUNTIMEFN"
 $(echo $ENV | tr [[:lower:]] [[:upper:]])_SECRETS = {
@@ -92,6 +95,7 @@ EOF
 gen_runtime_tail() {
     [[ -n "$1" ]] || die "Missing tail runtime environment name" 13
     export ENV="$1"
+    export UUID="$(cat $ENV-uuid)"
     source "${ENV}-secrets.sh"
     cat << EOF >> "$TMPDIR/$RUNTIMEFN"
 # END GENERATED CONFIG FOR $ENV - MANUAL CHANGES WILL BE LOST
@@ -102,7 +106,7 @@ EOF
 
 ##### MAIN
 
-[[ "$#" -ge "1" ]] || die "Must specify at least one environment name (test, stage, or prod)" 5
+[[ "$#" -ge "1" ]] || die "Must specify one or more env. names (test, stage, or prod)" 5
 
 for (( i=1; i <= $# && i <= 3; i++ ))
 do
@@ -113,15 +117,20 @@ do
     [[ -r "${ENV}-secrets.sh" ]] || die "Unable to open $SRC_DIR/$SECRETS_SUBDIR/${ENV}-secrets.sh" 6
 done
 
+echo "Generating terraform backend configuration."
 gen_backend "$BACKEND"
 
+echo "Generating terraform runtime configuration for:"
 gen_runtime_head "$BACKEND"
 
 for ENV in $ENVS
 do
+    echo "    $ENV"
     gen_runtime_body $ENV
 done
 
+echo "done."
 gen_runtime_tail "$BACKEND"
 
+echo "Installing generated configuration."
 mv -f "$TMPDIR"/"$BACKEND-"*.auto.tfvars "$SRC_DIR/$SECRETS_SUBDIR/"
