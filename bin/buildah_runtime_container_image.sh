@@ -182,10 +182,12 @@ then
     else
         echo "Skipping tag of layer 3"
     fi
-    sudo podman push $IMAGE_BASE:$IMAGE_TAG
-    sudo podman push $IMAGE_BASE:$_LAYER_3
-    sudo podman push $IMAGE_BASE:$_LAYER_2
-    sudo podman push $IMAGE_BASE:$_LAYER_1
+    if sudo podman push $IMAGE_BASE:$IMAGE_TAG
+    then
+        sudo podman push $IMAGE_BASE:$_LAYER_3
+        sudo podman push $IMAGE_BASE:$_LAYER_2
+        sudo podman push $IMAGE_BASE:$_LAYER_1
+    fi
     echo "Image ready for use: $IMAGE_BASE:$IMAGE_TAG"
 
 elif [[ "$MAGIC" == "$_LAYER_1" ]]
