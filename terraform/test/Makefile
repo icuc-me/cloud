@@ -1,37 +1,36 @@
 _PHASE=phase_$(PHASE)
-_DOT_PHASE=.$(_PHASE)
-_PLAN_TXT=$(_DOT_PHASE)/plan.output
+_PLAN_TXT=$(_PHASE)/plan.output
 SRCFILES=$(shell ls -1 $(_PHASE)*.tf common*.tf *.yml)
 ENV_NAME=$(shell basename $$PWD)
 
-all: guard-PHASE guard-ENV_NAME $(_DOT_PHASE)/apply
+all: guard-PHASE guard-ENV_NAME $(_PHASE)/apply
 
-$(_DOT_PHASE): guard-PHASE guard-ENV_NAME backend.auto.tfvars
+$(_PHASE): guard-PHASE guard-ENV_NAME backend.auto.tfvars
 	mkdir -p "$@"
-	@for src in ./modules/ *.auto.tfvars common_terraform.tf common_variables.tf only_$(ENV_NAME)_*.tf $(_PHASE)_*.tf phase_4_${ENV_NAME}.tf; do \
-		ln -rsvft "$@" "$$src"; done
+	@for src in ./modules/ *.auto.tfvars common_terraform.tf common_variables.tf only_$(ENV_NAME)_*.tf $(_PHASE)_main.tf $(_PHASE)_$(ENV_NAME).tf; do \
+		test ! -r "$$src" || ln -rsvft "$@" "$$src"; done
 	TF_IN_AUTOMATION=1 terraform init -input=false -backend-config="./backend.auto.tfvars" "./$@"
 	-TF_IN_AUTOMATION=1 terraform workspace new "$(_PHASE)"
 
-$(_DOT_PHASE)/plan.bin: guard-PHASE $(_DOT_PHASE) runtime.auto.tfvars test-strongbox.yml stage-strongbox.yml prod-strongbox.yml $(SRCFILES)
+$(_PHASE)/plan.bin: guard-PHASE $(_PHASE) runtime.auto.tfvars test-strongbox.yml stage-strongbox.yml prod-strongbox.yml $(SRCFILES)
 	rm -f "$@" "$(_PLAN_TXT)"
-	TF_IN_AUTOMATION=1 terraform workspace select "$(_PHASE)" "$(_DOT_PHASE)/"
-	TF_IN_AUTOMATION=1 terraform validate "$(_DOT_PHASE)/"
-	set -eo pipefail && TF_IN_AUTOMATION=1 terraform plan -input=false -module-depth=0 "-out=$@" "$(_DOT_PHASE)/" | tee "$(_PLAN_TXT)"
+	TF_IN_AUTOMATION=1 terraform workspace select "$(_PHASE)" "$(_PHASE)/"
+	TF_IN_AUTOMATION=1 terraform validate "$(_PHASE)/"
+	set -eo pipefail && TF_IN_AUTOMATION=1 terraform plan -input=false -module-depth=0 "-out=$@" "$(_PHASE)/" | tee "$(_PLAN_TXT)"
 
-.PHONY: $(_DOT_PHASE)/apply
-$(_DOT_PHASE)/apply: guard-PHASE $(_DOT_PHASE)/plan.bin $(SRCFILES)
+.PHONY: $(_PHASE)/apply
+$(_PHASE)/apply: guard-PHASE $(_PHASE)/plan.bin $(SRCFILES)
 	-@read -t 10 -p "$(_PHASE) Pause: press enter, wait 10 seconds to continue, or ctrl-c to abort."
-	TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve "$(_DOT_PHASE)/plan.bin"
+	TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve "$(_PHASE)/plan.bin"
 
 .PHONY: destroy
-destroy: guard-PHASE $(_DOT_PHASE) $(SRCFILES)
-	TF_IN_AUTOMATION=1 terraform workspace select "$(_PHASE)" "$(_DOT_PHASE)/"
-	-TF_IN_AUTOMATION=1 terraform destroy -input=false -auto-approve "$(_DOT_PHASE)/"
+destroy: guard-PHASE $(_PHASE)/plan.bin $(SRCFILES)
+	TF_IN_AUTOMATION=1 terraform workspace select "$(_PHASE)" "$(_PHASE)/"
+	-TF_IN_AUTOMATION=1 terraform destroy -input=false -auto-approve "$(_PHASE)/"
 
 .PHONY: clean
 clean:
-	-rm -rfv .phase_{1..99} .terraform
+	-rm -rfv phase_{1..99} .terraform
 
 # Utility target for checking required parameters
 .PHONY: guard-%
