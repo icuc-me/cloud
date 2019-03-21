@@ -5,7 +5,7 @@ set -e
 source $(dirname $0)/lib.sh
 
 MODKEY="NEEDS PER-ENV MODIFICATION"
-EXCLUDE='--exclude="*-strongbox.yml" --exclude="common_provider.tf" --exclude="common_*_variables.tf" --exclude=".gitignore"'
+EXCLUDE="--exclude=*-strongbox.yml --exclude=*.auto.tfvars --exclude=.gitignore"
 
 case "$1" in
     test)
@@ -25,7 +25,7 @@ make -C "$SRC_DIR/validate" .commits_clean
 
 TEMPDIR="$(mktemp -p '' -d ${SCRIPT_FILENAME}_XXXX)"
 trap "rm -rf $TEMPDIR" EXIT
-rsync --archive --links $EXCLUDE "$TF_DIR/$SRC" "$TEMPDIR/"
+rsync --archive --links $EXCLUDE "$TF_DIR/$SRC/" "$TEMPDIR"
 
 modfiles() {
     cd "$TEMPDIR"
@@ -40,7 +40,9 @@ YorNorR="r"
 while [[ "$YorNorR" == "R" ]] || [[ "$YorNorR" == "r" ]]
 do
     modfiles
-    read -N 1 -p "OKAY to proceed (y), re-edit (r), or abort (n)" YorNorR
+    echo ""
+    ls -la $TMPDIR
+    read -N 1 -p "$TMPDIR OKAY to proceed (y), re-edit (r), or abort (n)? " YorNorR
     echo ""
     if [[ "$YorNorR" == "N" ]] || [[ "$YorNorR" == "n" ]]
     then
@@ -48,12 +50,16 @@ do
     fi
 done
 
-rsync --progress --archive --links --delete $EXCLUDE "$TEMPDIR/$SRC/"  "$TF_DIR/$DST/"
-
-if ((ROLLMOD)) && [[ -d "$TF_DIR/$DST/modules" ]]
+if ((ROLLMOD)) && [[ -d "$TEMPDIR/modules" ]]
 then
-    rsync --progress --archive --links --delete "$TF_DIR/$DST/modules" "$TF_DIR"
-    rm -rf "$TF_DIR/$DST/modules"
+    rsync --archive --links --delete "$TEMPDIR/modules" "$TF_DIR/"
+    rm -rf "$TEMPDIR/modules"
+fi
+
+rsync --archive --links --delete $EXCLUDE "$TEMPDIR/"  "$TF_DIR/$DST"
+
+if ((ROLLMOD))
+then
     ln -sf "../modules" "$TF_DIR/$DST/modules"
 fi
 
