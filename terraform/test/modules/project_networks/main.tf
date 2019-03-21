@@ -57,6 +57,7 @@ resource "google_compute_firewall" "automatic-out" {
     name    = "automatic-out-${var.env_uuid}"
     network = "${google_compute_network.automatic.self_link}"
     direction = "EGRESS"
+    project = "${var.test_project}"
 
     destination_ranges = ["0.0.0.0/0"]
 
@@ -72,6 +73,7 @@ resource "google_compute_firewall" "automatic-in" {
     name    = "automatic-in-${var.env_uuid}"
     network = "${google_compute_network.automatic.self_link}"
     direction = "INGRESS"
+    project = "${var.test_project}"
 
     allow { protocol = "icmp" }
     allow { protocol = "tcp" ports = ["22"] }
