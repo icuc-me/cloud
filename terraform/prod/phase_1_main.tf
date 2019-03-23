@@ -5,6 +5,10 @@ module "main_service_account" {
     providers { google = "google" }
     susername = "${local.self["SUSERNAME"]}"
     create = "${local.is_prod}"
+    lifecycle {
+        prevent_destroy = true
+        ignore_changes = true
+    }
 }
 
 output "main_service_account" {

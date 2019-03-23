@@ -44,7 +44,7 @@ module "mock_strong_unbox" {
 // Verifies contents
 output "mock_strongbox_contents" {
     value = "${module.mock_strong_unbox.contents}"
-    sensitive = false
+    sensitive = true
 }
 
 output "uuid" {
