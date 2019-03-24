@@ -1,20 +1,42 @@
-module "test_project_iam_binding" {
-    source = "./modules/project_iam_binding"
-    providers { google = "google.test" }
-    roles_members = "${local.strongbox_contents["test_roles_members_bindings"]}"
-    create = "${local.is_prod}"
+locals {
+    ci_svc_acts = "${data.terraform_remote_state.phase_2.ci_svc_acts}"
+    ci_act_roles = [
+        "roles/storage.admin", "roles/compute.admin", "roles/compute.networkAdmin",
+        "roles/iam.serviceAccountUser"
+    ]
+
 }
 
-module "stage_project_iam_binding" {
-    source = "./modules/project_iam_binding"
-    providers { google = "google.stage" }
-    roles_members = "${local.strongbox_contents["stage_roles_members_bindings"]}"
-    create = "${local.is_prod}"
+// ref: https://www.terraform.io/docs/providers/google/r/google_project_iam.html
+resource "google_project_iam_member" "test_ci_svc_act_iam" {
+    provider = "google.test"
+    project = "${var.TEST_SECRETS["PROJECT"]}"
+    count = "${length(local.ci_act_roles)}"
+    role = "${local.ci_act_roles[count.index]}"
+    member  = "serviceAccount:${local.ci_svc_acts["test"]}"
 }
 
-module "prod_project_iam_binding" {
-    source = "./modules/project_iam_binding"
-    providers { google = "google.prod" }
-    roles_members = "${local.strongbox_contents["prod_roles_members_bindings"]}"
-    create = "${local.is_prod}"
+resource "google_project_iam_member" "stage_ci_svc_act_iam" {
+    provider = "google.stage"
+    project = "${var.STAGE_SECRETS["PROJECT"]}"
+    count = "${length(local.ci_act_roles)}"
+    role = "${local.ci_act_roles[count.index]}"
+    member  = "serviceAccount:${local.ci_svc_acts["stage"]}"
+}
+
+resource "google_project_iam_member" "prod_ci_svc_act_iam" {
+    provider = "google.prod"
+    project = "${var.PROD_SECRETS["PROJECT"]}"
+    count = "${length(local.ci_act_roles)}"
+    role = "${local.ci_act_roles[count.index]}"
+    member  = "serviceAccount:${local.ci_svc_acts["prod"]}"
+}
+
+output "ci_svc_act_iam" {
+    value = {
+        test = ["${google_project_iam_member.test_ci_svc_act_iam.*.role}"],
+        stage = ["${google_project_iam_member.stage_ci_svc_act_iam.*.role}"],
+        prod = ["${google_project_iam_member.prod_ci_svc_act_iam.*.role}"],
+    }
+    sensitive = true
 }

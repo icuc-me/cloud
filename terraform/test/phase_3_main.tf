@@ -14,27 +14,26 @@ locals {
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
 }
 
-// CI Automation service account for testing all environments
-module "test_ci_svc_act" {
-    source = "./modules/service_account"
-    providers { google = "google" }
-    susername = "${local.strongbox_contents["ci_susername"]}"
-    sdisplayname = "${local.strongbox_contents["ci_suser_display_name"]}"
-    create = "${local.is_prod}"
-}
-
 // VPC subnetworks and firewalls required by all instances and containers
 module "project_networks" {
     source = "./modules/project_networks"
     providers { google = "google" }
     env_uuid = "${var.UUID}"
-    test_project = "${var.TEST_SECRETS["PROJECT"]}"
+    test_project = "${local.is_prod == 1
+                      ? var.TEST_SECRETS["PROJECT"]
+                      : ""}"
+    stage_project = "${local.is_prod == 1
+                       ? var.STAGE_SECRETS["PROJECT"]
+                       : ""}"
+    prod_project = "${local.is_prod == 1
+                      ? var.PROD_SECRETS["PROJECT"]
+                      : ""}"
     public_tcp_ports = ["${compact(split(",",local.strongbox_contents["tcp_fw_ports"]))}"]
     public_udp_ports = ["${compact(split(",",local.strongbox_contents["udp_fw_ports"]))}"]
 }
 
 output "automatic_network" {
-    value = "${module.project_networks.automatic}"
+    value = "${module.project_networks.automatic[var.ENV_NAME]}"
     sensitive = true
 }
 

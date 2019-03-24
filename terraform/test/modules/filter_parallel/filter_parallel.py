@@ -37,7 +37,10 @@ def validate_input(query):
 
 if __name__ == "__main__":
     query = validate_input(json.load(sys.stdin))
-    assert len(query['k']) == len(query['v'])
+    try:
+        assert len(query['k']) == len(query['v'])
+    except AssertionError:
+        raise AssertionError("(length) {0} != {1}".format(query['k'], query['v']))
 
     k_result = []
     v_result = []

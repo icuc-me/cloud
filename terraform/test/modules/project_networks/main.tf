@@ -4,6 +4,17 @@ variable "env_uuid" {
 
 variable "test_project" {
     description = "The project ID for the test environment"
+    default = ""
+}
+
+variable "stage_project" {
+    description = "The project ID for the stage environment"
+    default = ""
+}
+
+variable "prod_project" {
+    description = "The project ID for the prod environment"
+    default = ""
 }
 
 variable "public_tcp_ports" {
@@ -45,39 +56,19 @@ module "subnet_cidrs" {
 
 /**** automatic ***/
 
-// ref: https://www.terraform.io/docs/providers/google/r/compute_network.html
-resource "google_compute_network" "automatic" {
-    name = "automatic-${var.env_uuid}"
-    description = "Auto-allocated network for general use"
-    auto_create_subnetworks = "true"
-    project = "${var.test_project}"
+module "test_automatic" {
+    source = "./automatic_networks"
+    project_id = "${var.test_project}"
 }
 
-resource "google_compute_firewall" "automatic-out" {
-    name    = "automatic-out-${var.env_uuid}"
-    network = "${google_compute_network.automatic.self_link}"
-    direction = "EGRESS"
-    project = "${var.test_project}"
-
-    destination_ranges = ["0.0.0.0/0"]
-
-    allow { protocol = "ah" }
-    allow { protocol = "esp" }
-    allow { protocol = "icmp" }
-    allow { protocol = "sctp" }
-    allow { protocol = "tcp" }
-    allow { protocol = "udp" }
+module "stage_automatic" {
+    source = "./automatic_networks"
+    project_id = "${var.stage_project}"
 }
 
-resource "google_compute_firewall" "automatic-in" {
-    name    = "automatic-in-${var.env_uuid}"
-    network = "${google_compute_network.automatic.self_link}"
-    direction = "INGRESS"
-    project = "${var.test_project}"
-
-    allow { protocol = "icmp" }
-    allow { protocol = "tcp" ports = ["22"] }
-    allow { protocol = "udp" ports = ["22"] }
+module "prod_automatic" {
+    source = "./automatic_networks"
+    project_id = "${var.prod_project}"
 }
 
 /**** PUBLIC ****/
@@ -157,7 +148,6 @@ data "google_compute_subnetwork" "private" {
     region = "${google_compute_subnetwork.private.*.region[count.index]}"
 }
 
-
 resource "google_compute_firewall" "private-allow-in" {
     name    = "private-allow-in-${var.env_uuid}"
     network = "${google_compute_network.private.self_link}"
@@ -201,8 +191,9 @@ locals {
 
 output "automatic" {
     value = {
-        network_name = "${google_compute_network.automatic.name}"
-        network_link = "${google_compute_network.automatic.self_link}"
+        test = "${module.test_automatic.name}"
+        stage = "${module.stage_automatic.name}"
+        prod = "${module.prod_automatic.name}"
     }
     sensitive = true
 }
