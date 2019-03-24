@@ -28,8 +28,14 @@ module "project_networks" {
     source = "./modules/project_networks"
     providers { google = "google" }
     env_uuid = "${var.UUID}"
-    default_tcp_ports = ["${compact(split(",",local.strongbox_contents["tcp_fw_ports"]))}"]
-    default_udp_ports = ["${compact(split(",",local.strongbox_contents["udp_fw_ports"]))}"]
+    test_project = "${var.TEST_SECRETS["PROJECT"]}"
+    public_tcp_ports = ["${compact(split(",",local.strongbox_contents["tcp_fw_ports"]))}"]
+    public_udp_ports = ["${compact(split(",",local.strongbox_contents["udp_fw_ports"]))}"]
+}
+
+output "automatic_network" {
+    value = "${module.project_networks.automatic}"
+    sensitive = true
 }
 
 output "public_network" {

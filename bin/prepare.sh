@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# This script is intended to be used by automation, performing all prepretory work
+# This script is intended to be used by automation, performing basic prepretory work
 # as needed, prior to executing terraform.  Alternately, if called as 'teardown.sh'
 # it will reverse the process.  No checks are performed, care should be taken not
-# to execute this against valuable data
+# to execute this against valuable data.
 
 set -e
 

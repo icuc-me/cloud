@@ -23,6 +23,7 @@ module "env_readers" {
 locals {
     d = "/"
     c = ","
+    x = "|"
     env_names = ["test", "stage", "prod"]
 }
 
@@ -47,15 +48,20 @@ data "template_file" "object_names" {
                           "")}"
 }
 
+data "google_client_openid_userinfo" "current" {}
+
 data "template_file" "id_csv" {
     count = 3
-    template = "${join(local.c,
+    template = "${join(local.x,
                        compact(distinct(split(local.c,
-                                              lookup(module.env_readers.transmogrified,
-                                                     local.env_names[count.index])))))}"
+                                              replace(lookup(module.env_readers.transmogrified,
+                                                             local.env_names[count.index]),
+                                                      data.google_client_openid_userinfo.current.email,
+                                                      "")))))}"
 }
 
-module "filter_parallel" {
+// empty ids and current owner of resources disallowed as readers
+module "filter_ids" {
     source = "../filter_parallel"
     k_csv = "${join(local.c, data.template_file.object_names.*.rendered)}"
     v_csv = "${join(local.c, data.template_file.id_csv.*.rendered)}"
@@ -65,13 +71,13 @@ module "filter_parallel" {
 // ref: https://www.terraform.io/docs/providers/google/r/storage_object_acl.html
 resource "google_storage_object_acl" "strongbox_acl" {
     count = "${var.set_acls == 1
-               ? module.filter_parallel.count
+               ? module.filter_ids.count
                : 0}"
     bucket = "${element(data.template_file.bucket_names.*.rendered, count.index)}"
-    object= "${element(module.filter_parallel.keys, count.index)}"
+    object= "${element(module.filter_ids.keys, count.index)}"
     role_entity = ["${formatlist("READER:user-%s",
-                                 split(local.c,
-                                       element(module.filter_parallel.values,
+                                 split(local.x,
+                                       element(module.filter_ids.values,
                                                count.index)))}"]
 }
 
@@ -95,25 +101,61 @@ data "template_file" "bucket_readers" {
                                           list(local.unique_buckets[count.index])))}"
 }
 
+data "template_file" "other_readers" {
+    count = 1   // value cannot be computed: "${length(local.unique_buckets)}"
+    template = "${replace(element(data.template_file.bucket_readers.*.rendered,
+                                  count.index),
+                          data.google_client_openid_userinfo.current.email,
+                          "")}"
+}
+
+
 data "template_file" "unique_bucket_readers" {
     count = 1  // value cannot be computed: "${length(local.unique_buckets)}"
     template = "${join(local.c,
                        distinct(compact(split(local.c,
-                                              element(data.template_file.bucket_readers.*.rendered,
+                                              element(data.template_file.other_readers.*.rendered,
                                                       count.index)))))}"
 }
 
+data "google_client_config" "current" {}
+
+locals {
+    admin_members = ["projectOwner:${data.google_client_config.current.project}",
+                     "projectEditor:${data.google_client_config.current.project}"]
+    view_members = ["projectViewer:${data.google_client_config.current.project}"]
+}
+
 // ref: https://www.terraform.io/docs/providers/google/r/storage_bucket_iam.html
-resource "google_storage_bucket_iam_binding" "strongbox" {
+resource "google_storage_bucket_iam_binding" "strongbox_viewer" {
     count = "${var.set_acls == 1
                ? length(local.unique_buckets)
                : 0}"
     bucket = "${element(local.unique_buckets, count.index)}"
     role = "roles/storage.objectViewer"
-    members = ["${formatlist("serviceAccount:%s",
-                             split(local.c,
-                                   element(data.template_file.unique_bucket_readers.*.rendered,
-                                           count.index)))}"]
+    members = ["${concat(formatlist("serviceAccount:%s",
+                                    split(local.c,
+                                          element(data.template_file.unique_bucket_readers.*.rendered,
+                                                  count.index))),
+                         local.view_members)}"]
+}
+
+resource "google_storage_bucket_iam_binding" "strongbox_admin" {
+    count = "${var.set_acls == 1
+               ? length(local.unique_buckets)
+               : 0}"
+    bucket = "${element(local.unique_buckets, count.index)}"
+    role = "roles/storage.admin"
+    members = ["${local.admin_members}"]
+}
+
+resource "google_storage_bucket_iam_binding" "strongbox_objectAdmin" {
+    count = "${var.set_acls == 1
+               ? length(local.unique_buckets)
+               : 0}"
+    bucket = "${element(local.unique_buckets, count.index)}"
+    role = "roles/storage.objectAdmin"
+    members = ["${local.admin_members}"]
 }
 
 output "bucket_readers" {

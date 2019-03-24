@@ -2,15 +2,30 @@ variable "env_uuid" {
     description = "The UUID value associated with the current environment."
 }
 
-variable "default_tcp_ports" {
+variable "test_project" {
+    description = "The project ID for the test environment"
+    default = ""
+}
+
+variable "stage_project" {
+    description = "The project ID for the stage environment"
+    default = ""
+}
+
+variable "prod_project" {
+    description = "The project ID for the prod environment"
+    default = ""
+}
+
+variable "public_tcp_ports" {
     type = "list"
-    description = "List of TCP ports or port-ranges to permit through default network firewall"
+    description = "List of TCP ports or port-ranges to permit through public network firewall"
     default = ["22"]  // empty means allow-all
 }
 
-variable "default_udp_ports" {
+variable "public_udp_ports" {
     type = "list"
-    description = "List of UDP ports or port-ranges to permit through default network firewall"
+    description = "List of UDP ports or port-ranges to permit through public network firewall"
     default = ["22"]  // empty means allow-all
 }
 
@@ -39,46 +54,63 @@ module "subnet_cidrs" {
     env_uuid = "${var.env_uuid}"
 }
 
+/**** automatic ***/
+
+module "test_automatic" {
+    source = "./automatic_networks"
+    project_id = "${var.test_project}"
+}
+
+module "stage_automatic" {
+    source = "./automatic_networks"
+    project_id = "${var.stage_project}"
+}
+
+module "prod_automatic" {
+    source = "./automatic_networks"
+    project_id = "${var.prod_project}"
+}
+
 /**** PUBLIC ****/
 
 // ref: https://www.terraform.io/docs/providers/google/r/compute_network.html
-resource "google_compute_network" "default" {
-    name = "default-${var.env_uuid}"
+resource "google_compute_network" "public" {
+    name = "public-${var.env_uuid}"
     description = "Public-facing network with external IPs and google managed firewall"
     auto_create_subnetworks = "false"
 }
 
 // Ref: https://www.terraform.io/docs/providers/google/r/compute_subnetwork.html
-resource "google_compute_subnetwork" "default" {
+resource "google_compute_subnetwork" "public" {
     count = "${local.nr_filtered_regions}"
-    name = "default-${element(local.filtered_regions, count.index)}-${var.env_uuid}"
+    name = "public-${element(local.filtered_regions, count.index)}-${var.env_uuid}"
     region = "${element(local.filtered_regions, count.index)}"
     ip_cidr_range = "${element(module.subnet_cidrs.set, count.index)}"
-    network = "${google_compute_network.default.self_link}"
+    network = "${google_compute_network.public.self_link}"
     private_ip_google_access = "true"  // Allow access to google APIs
 }
 
 // possible not all resources were created
-data "google_compute_subnetwork" "default" {
+data "google_compute_subnetwork" "public" {
     count = "${local.nr_filtered_regions}"
-    name = "${google_compute_subnetwork.default.*.name[count.index]}"
-    region = "${google_compute_subnetwork.default.*.region[count.index]}"
+    name = "${google_compute_subnetwork.public.*.name[count.index]}"
+    region = "${google_compute_subnetwork.public.*.region[count.index]}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/compute_firewall.html
-resource "google_compute_firewall" "default-in" {
-    name    = "default-in-${var.env_uuid}"
-    network = "${google_compute_network.default.self_link}"
+resource "google_compute_firewall" "public-in" {
+    name    = "public-in-${var.env_uuid}"
+    network = "${google_compute_network.public.self_link}"
     direction = "INGRESS"
 
     allow { protocol = "icmp" }
-    allow { protocol = "tcp" ports = ["${sort(var.default_tcp_ports)}"] }
-    allow { protocol = "udp" ports = ["${sort(var.default_udp_ports)}"] }
+    allow { protocol = "tcp" ports = ["${sort(var.public_tcp_ports)}"] }
+    allow { protocol = "udp" ports = ["${sort(var.public_udp_ports)}"] }
 }
 
-resource "google_compute_firewall" "default-out" {
-    name    = "default-out-${var.env_uuid}"
-    network = "${google_compute_network.default.self_link}"
+resource "google_compute_firewall" "public-out" {
+    name    = "public-out-${var.env_uuid}"
+    network = "${google_compute_network.public.self_link}"
     direction = "EGRESS"
 
     destination_ranges = ["0.0.0.0/0"]
@@ -116,7 +148,6 @@ data "google_compute_subnetwork" "private" {
     region = "${google_compute_subnetwork.private.*.region[count.index]}"
 }
 
-
 resource "google_compute_firewall" "private-allow-in" {
     name    = "private-allow-in-${var.env_uuid}"
     network = "${google_compute_network.private.self_link}"
@@ -149,7 +180,7 @@ resource "google_compute_firewall" "private-allow-out" {
 }
 
 locals {
-    actual_public_regions = ["${data.google_compute_subnetwork.default.*.region}"]
+    actual_public_regions = ["${data.google_compute_subnetwork.public.*.region}"]
     actual_public_provider_region_idx = "${index(local.actual_public_regions,
                                                  data.google_client_config.current.region)}"
 
@@ -158,12 +189,21 @@ locals {
                                                   data.google_client_config.current.region)}"
 }
 
+output "automatic" {
+    value = {
+        test = "${module.test_automatic.name}"
+        stage = "${module.stage_automatic.name}"
+        prod = "${module.prod_automatic.name}"
+    }
+    sensitive = true
+}
+
 output "public" {
     value = {
-        network_name = "${google_compute_network.default.name}"
-        network_link = "${google_compute_network.default.self_link}"
-        subnetwork_name = "${data.google_compute_subnetwork.default.*.name[local.actual_public_provider_region_idx]}"
-        subnetwork_link = "${data.google_compute_subnetwork.default.*.self_link[local.actual_public_provider_region_idx]}"
+        network_name = "${google_compute_network.public.name}"
+        network_link = "${google_compute_network.public.self_link}"
+        subnetwork_name = "${data.google_compute_subnetwork.public.*.name[local.actual_public_provider_region_idx]}"
+        subnetwork_link = "${data.google_compute_subnetwork.public.*.self_link[local.actual_public_provider_region_idx]}"
     }
     sensitive = true
 }
