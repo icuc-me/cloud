@@ -7,41 +7,38 @@ and a service account username of "fng".  Create service accounts and keys
 with the following commands, run from inside the ``secrets`` directory:
 
 ```
-$ alias pgcloud='sudo podman run -it --rm -e AS_ID=$UID -e AS_USER=$USER --security-opt label=disable -v /home/$USER:$HOME -v /tmp:/tmp:ro quay.io/cevich/gcloud_centos:latest --configuration=$ENV_NAME --project=${ENV_NAME}${PROJECT_SFX}'
-$ PROJECT_SFX=foobar
+
+$ PROJECT_SFX=-foo-bar
 $ SUSERNAME=fng
   # a lesser-privledged account is used for testing
-$ ROLES="
-    --role roles/compute.admin
-    --role roles/compute.networkAdmin
-    --role roles/iam.serviceAccountUser
-    --role roles/storage.admin
-    --role roles/iam.serviceAccountAdmin"
+$ SUPERSERVICE=${SUSERNAME}@prod${PROJECT_SFX}.iam.gserviceaccount.com
+$ ROLES="\
+--role=roles/compute.admin
+--role=roles/compute.networkAdmin
+--role=roles/storage.admin
+--role=roles/storage.objectAdmin
+--role=roles/iam.serviceAccountUser
+--role=roles/iam.serviceAccountAdmin
+--role=roles/resourcemanager.projectIamAdmin"
 
-$ SUPERSERVICE=$SUSERNAME@prod${PROJECT_SFX}.iam.gserviceaccount.com
+$ alias pgcloud='sudo podman run -i --rm -e AS_ID=$UID -e AS_USER=$USER --security-opt label=disable
+ -v /home/$USER:$HOME -v /tmp:/tmp:ro quay.io/cevich/gcloud_centos:latest
+ --configuration=${ENV_NAME} --project=${ENV_NAME}${PROJECT_SFX}'
 
-$ for ENV_NAME in prod stage test; do \
-    pgcloud init --skip-diagnostics; \
+$   pgcloud init --skip-diagnostics; \
     pgcloud iam service-accounts create ${SUSERNAME}; \
     pgcloud iam service-accounts keys create \
-        $PWD/${ENV_NAME}-${SUSERNAME}.json \
-        --iam-account=serviceAccount:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com \
+        $PWD/${SUSERNAME}.json \
+        --iam-account=serviceAccount:$SUPERSERVICE \
         --key-file-type=json; \
-    pgcloud projects add-iam-policy-binding ${ENV_NAME}${PROJECT_SFX} \
-        --member serviceAccount:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com \
-        $ROLES; \
-    pgcloud projects add-iam-policy-binding ${ENV_NAME}${PROJECT_SFX} \
-        --member serviceAccount:${SUPERSERVICE} \
-        --role roles/resourcemanager.projectIamAdmin;
-done
-```
-
-A handy command for listing roles bound to a service account is:
-
-```
-$ gcloud projects get-iam-policy ${ENV_NAME}${PROJECT_SFX} \
---flatten="bindings[].members" --format='table(bindings.role)' \
---filter="bindings.members:${SUSERNAME}@${ENV_NAME}${PROJECT_SFX}.iam.gserviceaccount.com"
+$ for ENV_NAME in prod stage test; do
+    for ROLE in $ROLES; do \
+        pgcloud projects add-iam-policy-binding ${ENV_NAME}${PROJECT_SFX} \
+                --quiet --member serviceAccount:${SUPERSERVICE} $ROLE;  done; \
+    pgcloud projects get-iam-policy ${ENV_NAME}${PROJECT_SFX} \
+           --flatten="bindings[].members" --format='table(bindings.role)' \
+           --filter="bindings.members:$SUPERSERVICE"; \
+    done
 ```
 
 ## Contents of `*-secrets.sh`:
@@ -70,18 +67,12 @@ files - one per environment.  Each must contain the following values:
 * ``env_name``: name of the environment - validated against ``ENV_NAME`` at runtime
 * ``suser_display_name``: Full name / description to assign when creating the main service accounts
   for each project (test, stage, prod)
-* ``ci_susername``: Service account username for use by automated testing.
-* ``ci_suser_display_name``: Human-friendly name for bot account
-* ``test_roles_members_bindings`` - see below
-* ``stage_roles_members_bindings`` - see below
-* ``prod_roles_members_bindings`` - Terraform 0.11 cannot accept anything except
+* ``ci_suser_display_name``: Human-friendly name for bot accounts (``*_ci_susername``)
+* ``test_ci_susername``: Service account username for use by automated testing for test project.
+* ``stage_ci_susername``: Service account username for use by automated testing for stage project.
+* ``prod_ci_susername``: Service account username for use by automated testing for prod project.
+* ``env_readers`` - Terraform 0.11 cannot accept anything except
   strings.  These are each encoded dictionaries containing a list of strings.
   The dictionaries are separated by `;`, the key and value by '=', and list items by ','.
-  Keys should be the names of canned or custom Google IAM roles.  Items are a list
-  of identities assigned to the role.  See the
-  [terraform google_project_iam_binding documentation](https://www.terraform.io/docs/providers/google/r/google_project_iam.html#google_project_iam_binding)
-  for the required identity format.
-* ``env_readers`` - Similar format to ``prod_roles_members_bindings`` above.  A
-  string-encoded dictionary containing three keys: `test`, `stage`, and `prod`.  Each
-  with a (possibly empty) list in CSV format, of service account identities which should
-  be granted read access to the cooresponding strongbox.
+  Each (possibly empty) list contains service account identities which should
+  be granted read access to the cooresponding strongbox bucket and objects.

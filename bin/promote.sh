@@ -11,21 +11,20 @@ case "$1" in
     test)
         SRC="test"
         DST="stage"
-        ROLLMOD=1
         ;;
     stage)
         SRC="stage"
         DST="prod"
-        ROLLMOD=0
         ;;
-    *) die "First parameter must be 'test' or 'stage', got: '$1'." 1
+    prod)
+        SRC="prod"
+        DST="test"
+        ;;
+    *) die "First parameter must be 'test', 'stage', or 'prod', got: '$1'." 1
 esac
-
-make -C "$SRC_DIR/validate" .commits_clean
 
 TEMPDIR="$(mktemp -p '' -d ${SCRIPT_FILENAME}_XXXX)"
 trap "rm -rf $TEMPDIR" EXIT
-rsync --archive --links $EXCLUDE "$TF_DIR/$SRC/" "$TEMPDIR"
 
 modfiles() {
     cd "$TEMPDIR"
@@ -39,8 +38,11 @@ modfiles() {
 YorNorR="r"
 while [[ "$YorNorR" == "R" ]] || [[ "$YorNorR" == "r" ]]
 do
+    make -C "$SRC_DIR/validate" .commits_clean
+    rsync --archive --links $EXCLUDE "$TF_DIR/$SRC/" "$TEMPDIR"
     modfiles
     echo ""
+    echo "$TMPDIR"
     ls -la $TMPDIR
     read -N 1 -p "$TMPDIR OKAY to proceed (y), re-edit (r), or abort (n)? " YorNorR
     echo ""
@@ -50,18 +52,7 @@ do
     fi
 done
 
-if ((ROLLMOD)) && [[ -d "$TEMPDIR/modules" ]]
-then
-    rsync --archive --links --delete "$TEMPDIR/modules" "$TF_DIR/"
-    rm -rf "$TEMPDIR/modules"
-fi
-
 rsync --archive --links --delete $EXCLUDE "$TEMPDIR/"  "$TF_DIR/$DST"
-
-if ((ROLLMOD))
-then
-    ln -sf "../modules" "$TF_DIR/$DST/modules"
-fi
 
 cd "$TF_DIR"
 git status

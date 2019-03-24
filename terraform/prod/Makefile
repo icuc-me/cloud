@@ -7,7 +7,7 @@ all: guard-PHASE guard-ENV_NAME $(_PHASE)/apply
 
 $(_PHASE): guard-PHASE guard-ENV_NAME backend.auto.tfvars
 	mkdir -p "$@"
-	@for src in ./modules/ *.auto.tfvars common_terraform.tf common_variables.tf only_$(ENV_NAME)_*.tf $(_PHASE)_main.tf $(_PHASE)_$(ENV_NAME).tf; do \
+	@for src in ./modules/ *.auto.tfvars common_*.tf only_$(ENV_NAME)_*.tf $(_PHASE)_main.tf $(_PHASE)_$(ENV_NAME).tf; do \
 		test ! -r "$$src" || ln -rsvft "$@" "$$src"; done
 	TF_IN_AUTOMATION=1 terraform init -input=false -backend-config="./backend.auto.tfvars" "./$@"
 	-TF_IN_AUTOMATION=1 terraform workspace new "$(_PHASE)"
