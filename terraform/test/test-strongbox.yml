@@ -7,12 +7,9 @@ env_name: "test"
 suser_display_name: "John Doe"
 
 ci_suser_display_name: "CI Automation Account"
-ci_susername: "ciuser03"
-
-# Terraform 0.11 cannot accept anything except strings
-test_roles_members_bindings: >-
-    roles/compute.admin=some young guy,other dude;
-    roles/storage.admin=other dude, super-man;
+test_ci_susername: "foo"
+stage_ci_susername: "bar"
+prod_ci_susername: "baz"
 
 env_readers: >-
     test=value1a,value1b,xxxx,value1c,xxxx;

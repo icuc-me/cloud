@@ -1,10 +1,12 @@
 
-// Main service account for managing environments
+// Main service account for managing all environments
+// N/B: THIS MUST BE IMPORTED & ROLES BOUND MANUALLY: see secrets/README.md
 module "main_service_account" {
     source = "./modules/service_account"
     providers { google = "google" }
     susername = "${local.self["SUSERNAME"]}"
     create = "${local.is_prod}"
+    protect = "${local.is_prod}"
 }
 
 output "main_service_account" {
@@ -12,18 +14,19 @@ output "main_service_account" {
     sensitive = true
 }
 
-module "main_iam_binding" {
-    source = "./modules/project_iam_binding"
-    providers { google = "google" }
-    roles_members = <<EOF
-        roles/storage.admin=serviceAccount:${module.main_service_account.email};
-        roles/compute.admin=serviceAccount:${module.main_service_account.email};
-        roles/compute.networkAdmin=serviceAccount:${module.main_service_account.email};
-        roles/iam.serviceAccountAdmin=serviceAccount:${module.main_service_account.email};
-        roles/iam.serviceAccountUser=serviceAccount:${module.main_service_account.email};
-        roles/resourcemanager.projectIamAdmin=serviceAccount:${module.main_service_account.email};
-EOF
-    create = "${local.is_prod}"
+// ref: https://www.terraform.io/docs/providers/google/r/storage_bucket_iam.html
+resource "google_storage_bucket_iam_binding" "main_bucket_admin" {
+    count = "${local.is_prod}"
+    bucket = "${local.self["BUCKET"]}"
+    role = "roles/storage.admin"
+    members = ["serviceAccount:${module.main_service_account.email}"]
+}
+
+resource "google_storage_bucket_iam_binding" "main_bucket_object_admin" {
+    count = "${local.is_prod}"
+    bucket = "${local.self["BUCKET"]}"
+    role = "roles/storage.objectAdmin"
+    members = ["serviceAccount:${module.main_service_account.email}"]
 }
 
 // Persistent, encrypted sensitive data store for all environments
@@ -53,7 +56,6 @@ locals {
     }
 }
 
-// Actual, uris for production-data
 output "strongbox_uris" {
     value = {
         test = "${local.is_prod == 1
