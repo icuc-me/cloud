@@ -20,3 +20,25 @@ provider "google" {
     zone = "${var.TEST_SECRETS["ZONE"]}"
     scopes = ["${local.google_scopes}"]
 }
+
+// THE ALIASES BELOW ARE FAKE - FOR TESTING
+
+provider "google" {
+    version = "~> 2.2"
+    alias = "stage"
+    credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
+    project = "${var.TEST_SECRETS["PROJECT"]}"
+    region = "${var.TEST_SECRETS["REGION"]}"
+    zone = "${var.TEST_SECRETS["ZONE"]}"
+    scopes = ["${local.google_scopes}"]
+}
+
+provider "google" {
+    version = "~> 2.2"
+    alias = "prod"
+    credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
+    project = "${var.TEST_SECRETS["PROJECT"]}"
+    region = "${var.TEST_SECRETS["REGION"]}"
+    zone = "${var.TEST_SECRETS["ZONE"]}"
+    scopes = ["${local.google_scopes}"]
+}

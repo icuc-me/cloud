@@ -30,3 +30,15 @@ provider "google" {
     zone = "${var.STAGE_SECRETS["ZONE"]}"
     scopes = ["${local.google_scopes}"]
 }
+
+// THE ALIASES BELOW ARE FAKE - FOR TESTING
+
+provider "google" {
+    version = "~> 2.2"
+    alias = "prod"
+    credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
+    project = "${var.STAGE_SECRETS["PROJECT"]}"
+    region = "${var.STAGE_SECRETS["REGION"]}"
+    zone = "${var.STAGE_SECRETS["ZONE"]}"
+    scopes = ["${local.google_scopes}"]
+}
