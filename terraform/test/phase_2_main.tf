@@ -81,6 +81,39 @@ output "ci_svc_acts" {
     sensitive = true
 }
 
+module "test_img_svc_act" {
+    source = "./modules/service_account"
+    providers { google = "google.test" }
+    susername = "${module.strong_unbox.contents["test_img_susername"]}"
+    sdisplayname = "${module.strong_unbox.contents["img_suser_display_name"]}"
+    create = "${local.is_prod}"
+}
+
+module "stage_img_svc_act" {
+    source = "./modules/service_account"
+    providers { google = "google.stage" }
+    susername = "${module.strong_unbox.contents["stage_img_susername"]}"
+    sdisplayname = "${module.strong_unbox.contents["img_suser_display_name"]}"
+    create = "${local.is_prod}"
+}
+
+module "prod_img_svc_act" {
+    source = "./modules/service_account"
+    providers { google = "google.prod" }
+    susername = "${module.strong_unbox.contents["prod_img_susername"]}"
+    sdisplayname = "${module.strong_unbox.contents["img_suser_display_name"]}"
+    create = "${local.is_prod}"
+}
+
+output "img_svc_acts" {
+    value = {
+        test = "${module.test_img_svc_act.email}"
+        stage = "${module.stage_img_svc_act.email}"
+        prod = "${module.prod_img_svc_act.email}"
+    }
+    sensitive = true
+}
+
 output "uuid" {
     value = "${var.UUID}"
     sensitive = true
