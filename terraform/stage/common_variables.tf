@@ -90,6 +90,11 @@ locals {
                       : 0}"
     _src_version = { SRC_VERSION = "${var.SRC_VERSION}" }
 
+    google_scopes = [
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
     mock_strongbox = "${local.self["STRONGBOX"]}_mock_${var.UUID}"  // uniqe for testing
 
     strongkeys = {
