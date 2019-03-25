@@ -50,7 +50,7 @@ output "mock_strongbox_contents" {
 // CI Automation service account for test environment
 module "test_ci_svc_act" {
     source = "./modules/service_account"
-    providers { google = "google" }
+    providers { google = "google.test" }
     susername = "${module.strong_unbox.contents["test_ci_susername"]}"
     sdisplayname = "${module.strong_unbox.contents["ci_suser_display_name"]}"
     create = "${local.is_prod}"
@@ -58,7 +58,7 @@ module "test_ci_svc_act" {
 
 module "stage_ci_svc_act" {
     source = "./modules/service_account"
-    providers { google = "google" }
+    providers { google = "google.stage" }
     susername = "${module.strong_unbox.contents["stage_ci_susername"]}"
     sdisplayname = "${module.strong_unbox.contents["ci_suser_display_name"]}"
     create = "${local.is_prod}"
@@ -66,7 +66,7 @@ module "stage_ci_svc_act" {
 
 module "prod_ci_svc_act" {
     source = "./modules/service_account"
-    providers { google = "google" }
+    providers { google = "google.prod" }
     susername = "${module.strong_unbox.contents["prod_ci_susername"]}"
     sdisplayname = "${module.strong_unbox.contents["ci_suser_display_name"]}"
     create = "${local.is_prod}"
