@@ -10,6 +10,7 @@ golang-godoc
 google-cloud-sdk
 make
 nmap-ncat
+openssl
 openssh-clients
 podman
 python36

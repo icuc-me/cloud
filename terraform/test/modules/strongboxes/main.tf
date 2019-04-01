@@ -16,6 +16,7 @@ variable "force_destroy" {
 }
 
 locals {
+    box_sfx = "v2.txt"
     delimiter = "/"
     components = ["${split(local.delimiter, var.strongbox)}"]
     boxbucket = "${local.components[2]}"
@@ -54,7 +55,7 @@ module "test_strongbox" {
     providers = { google = "google" }
     source = "./strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
-    strongbox_name = "test-strongbox.json.bz2.pgp"
+    strongbox_name = "test.${local.box_sfx}"
     box_content = "${data.external.test_contents.result["encrypted"]}"
 }
 
@@ -62,7 +63,7 @@ module "stage_strongbox" {
     providers = { google = "google" }
     source = "./strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
-    strongbox_name = "stage-strongbox.json.bz2.pgp"
+    strongbox_name = "stage.${local.box_sfx}"
     box_content = "${data.external.stage_contents.result["encrypted"]}"
 }
 
@@ -70,7 +71,7 @@ module "prod_strongbox" {
     providers = { google = "google" }
     source = "./strongbox"
     bucket_name = "${google_storage_bucket.boxbucket.name}"
-    strongbox_name = "prod-strongbox.json.bz2.pgp"
+    strongbox_name = "prod.${local.box_sfx}"
     box_content = "${data.external.prod_contents.result["encrypted"]}"
 }
 
