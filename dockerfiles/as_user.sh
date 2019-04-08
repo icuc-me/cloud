@@ -21,7 +21,8 @@ cd "$SRC_DIR"
 if ! id "$AS_USER" &> /dev/null
 then
     groupadd -g "$AS_ID" "$AS_USER"
-    useradd -g "$AS_ID" -u "$AS_ID" "$AS_USER" --no-create-home  # assumed volume mount
+    useradd -g "$AS_ID" -u "$AS_ID" -G "wheel" "$AS_USER" --no-create-home  # assumed volume mount
+    echo '%wheel  ALL=(ALL)  NOPASSWD: ALL/' >> /etc/sudoers
     install -o "$AS_ID" -g "$AS_ID" /etc/skel/.??* /home/$AS_USER
 fi
 
