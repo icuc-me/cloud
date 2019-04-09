@@ -6,7 +6,8 @@ source $(dirname $0)/lib.sh
 
 if [[ "$CI" == "true" ]]
 then
-    [[ -n "${REG_LOGIN}" ]] && [[ -n "${REG_PASSWD}" ]] && $CONTAINER login -u="${REG_LOGIN}" -p="${REG_PASSWD}" quay.io &> /dev/null
+    [[ -n "${REG_LOGIN}" ]] && [[ -n "${REG_PASSWD}" ]] && \
+            $CONTAINER login -u="${REG_LOGIN}" -p="${REG_PASSWD}" quay.io &> /dev/null
     history -c
 
     for name in "$BASE_IN" "$PACKER_IN" "$TFORM_IN" "$VALID_IN" "$DEVEL_IN"
