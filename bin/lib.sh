@@ -1,5 +1,6 @@
 
 set -e
+set +x
 
 die() {
     echo -e "$1"
@@ -12,9 +13,12 @@ SCRIPT_SUBDIR=${SCRIPT_SUBDIR:-$(basename "$SCRIPT_DIRPATH")}
 SRC_DIR=${SRC_DIR:-$(realpath "$SCRIPT_DIRPATH/../")}
 TF_DIR="$SRC_DIR/terraform"
 
-eval "$(go env)"
-export PATH="$GOPATH/bin:$PATH" >> $HOME/.bashrc
-export $(go env | cut -d '=' -f 1)
+if type -P go &> /dev/null
+then
+    eval "$(go env)"
+    export PATH="$GOPATH/bin:$PATH" >> $HOME/.bashrc
+    export $(go env | cut -d '=' -f 1)
+fi
 
 cd $SRC_DIR
 [[ "$CI" == "true" ]] && git fetch --tags &> /dev/null
@@ -26,16 +30,15 @@ VERSION_MAJ="$(echo $VERSION | cut -d . -f 1)"
 # runtime
 CONTAINER="${CONTAINER:-docker}"
 
+IMG_TAG="${IMG_TAG:-$VERSION}"
 if [[ "$CI" == "true" ]]
 then
-    if [[ -n "$CIRRUS_TAG" ]] && [[ "$CIRRUS_BRANCH" == "master" ]]
+    if [[ "$CIRRUS_BRANCH" == "master" ]]
     then
         IMG_TAG="${VERSION_MAJ_MIN}"
     else
         IMG_TAG="${TEST_IMG_TAG}"
     fi
-else
-    IMG_TAG="${IMG_TAG:-$VERSION}"
 fi
 
 [[ "${IMG_TAG}" != "0.0.0" ]] || die "Invalid image tag 0.0.0, check build environment." 1

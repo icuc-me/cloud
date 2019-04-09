@@ -16,12 +16,9 @@ docker_build() {
     [[ -n "$TAG" ]] || die "${FUNCNAME[0]}() expects \$3 to be non-empty repository tag" 2
 
     cd "$SRC_DIR"
-    set -x
-    $CONTAINER build \
-        "${BA_TAG}" \
-        -f "dockerfiles/${NAME}.dockerfile" \
-        --tag "${IN}" ${XTRA:-} ./
-    set +x
+    CMD="$CONTAINER build ${BA_TAG} -f dockerfiles/${NAME}.dockerfile --tag ${IN} ${XTRA:-} ./"
+    echo "$CMD"
+    $CMD
     echo "Tagging ${IN} -> ${FQIN}"
     $CONTAINER tag "${IN}" "${FQIN}"
     echo "########################################"
@@ -30,6 +27,7 @@ docker_build() {
 unset XTRA
 [[ "$CI" != "true" ]] || XTRA="--no-cache"
 docker_build "$REG_NS" "$BASE_IN" "$IMG_TAG" $XTRA
+
 unset XTRA
 for name in "$PACKER_IN" "$TFORM_IN" "$VALID_IN" "$DEVEL_IN"
 do
