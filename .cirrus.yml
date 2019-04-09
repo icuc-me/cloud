@@ -4,6 +4,7 @@ env:
     # Behaviorial
     CIRRUS_SHELL: '/bin/bash'
     CIRRUS_WORKING_DIR: '/root/$CIRRUS_REPO_NAME'
+    ANCESTOR_BRANCH_COMMIT: "${CIRRUS_BASE_SHA}"
 
     # Images
     REG_NS: "quay.io/r4z0r7o3"
@@ -11,18 +12,23 @@ env:
     IMG_FQIN: "${REG_NS}/${IMG_NAME}"
     TEST_IMG_TAG: "0.0.${CIRRUS_BUILD_ID}-pr${CIRRUS_PR}"  # can't remote-remove pushed image
 
+    # Credentials
+    REG_LOGIN: ENCRYPTED[962deb119872c8e9c853d92c7f6d38c7d3a3926cc47d4cc44cd734eac0e7237be681614be2a00b4d4c4f228c8a764582]
+    REG_PASSWD: ENCRYPTED[96f2b6bc8b0d77c2da210161ffd96ab71a36a2b4280af03bcc75b0268cf961794ec0b3bba725e8af19359e1e1ca514a5]
+    TEST_SECRETS: ENCRYPTED[35d9973aad5c5f825cf594bfb932e7c6a32f2195d2408773b47dfaf0aeb9f0c756df59c995fc3ca15948736494a3ced4]
+    TEST_CREDS: ENCRYPTED[ead785ff17f0a2d00b912af4a2531658cc0dc28b4aedf08e1f9ca3d6e7167cbb99d30e09c4234377a9cd507273053a7e]
+
 timeout_in: 30m
 
 docker_builder:
     name: 'docker_builder'
-    env:
-        REG_LOGIN: ENCRYPTED[962deb119872c8e9c853d92c7f6d38c7d3a3926cc47d4cc44cd734eac0e7237be681614be2a00b4d4c4f228c8a764582]
-        REG_PASSWD: ENCRYPTED[96f2b6bc8b0d77c2da210161ffd96ab71a36a2b4280af03bcc75b0268cf961794ec0b3bba725e8af19359e1e1ca514a5]
     build_script: './bin/image_build.sh'
     push_script: './bin/image_push.sh'
 
 docker_builder_validate_task:
     only_if: $CIRRUS_BRANCH != "master"
+    # Not all resources managed by Cirrus
+    auto_cancellation: $CI != "true"
     depends_on:
         - 'docker_builder'
     container:
@@ -30,24 +36,18 @@ docker_builder_validate_task:
         image: "${IMG_FQIN}:${TEST_IMG_TAG}"
         cpu: 2
         memory: 2
-    env:
-        ANCESTOR_BRANCH_COMMIT: "${CIRRUS_BASE_SHA}"
-        TEST_SECRETS: ENCRYPTED[35d9973aad5c5f825cf594bfb932e7c6a32f2195d2408773b47dfaf0aeb9f0c756df59c995fc3ca15948736494a3ced4]
-        TEST_CREDS: ENCRYPTED[ead785ff17f0a2d00b912af4a2531658cc0dc28b4aedf08e1f9ca3d6e7167cbb99d30e09c4234377a9cd507273053a7e]
     setup_script: '$CIRRUS_WORKING_DIR/bin/validate_setup.sh'
     validate_script: 'make validate'
 
 validate_task:
     only_if: $CIRRUS_BRANCH == "master"
+    # Not all resources managed by Cirrus
+    auto_cancellation: $CI != "true"
     depends_on:
         - 'docker_builder'
     container:
         image: '${IMG_FQIN}:latest'
         cpu: 2
         memory: 2
-    env:
-        ANCESTOR_BRANCH_COMMIT: "${CIRRUS_BASE_SHA}"
-        TEST_SECRETS: ENCRYPTED[35d9973aad5c5f825cf594bfb932e7c6a32f2195d2408773b47dfaf0aeb9f0c756df59c995fc3ca15948736494a3ced4]
-        TEST_CREDS: ENCRYPTED[ead785ff17f0a2d00b912af4a2531658cc0dc28b4aedf08e1f9ca3d6e7167cbb99d30e09c4234377a9cd507273053a7e]
     setup_script: '$CIRRUS_WORKING_DIR/bin/validate_setup.sh'
     validate_script: '$CIRRUS_WORKING_DIR/bin/validate_run.sh'
