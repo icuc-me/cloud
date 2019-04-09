@@ -13,7 +13,7 @@ BACKEND_FILEPATH="$1"
 [[ -r "$BACKEND_FILEPATH" ]] || die "Must passs terraform backend configuration as parameter" 1
 
 tfvar_value() {
-    cat "$BACKEND_FILEPATH" | grep -m 1 "$1" | sed -re "s/^$1\s*=\s*//g" | tr -d \'\"
+    cat "$BACKEND_FILEPATH" | egrep -m 1 "$1" | cut -d '=' -f 2 | tr -d "'\"[[:space:]]"
 }
 
 set_tfvars() {

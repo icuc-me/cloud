@@ -19,9 +19,9 @@ guard-%:
 	fi;
 
 %-uuid: guard-ENV_NAME
-	[[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "test" ]] || echo "$(TEST_UUID)" > test-uuid
-	[[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "stage" ]] || echo "$(STAGE_UUID)" > stage-uuid
-	[[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "prod" ]] || echo "$(PROD_UUID)" > prod-uuid
+	( [[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "test" ]] ) || echo "$(TEST_UUID)" > test-uuid
+	( [[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "stage" ]] ) || echo "$(STAGE_UUID)" > stage-uuid
+	( [[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "prod" ]] ) || echo "$(PROD_UUID)" > prod-uuid
 	touch "$@"
 
 test-%.auto.tfvars: test-uuid

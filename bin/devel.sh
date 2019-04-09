@@ -1,34 +1,27 @@
 #!/bin/bash
 
-# Development front-end for project
+# Development front-end, intended to be called by humans, not automation.
 set -e
 
 source "$(dirname $0)/lib.sh"
 
 check_usage() {
-    if ! type -P podman &> /dev/null
+    if ! type -P $CONTAINER &> /dev/null
     then
-        die "The podman command was not found on path" 1
+        die "The $CONTAINER command was not found on path" 1
     elif ! sudo podman version &> /dev/null
     then
-        die "Sudo access to podman is required" 2
-    elif [[ -z "$IMAGE_NAME" ]]
+        die "Sudo access to $CONTAINER is required" 2
+    elif [[ -z "$DEVEL_FQIN" ]]
     then
-        die "Error retrieving image name" 3
-    elif ! sudo podman images $IMAGE_NAME &> /dev/null
+        die "Error image name is empty" 3
+    elif ! sudo $CONTAINER images $DEVEL_FQIN &> /dev/null
     then
-        IMAGE_TAG=$(echo "$IMAGE_NAME" | cut -d : -f 2)
-        IMAGE_BASE=$(echo "$IMAGE_NAME" | cut -d : -f 1)
-        # Not critical but may save some time
-        for fullname in $IMAGE_BASE:$_LAYER_1 $IMAGE_BASE:$_LAYER_2 $IMAGE_BASE:$_LAYER_3
-        do
-           sudo podman pull $fullname &
-        done
-        wait || true
-
-        sudo podman pull $IMAGE_NAME || \
-            $SCRIPT_DIRPATH/buildah_runtime_container_image.sh || \
-            die "Error accessing image $IMAGE_NAME"
+        if ! sudo $CONTAINER pull docker://$DEVEL_FQIN
+        then
+            $SCRIPT_DIRPATH/image_build.sh || \
+                die "Error pulling or building image $DEVEL_FQIN"
+        fi
     elif ! echo "$SRC_DIR" egrep -q "/home/$USER/.+"
     then
         die "Expected source to exist as some subdirectory of /home/$USER" 4
@@ -45,7 +38,7 @@ check_usage
 if [[ "$(basename $0)" == "devel.sh" ]]
 then
     set -x
-    sudo podman run -it --rm \
+    sudo $CONTAINER run -it --rm \
        --security-opt "label=disable" \
        --volume "$(host_ro .vimrc)" \
        --volume "$(host_ro .gitconfig)" \
@@ -54,11 +47,11 @@ then
        --env "SRC_DIR=$SRC_DIR" \
        --env "AS_USER=$USER" \
        --env "AS_ID=$UID" \
-       "$IMAGE_NAME" \
+       "$DEVEL_FQIN" \
     "/usr/bin/bash --login -i"
 else  # make.sh
     set -x
-    sudo podman run -it --rm \
+    sudo $CONTAINER run -i --rm \
        --security-opt "label=disable" \
        --volume "$(host_ro .vimrc)" \
        --volume "$(host_ro .gitconfig)" \
@@ -67,6 +60,6 @@ else  # make.sh
        --env "SRC_DIR=$SRC_DIR" \
        --env "AS_USER=$USER" \
        --env "AS_ID=$UID" \
-       "$IMAGE_NAME" \
+       "$DEVEL_FQIN" \
     "/usr/bin/make $@"
 fi

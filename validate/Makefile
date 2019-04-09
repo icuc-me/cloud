@@ -14,8 +14,8 @@ help:
 	@echo 'validate - execute all environment validation tests'
 	@echo '###########################################################################'
 
-GOPATH=$(shell go env GOPATH))
-GOBIN=$(shell go env GOBIN))
+GOPATH=$(shell go env GOPATH)
+GOBIN=$(shell go env GOBIN)
 PROJECT=github.com/icuc-me/cloud/validate
 SRC_DIR=$(shell realpath "../")
 TF_CFG_DIR=$(SRC_DIR)/terraform/test
@@ -36,9 +36,16 @@ clean:
 
 .pathok: $(SRC_DIR)/validate/Makefile
 	@echo "Verifying go module support: $$SRC_DIR outside of $$GOPATHs"
-	for gopath in ${GOPATH//:/ }; do \
+	for gopath in $${GOPATH//:/ }; do \
 		test "$${SRC_DIR##$$GOPATH}" == "$$SRC_DIR"; \
 	done
+	test -n "$(GOPATH)"
+	test -n "$$GOPATH"
+	test -n "$$PATH"
+	@echo "Verifying \$${GOPATH}/bin exists in \$${PATH}"
+	@echo "PATH=$$PATH"
+	@echo "GOPATH=$$GOPATH"
+	echo "$$PATH" | grep -q "$$GOPATH/bin"
 	@touch .pathok
 
 .PHONY: .all_commited
@@ -67,27 +74,9 @@ verify: .pathok .all_commited .commits_clean .gofmt
 validate.test: .pathok .gofmt
 	go test -c
 
-# ref: https://github.com/alecthomas/gometalinter
+# ref: https://github.com/golangci/golangci-lint#quick-start
 lint: .pathok .gofmt validate.test
-	gometalinter \
-		--line-length=140 --misspell-locale=en.US --tests --aggregate --enable-gc --cyclo-over=20 \
-		--disable=megacheck \
-		--disable=gochecknoinits \
-		--disable=unparam \
-		--disable=varcheck \
-		--disable=structcheck \
-		--exclude='requiredOutputKeys.+global variable' \
-		--exclude='envVars.+global variable' \
-		--exclude='validate_test.go.+file is not goimported' \
-		--exclude='test_utils.go.+is unused' \
-		--exclude='cannot find package' \
-		--exclude='errors while loading package github.com:' \
-		--exclude='gOOGLE_PROJECT_ID.+should be' \
-		--exclude='gOOGLE_APPLICATION_CREDENTIALS.+should be' \
-		--exclude='underscores.+GOOGLE_APPLICATION_CREDENTIALS' \
-		--exclude='underscores.+GOOGLE_PROJECT_ID' \
-		--exclude='underscores.+N_phases' \
-		./...
+	golangci-lint run --tests ./...
 	@touch lint
 
 smoke: verify
