@@ -10,7 +10,7 @@ env:
     REG_NS: "quay.io/r4z0r7o3"
     IMG_NAME: "validate.cloud.icuc.me"
     IMG_FQIN: "${REG_NS}/${IMG_NAME}"
-    TEST_IMG_TAG: "0.0.${CIRRUS_BUILD_ID}-pr${CIRRUS_PR}"  # can't remote-remove pushed image
+    TEST_IMG_TAG: "0.0.${CIRRUS_BUILD_ID}"  # can't remote-remove pushed image
 
     # Credentials
     REG_LOGIN: ENCRYPTED[962deb119872c8e9c853d92c7f6d38c7d3a3926cc47d4cc44cd734eac0e7237be681614be2a00b4d4c4f228c8a764582]
