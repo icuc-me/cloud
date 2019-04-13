@@ -24,6 +24,8 @@ docker_build() {
     echo "########################################"
 }
 
+show_env
+
 unset XTRA
 [[ "$CI" != "true" ]] || XTRA="--no-cache"
 docker_build "$REG_NS" "$BASE_IN" "$IMG_TAG" $XTRA

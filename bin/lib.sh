@@ -61,3 +61,24 @@ VALID_FQIN="${REG_NS}/${VALID_IN}:${IMG_TAG}"
 
 DEVEL_IN="devel.${IMG_SFX}"
 DEVEL_FQIN="${REG_NS}/${DEVEL_IN}:${IMG_TAG}"
+
+show_env(){
+    ENVNAMES="$(env | egrep '^CIRRUS.+=' | cut -d '=' -f 1)
+        $(go env | egrep '^.+=' | cut -d '=' -f 1)
+        USER
+        HOME
+        PATH
+        VERSION
+        IMG_FQIN
+        IMG_TAG
+        REG_NS
+        IMG_NAME
+        TEST_IMG_TAG
+        CI"
+    for name in $ENVNAMES
+    do
+        local value="$(printenv $name)"
+        [[ -z "$value" ]] || \
+            echo "$name=$value"
+    done
+}
