@@ -76,3 +76,29 @@ files - one per environment.  Each must contain the following values:
   The dictionaries are separated by `;`, the key and value by '=', and list items by ','.
   Each (possibly empty) list contains service account identities which should
   be granted read access to the cooresponding strongbox bucket and objects.
+
+### Encryption / Decryption
+
+Openssl and python3 are required, and the google sdk is recommended.  Given a strongbox *yaml*
+file.  The following pipeline will encrypt and load the output into a bucket object.
+
+```
+$ SB=test-strongbox.yml
+$ BU=gs://foobarbaz
+$ cat "$SB" | \
+    python3 -c 'import sys,json,yaml;json.dump(yaml.load(sys.stdin),sys.stdout,indent=2);' | \
+    openssl enc -aes-256-cbc -A -base64 -e | \
+    gsutil cp -I "$BU/$SB"
+```
+
+Assuming the same password/passphrase is used, the following will decrypt the remote
+bucket contents into a local strongbox file.
+
+```
+$ BU=gs://foobarbaz
+$ SB=test.v2.txt
+$ gsutil cat "$BU/$SB" | \
+    openssl enc -aes-256-cbc -A -base64 -d | \
+    python3 -c 'import sys,json,yaml;yaml.dump(json.load(sys.stdin),sys.stdout);' \
+    > "$SB"
+```
