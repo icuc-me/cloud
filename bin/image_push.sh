@@ -13,8 +13,11 @@ then
     for name in "$BASE_IN" "$PACKER_IN" "$TFORM_IN" "$VALID_IN" "$DEVEL_IN"
     do
         $CONTAINER push "$REG_NS/$name:$IMG_TAG"
-        [[ "$CIRRUS_BRANCH" != "master" ]] || \
+        if [[ "$CIRRUS_BRANCH" == "master" ]]
+        then
+            $CONTAINER tag "$REG_NS/$name:$IMG_TAG" "$REG_NS/$name:latest"
             $CONTAINER push "$REG_NS/$name:latest"
+        fi
     done
 else
     die "Expected \$CI: 'true', got: '$CI'"
