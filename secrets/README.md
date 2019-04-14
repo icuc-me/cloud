@@ -83,9 +83,10 @@ Openssl and python3 are required, and the google sdk is recommended.  Given a st
 file.  The following pipeline will encrypt and load the output into a bucket object.
 
 ```
-$ SB=test-strongbox.yml
+$ IN=test-strongbox.yml
+$ SB=test.v2.txt
 $ BU=gs://foobarbaz
-$ cat "$SB" | \
+$ cat "$IN" | \
     python3 -c 'import sys,json,yaml;json.dump(yaml.load(sys.stdin),sys.stdout,indent=2);' | \
     openssl enc -aes-256-cbc -A -base64 -e | \
     gsutil cp -I "$BU/$SB"
@@ -95,10 +96,11 @@ Assuming the same password/passphrase is used, the following will decrypt the re
 bucket contents into a local strongbox file.
 
 ```
+$ OUT=test-strongbox.yml
 $ BU=gs://foobarbaz
 $ SB=test.v2.txt
 $ gsutil cat "$BU/$SB" | \
     openssl enc -aes-256-cbc -A -base64 -d | \
     python3 -c 'import sys,json,yaml;yaml.dump(json.load(sys.stdin),sys.stdout);' \
-    > "$SB"
+    > "$OUT"
 ```
