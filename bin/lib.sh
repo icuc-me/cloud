@@ -35,7 +35,7 @@ if [[ "$CI" == "true" ]]
 then
     if [[ "$CIRRUS_BRANCH" == "master" ]]
     then
-        IMG_TAG="${VERSION_MAJ_MIN}"
+        IMG_TAG="${VERSION_MAJ_MIN_REV}"
     else
         IMG_TAG="${TEST_IMG_TAG}"
     fi
