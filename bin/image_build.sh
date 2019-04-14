@@ -20,7 +20,7 @@ docker_build() {
     echo "$CMD"
     $CMD
     echo "Tagging ${IN} -> ${FQIN}"
-    $CONTAINER tag "${IN}" "${FQIN}"
+    sudo $CONTAINER tag "${IN}" "${FQIN}"
     echo "########################################"
 }
 

@@ -7,7 +7,7 @@ source $(dirname $0)/lib.sh
 if [[ "$CI" == "true" ]]
 then
     [[ -n "${REG_LOGIN}" ]] && [[ -n "${REG_PASSWD}" ]] && \
-            $CONTAINER login -u="${REG_LOGIN}" -p="${REG_PASSWD}" quay.io &> /dev/null
+            sudo $CONTAINER login -u="${REG_LOGIN}" -p="${REG_PASSWD}" quay.io &> /dev/null
     history -c
 
     for name in "$BASE_IN" "$PACKER_IN" "$TFORM_IN" "$VALID_IN" "$DEVEL_IN"
@@ -15,8 +15,8 @@ then
         $CONTAINER push "$REG_NS/$name:$IMG_TAG"
         if [[ "$CIRRUS_BRANCH" == "master" ]]
         then
-            $CONTAINER tag "$REG_NS/$name:$IMG_TAG" "$REG_NS/$name:latest"
-            $CONTAINER push "$REG_NS/$name:latest"
+            sudo $CONTAINER tag "$REG_NS/$name:$IMG_TAG" "$REG_NS/$name:latest"
+            sudo $CONTAINER push "$REG_NS/$name:latest"
         fi
     done
 else
