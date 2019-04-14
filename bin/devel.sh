@@ -3,6 +3,8 @@
 # Development front-end, intended to be called by humans, not automation.
 set -e
 
+IMG_TAG="latest"
+
 source "$(dirname $0)/lib.sh"
 
 check_usage() {
