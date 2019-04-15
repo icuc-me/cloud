@@ -113,7 +113,7 @@ data "template_file" "other_readers" {
 data "template_file" "unique_bucket_readers" {
     count = 1  // value cannot be computed: "${length(local.unique_buckets)}"
     template = "${join(local.c,
-                       distinct(compact(split(local.c,
+                       distinct(compact(split(local.x,
                                               element(data.template_file.other_readers.*.rendered,
                                                       count.index)))))}"
 }
