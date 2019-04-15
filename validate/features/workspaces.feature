@@ -4,7 +4,9 @@ Feature: Multiple terraform environment phases and workspaces each have specific
 
     Background:
         Given the environment variable "TF_CFG_DIR"
+        And the environment variable "ENV_NAME"
         And the env. var. "TF_CFG_DIR" contents "referrs to a directory"
+        And the env. var. "ENV_NAME" contents "names a valid environment"
 
     Scenario:
         Given I list the contents of the directory

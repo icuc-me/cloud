@@ -6,8 +6,10 @@ Feature: Environment variable-baesd authN/authZ
     Background:
         Given the environment variable "GOOGLE_APPLICATION_CREDENTIALS"
         And the environment variable "GOOGLE_PROJECT_ID"
+        And the environment variable "ENV_NAME"
         And the env. var. "GOOGLE_APPLICATION_CREDENTIALS" contents "are the path to a readable file"
         And the env. var. "GOOGLE_PROJECT_ID" contents "conform to a naming standard"
+        And the env. var. "ENV_NAME" contents "names a valid environment"
 
     # Ref: https://godoc.org/golang.org/x/oauth2/google#DefaultClient
     Scenario:

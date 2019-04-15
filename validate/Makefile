@@ -18,8 +18,8 @@ GOPATH=$(shell go env GOPATH)
 GOBIN=$(shell go env GOBIN)
 PROJECT=github.com/icuc-me/cloud/validate
 SRC_DIR=$(shell realpath "../")
-TF_CFG_DIR=$(SRC_DIR)/terraform/test
-# TODO: OVERIDE this from value provided by CI system
+ENV_NAME?=test
+TF_CFG_DIR?=$(SRC_DIR)/terraform/$(ENV_NAME)
 ANCESTOR_BRANCH_COMMIT?=$(shell git merge-base origin/master HEAD)
 SEED=$(shell date +%s)
 
@@ -80,18 +80,19 @@ lint: .pathok .gofmt validate.test
 	@touch lint
 
 smoke: verify
-	bash smoke.sh
+	bash smoke.sh $(ENV_NAME)
 	@touch smoke
 
-../secrets/test-backend.auto.tfvars:
-	$(MAKE) -C ../secrets ENV_NAME=test
+../secrets/$(ENV_NAME)-backend.auto.tfvars:
+	$(MAKE) -C ../secrets ENV_NAME=$(ENV_NAME)
 
 PHONY: validate
-validate: .pathok .gofmt ../secrets/test-backend.auto.tfvars validate.test
+validate: .pathok .gofmt ../secrets/$(ENV_NAME)-backend.auto.tfvars validate.test
 	env \
-		GOOGLE_APPLICATION_CREDENTIALS="$(shell awk -F \" -e '/credentials = "/{print $$2}' ../secrets/test-backend.auto.tfvars)" \
-		GOOGLE_PROJECT_ID="$(shell awk -F \" -e '/project = "/{print $$2}' ../secrets/test-backend.auto.tfvars)" \
+		GOOGLE_APPLICATION_CREDENTIALS="$(shell awk -F \" -e '/credentials = "/{print $$2}' ../secrets/$(ENV_NAME)-backend.auto.tfvars)" \
+		GOOGLE_PROJECT_ID="$(shell awk -F \" -e '/project = "/{print $$2}' ../secrets/$(ENV_NAME)-backend.auto.tfvars)" \
 		TF_CFG_DIR=$(TF_CFG_DIR) \
+		ENV_NAME=$(ENV_NAME) \
 		./validate.test \
 			-test.parallel=1 \
 			-godog.random=$(SEED) \
