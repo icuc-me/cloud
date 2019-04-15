@@ -28,7 +28,8 @@ VERSION_MAJ_MIN="$(echo $VERSION | cut -d . -f 1-2)"
 VERSION_MAJ="$(echo $VERSION | cut -d . -f 1)"
 
 # runtime
-CONTAINER="${CONTAINER:-docker}"
+[[ "$CI" == "true" ]] && CONTAINER=docker
+CONTAINER="${CONTAINER:-podman}"
 
 IMG_TAG="${IMG_TAG:-$VERSION}"
 if [[ "$CI" == "true" ]]
