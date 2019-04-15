@@ -42,3 +42,25 @@ do
     egrep -q -a -m -1 "^    $KEY = \".+\"" $RUNTIME_FILEPATH || \
         die "Missing nested $KEY key in $RUNTIME_FILEPATH" 11
 done
+
+indent 4 "Checking python3 binary exists"
+[[ -n "$(type -P python3)" ]] || \
+    die "Missing python3" 14
+
+indent 4 "Verifying openssl enc / dec works"
+EXPECTED_MESSAGE="\n\nsecret message 1234\n\n"
+ACTUAL_MESSAGE=$(echo "$EXPECTED_MESSAGE" | \
+                 openssl enc -aes-256-cbc -pass file:$BACKEND_FILEPATH -A -base64 -e | \
+                 openssl enc -aes-256-cbc -pass file:$BACKEND_FILEPATH -A -base64 -d)
+[[ "$ACTUAL_MESSAGE" == "$EXPECTED_MESSAGE" ]] || \
+    die "Encryption / Decryption failed" 15
+
+indent 4 "Verifying gsutil and gcloud commands function"
+for CMDNAME in gcloud gsutil
+do
+    indent 5 "Checking $CMDNAME"
+    [[ -n "$(type -P $CMDNAME)" ]] || \
+        die "Missing command $CMDNAME" 16
+    [[ -n "$($CMDNAME --help)" ]] || \
+        die "Missing --help output from running $CMDNAME" 17
+done
