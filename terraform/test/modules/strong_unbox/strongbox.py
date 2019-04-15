@@ -93,8 +93,8 @@ def cat_string(key):
 def encrypt(plain_pipe, key_pipe):
     cmd_args = list(COMMON_ARGS)
     cmd_args += ["-e", "-pass", "fd:{0}".format(key_pipe.fileno())]
-    cypher_text = str(check_output(cmd_args, stdin=plain_pipe.fileno(), close_fds=False),
-                      encoding='utf-8')
+    cypher_text = check_output(cmd_args, stdin=plain_pipe.fileno(), close_fds=False,
+                               encoding='utf-8')
     return '\n'.join([cypher_text[i:i+CRYPT_CHARS] for i in range(0, len(cypher_text), CRYPT_CHARS)])
 
 
