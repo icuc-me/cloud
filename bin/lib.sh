@@ -83,3 +83,21 @@ show_env(){
             echo "$name=$value"
     done
 }
+
+reg_login(){
+    [[ -n "${REG_LOGIN}" ]] || \
+        die "Expecting \$REG_LOGIN to be non-empty" 31
+
+    [[ -n "${REG_PASSWD}" ]] || \
+        die "Expecting \$REG_PASSWD to be non-empty" 32
+
+    # Login, hide stdio, don't store in history
+    echo "Logging in to remote repository"
+    set +ex
+    sudo $CONTAINER login -u="${REG_LOGIN}" -p="${REG_PASSWD}" quay.io
+    history -c
+    RET=$?
+    set -e
+    [[ "$RET" == 0 ]] || \
+        die "Error logging in to registry, check \$REG_LOGIN and/or \$REG_PASSWD" 33
+}

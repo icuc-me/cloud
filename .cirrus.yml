@@ -23,7 +23,7 @@ timeout_in: 30m
 docker_builder:
     name: 'docker_builder'
     build_script: './bin/image_build.sh'
-    push_script: './bin/image_push.sh'  # current tag only
+    push_script: './bin/image_push.sh'  # push all $IMG_TAG
 
 docker_builder_validate_task:
     only_if: $CIRRUS_BRANCH != "master"
@@ -36,6 +36,7 @@ docker_builder_validate_task:
         image: "${IMG_FQIN}:${TEST_IMG_TAG}"
         cpu: 2
         memory: 2
+    untag_script: 'env CONTAINER=podman $CIRRUS_WORKING_DIR/bin/image_del.sh'  # ephemeral
     setup_script: '$CIRRUS_WORKING_DIR/bin/validate_setup.sh'
     validate_script: 'make validate'
 
@@ -51,4 +52,4 @@ validate_task:
         memory: 2
     setup_script: '$CIRRUS_WORKING_DIR/bin/validate_setup.sh'
     validate_script: '$CIRRUS_WORKING_DIR/bin/validate_run.sh'
-    push_script: '$CIRRUS_WORKING_DIR/bin/image_push.sh tag-latest'  # current + latest tag
+    push_script: 'env CONTAINER=podman $CIRRUS_WORKING_DIR/bin/image_tag.sh'  # tag all $IMG_TAG -> latest
