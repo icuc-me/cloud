@@ -3,10 +3,21 @@ variable "project_id" {
     default = ""
 }
 
+locals {
+    default = "default"
+    default_in = "default-in"
+    default_out = "default-out"
+    testname = "default-${var.project_id}"
+    testname_in = "default-in-${var.project_id}"
+    testname_out = "default-out-${var.project_id}"
+}
+
 // ref: https://www.terraform.io/docs/providers/google/r/compute_network.html
 resource "google_compute_network" "automatic" {
     count = "${var.project_id != "" ? 1 : 0}"
-    name = "automatic-${var.project_id}"
+    name = "${var.project_id == "test"
+              ? local.testname
+              : local.default}"
     description = "Auto-allocated network for general use"
     auto_create_subnetworks = "true"
     project = "${var.project_id}"
@@ -14,7 +25,9 @@ resource "google_compute_network" "automatic" {
 
 resource "google_compute_firewall" "automatic-out" {
     count = "${var.project_id != "" ? 1 : 0}"
-    name    = "automatic-${var.project_id}-out"
+    name = "${var.project_id == "test"
+              ? local.testname_out
+              : local.default_out}"
     network = "${google_compute_network.automatic.self_link}"
     direction = "EGRESS"
     project = "${var.project_id}"
@@ -31,7 +44,9 @@ resource "google_compute_firewall" "automatic-out" {
 
 resource "google_compute_firewall" "automatic-in" {
     count = "${var.project_id != "" ? 1 : 0}"
-    name    = "automatic-${var.project_id}-in"
+    name = "${var.project_id == "test"
+              ? local.testname_in
+              : local.default_in}"
     network = "${google_compute_network.automatic.self_link}"
     direction = "INGRESS"
     project = "${var.project_id}"
@@ -42,5 +57,7 @@ resource "google_compute_firewall" "automatic-in" {
 }
 
 output "name" {
-    value = "automatic-${var.project_id}"
+    value = "${var.project_id == "test"
+             ? local.testname
+             : local.default}"
 }

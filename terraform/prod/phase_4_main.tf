@@ -1,15 +1,3 @@
-data "terraform_remote_state" "phase_1" {
-    backend = "gcs"
-    config {
-        credentials = "${local.self["CREDENTIALS"]}"
-        project = "${local.self["PROJECT"]}"
-        region = "${local.self["REGION"]}"
-        bucket = "${local.self["BUCKET"]}"
-        prefix = "${local.self["PREFIX"]}"
-    }
-    workspace = "phase_1"
-}
-
 data "terraform_remote_state" "phase_2" {
     backend = "gcs"
     config {
@@ -22,38 +10,60 @@ data "terraform_remote_state" "phase_2" {
     workspace = "phase_2"
 }
 
-data "terraform_remote_state" "phase_3" {
-    backend = "gcs"
-    config {
-        credentials = "${local.self["CREDENTIALS"]}"
-        project = "${local.self["PROJECT"]}"
-        region = "${local.self["REGION"]}"
-        bucket = "${local.self["BUCKET"]}"
-        prefix = "${local.self["PREFIX"]}"
-    }
-    workspace = "phase_3"
-}
-
 locals {
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
-    // In test & stage, this will be mock-uri's
-    strongbox_uris = "${data.terraform_remote_state.phase_1.strongbox_uris}"
 }
 
-// Set access controls on buckets and objects.  Mock buckets used in test & stage
-module "strongbox_acls" {
-    source = "./modules/strongbox_acls"
+// VPC subnetworks and firewalls required by all instances and containers
+module "project_networks" {
+    source = "./modules/project_networks"
     providers { google = "google" }
-    set_acls = "1"
-    strongbox_uris = "${local.strongbox_uris}"
-    env_readers = "${local.strongbox_contents["env_readers"]}"
+    env_uuid = "${var.UUID}"
+    test_project = "${local.is_prod == 1
+                      ? var.TEST_SECRETS["PROJECT"]
+                      : ""}"
+    stage_project = "${local.is_prod == 1
+                       ? var.STAGE_SECRETS["PROJECT"]
+                       : ""}"
+    prod_project = "${local.is_prod == 1
+                      ? var.PROD_SECRETS["PROJECT"]
+                      : ""}"
+    public_tcp_ports = ["${compact(split(",",local.strongbox_contents["tcp_fw_ports"]))}"]
+    public_udp_ports = ["${compact(split(",",local.strongbox_contents["udp_fw_ports"]))}"]
 }
 
-output "strongbox_acls" {
-    value = {
-        object_readers = "${module.strongbox_acls.object_readers}"
-        bucket_readers = "${module.strongbox_acls.bucket_readers}"
-    }
+output "automatic_network" {
+    value = "${module.project_networks.automatic[var.ENV_NAME]}"
+    sensitive = true
+}
+
+output "public_network" {
+    value = "${module.project_networks.public}"
+    sensitive = true
+}
+
+output "private_network" {
+    value = "${module.project_networks.private}"
+    sensitive = true
+}
+
+// Main firewall and VPN for filtering external traffic to internal subnetwork
+module "gateway" {
+    source = "./modules/gateway"
+    providers { google = "google" }
+    env_name = "${var.ENV_NAME}"
+    env_uuid = "${var.UUID}"
+    public_subnetwork = "${module.project_networks.public["subnetwork_name"]}"
+    private_subnetwork = "${module.project_networks.private["subnetwork_name"]}"
+}
+
+output "gateway_external_ip" {
+    value = "${module.gateway.external_ip}"
+    sensitive = true
+}
+
+output "gateway_private_ip" {
+    value = "${module.gateway.private_ip}"
     sensitive = true
 }
 

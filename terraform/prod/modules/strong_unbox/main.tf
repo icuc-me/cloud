@@ -13,7 +13,7 @@ variable "credentials" {
 
 
 data "external" "strongbox" {
-    program = ["env", "${path.module}/strongbox.py"]
+    program = ["${path.module}/strongbox.py"]
     query = {
         credentials = "${var.credentials}"
         strongbox = "${var.strongbox_uri}"
