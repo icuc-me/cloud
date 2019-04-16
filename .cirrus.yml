@@ -23,7 +23,7 @@ timeout_in: 30m
 docker_builder:
     name: 'docker_builder'
     build_script: './bin/image_build.sh'
-    push_script: './bin/image_push.sh'
+    push_script: './bin/image_push.sh'  # current tag only
 
 docker_builder_validate_task:
     only_if: $CIRRUS_BRANCH != "master"
@@ -51,3 +51,4 @@ validate_task:
         memory: 2
     setup_script: '$CIRRUS_WORKING_DIR/bin/validate_setup.sh'
     validate_script: '$CIRRUS_WORKING_DIR/bin/validate_run.sh'
+    push_script: '$CIRRUS_WORKING_DIR/bin/image_push.sh tag-latest'  # current + latest tag
