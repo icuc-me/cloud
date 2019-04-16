@@ -12,10 +12,16 @@ source $(dirname $0)/lib.sh
 
 reg_login
 
-for name in "$BASE_IN" "$PACKER_IN" "$TFORM_IN" "$VALID_IN" "$DEVEL_IN"
+for name in "$BASE_IN" "$TOOLS_IN" "$RUN_IN"
 do
     echo "Deleting '$REG_NS/$name:$IMG_TAG'"
     sudo skopeo delete "docker://$REG_NS/$name:$IMG_TAG" &
+
+    if [[ "$IMG_TAG" != "$TEST_IMG_TAG" ]]
+    then
+        echo "Deleting '$REG_NS/$name:$TEST_IMG_TAG'"
+        sudo skopeo delete "docker://$REG_NS/$name:$TEST_IMG_TAG" &
+    fi
 done
 
 wait

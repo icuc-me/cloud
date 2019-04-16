@@ -51,17 +51,11 @@ BA_TAG="--build-arg=TAG=${IMG_TAG}"
 BASE_IN="base.${IMG_SFX}"
 BASE_FQIN="${REG_NS}/${BASE_IN}:${IMG_TAG}"
 
-PACKER_IN="packer.${IMG_SFX}"
-PACKER_FQIN="${REG_NS}/${PACKER_IN}:${IMG_TAG}"
+TOOLS_IN="tools.${IMG_SFX}"
+TOOLS_FQIN="${REG_NS}/${PACKER_IN}:${IMG_TAG}"
 
-TFORM_IN="terraform.${IMG_SFX}"
-TFORM_FQIN="${REG_NS}/${TFORM_IN}:${IMG_TAG}"
-
-VALID_IN="validate.${IMG_SFX}"
-VALID_FQIN="${REG_NS}/${VALID_IN}:${IMG_TAG}"
-
-DEVEL_IN="devel.${IMG_SFX}"
-DEVEL_FQIN="${REG_NS}/${DEVEL_IN}:${IMG_TAG}"
+RUN_IN="runtime.${IMG_SFX}"
+RUN_FQIN="${REG_NS}/${RUN_IN}:${IMG_TAG}"
 
 show_env(){
     ENVNAMES="$(env | egrep '^CIRRUS.+=' | cut -d '=' -f 1)
