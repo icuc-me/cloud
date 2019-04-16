@@ -13,7 +13,10 @@ import io
 import binascii
 import random
 import ipaddress
-import simplejson as json
+try:
+    import simplejson as json
+except ModuleNotFoundError:
+    import json
 
 def errout(msg):
     sys.stderr.write('{0}\n'.format(msg))
@@ -75,5 +78,5 @@ if __name__ == "__main__":
     count, seed_string = validate_input(json.load(sys.stdin))
     cache = CidrCache(seed_string)
     cidrs = [cache.getone() for n in range(count)]
-    sys.stdout.write(json.dumps(dict(csv=",".join(cidrs)), skipkeys=True,
+    sys.stdout.write(json.dumps(dict(csv=str(",".join(cidrs))), skipkeys=True,
                                 allow_nan=False, separators=(',',':')))

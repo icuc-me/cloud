@@ -7,9 +7,10 @@ import os
 import shlex
 import re
 from subprocess import check_output, CalledProcessError, PIPE, STDOUT
-from io import StringIO
-import simplejson as json
-from yaml import load
+try:
+    import simplejson as json
+except ModuleNotFoundError:
+    import json
 
 
 def errout(msg):
@@ -37,10 +38,15 @@ def validate_input(query):
 
 if __name__ == "__main__":
     query = validate_input(json.load(sys.stdin))
+    llhs = len(query['k'])
+    lrhs = len(query['v'])
     try:
-        assert len(query['k']) == len(query['v'])
-    except AssertionError:
-        raise AssertionError("(length) {0} != {1}".format(query['k'], query['v']))
+        assert llhs == lrhs
+    except AssertionError as xcept:
+        errout("length {0} != {1}".format(llhs, lrhs))
+        errout("LHS {0} contents {1}".format(type(query['k']), query['k']))
+        errout("RHS {0} contents {1}".format(type(query['v']), query['v']))
+        raise
 
     k_result = []
     v_result = []
@@ -52,8 +58,8 @@ if __name__ == "__main__":
         v_result.append(v)
 
     result = dict(
-        k_csv=query['delim'].join(k_result),
-        v_csv=query['delim'].join(v_result),
+        k_csv=str(query['delim'].join(k_result)),
+        v_csv=str(query['delim'].join(v_result)),
         count=str(len(k_result))
     )
     sys.stdout.write(json.dumps(result, skipkeys=True,
