@@ -1,0 +1,64 @@
+
+"ipa-client-install"
+
+"--unattended"
+
+{% if ipaserver_admin_principal | default("",True) | trim | length %}
+    "--principal=$IPASERVER_ADMIN_PRINCIPAL"
+{% endif %}
+
+{% if ipaserver_admin_password | default("",True) | trim | length %}
+    "--password=$IPASERVER_ADMIN_PASSWORD"
+{% endif %}
+
+{% for _ipaddr in ipaclient_ip_addresses | default([],True) %}
+    "--ip-address={{ _ipaddr | trim }}"
+{% endfor %}
+
+"--domain={{ ipaclient_domain | trim }}"
+
+"--realm={{ ipaclient_realm | trim }}"
+
+"--hostname={{ ipaclient_hostname | trim }}"
+
+{% if ipaclient_hbac_allow | bool %}
+    "--permit"
+{% endif %}
+
+{% if ipaclient_mkhomedir | bool %}
+    "--mkhomedir"
+{% endif %}
+
+{% if not ipaclient_setup_ntp | bool %}
+    "--no-ntp"
+{% else %}
+    {% if ipaclient_ntp_servers | default([],True) | length %}
+        {% for _ntp_server in ipaclient_ntp_servers | mandatory %}
+            "--ntp-server={{ _ntp_server | trim }}"
+        {% endfor %}
+    {% endif %}
+
+    {% if ipaclient_ntp_pool | default("",True) | trim | length %}
+        "--ntp-pool={{ ipaclient_ntp_pool | trim }}"
+    {% endif %}
+{% endif %}
+
+{% if ipaclient_ssh_trust_dns | bool %}
+    "--ssh-trust-dns"
+{% endif %}
+
+{% if not ipaclient_configure_ssh | bool %}
+    "--no-ssh"
+{% endif %}
+
+{% if not ipaclient_configure_sshd | bool %}
+    "--no-sshd"
+{% endif %}
+
+{% if not ipaclient_configure_sshfp | bool %}
+    "--no-dns-sshfp"
+{% endif %}
+
+{% if ipaclient_dns_updates | bool %}
+    "--enable-dns-updates"
+{% endif %}

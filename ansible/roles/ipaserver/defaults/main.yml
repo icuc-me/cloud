@@ -1,0 +1,70 @@
+---
+
+# IPA Hostname, domain and Keberos Realm
+ipaserver_hostname: "{{ ansible_fqdn }}"
+ipaserver_domain: "{{ ansible_domain }}"
+ipaserver_realm: "{{ ansible_domain | upper }}"
+
+ipaserver_ip_addresses:  # also used for any replicas
+    - "{{ ansible_default_ipv4.address | default(ansible_eth0.ipv4.address) }}"
+
+# IPA Kerberos Admin Configuration - also used for any replicas
+ipaserver_admin_password: "Secret123"
+ipaserver_dir_admin_password: "Secret123"
+
+ipaserver_no_host_dns: False
+
+ipaserver_setup_kra: True
+
+ipaserver_idstart: 5000
+ipaserver_idmax: 0
+
+ipaserver_hbac_allow: True
+
+ipaserver_ui_redirect: True
+
+# When non-empty, a map of option strings (w/o leading "--") and cooresponding file names
+# also used for any replicas
+ipaserver_file_options: {}
+
+# Ignored when empty string
+ipaserver_dirsrv_pin: ""
+ipaserver_http_pin: ""
+ipaserver_pkinit_pin: ""
+
+# When non-empty, a map of option strings (w/o leading "--") and cooresponding certificate names
+ipaserver_cert_names: {}
+
+ipaserver_mkhomedir: False
+
+ipaserver_setup_ntp: True
+
+ipaserver_ssh_trust_dns: True
+
+ipaserver_configure_ssh: True
+
+ipaserver_configure_sshd: True
+
+ipaserver_configure_sshfp: True
+
+# When non-empty, a map of external-ca option strings (w/o leading "--") and values
+ipaserver_ext_ca_opts: {}
+
+ipaserver_auto_reverse: True
+
+ipaserver_forward_policy: "first"
+
+ipaserver_auto_forwarders: True
+
+ipaserver_dns_forwarders: []
+
+ipaserver_dnssec_configure: True
+
+# When true, promote current client to a replica
+ipaserver_replica_promote: False
+
+# Number of times to retry startup verification
+ipaserver_running_tries: 4
+
+# Number of seconds to wait between retries
+ipaserver_running_delay: 30

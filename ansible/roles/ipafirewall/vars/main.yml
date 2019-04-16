@@ -1,0 +1,20 @@
+---
+
+ansible_python_interpreter: 'python3'
+
+_prefix: '{{ "free" if ansible_distribution == "Fedora" else "" }}'
+
+ipaserver_firewalld_services:
+    - 'dns'
+    - 'http'
+    - 'https'
+    - 'kadmin'
+    - 'kerberos'
+    - 'kpasswd'
+    - 'ldap'
+    - 'ldaps'
+    - 'ntp'
+    - '{{_prefix}}ipa-ldap'
+    - '{{_prefix}}ipa-ldaps'
+    - '{{_prefix}}ipa-replication'
+    - '{{_prefix}}ipa-trust'

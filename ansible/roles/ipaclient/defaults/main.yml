@@ -1,0 +1,33 @@
+---
+
+# IPA Kerberos user authorized to enroll host
+ipaserver_admin_principal: "admin@{{ ipaclient_realm }}"
+# bulk password, unless ipaserver_admin_username is also set
+ipaserver_admin_password: "Secret123"
+
+# IPA Hostname, domain and Keberos Realm
+ipaclient_hostname: "{{ ansible_fqdn }}"
+ipaclient_domain: "{{ ansible_domain }}"
+ipaclient_realm: "{{ ansible_domain | upper }}"
+
+ipaclient_ip_addresses:  # must be a list
+    - "{{ ansible_default_ipv4.address | default(ansible_all_ipv4_addresses[0]) }}"
+
+ipaclient_mkhomedir: False
+
+ipaclient_hbac_allow: True
+
+ipaclient_dns_updates: False
+
+ipaclient_setup_ntp: True
+ipaclient_ntp_servers: []  # must be list
+# Ignored when empty string
+ipaclient_ntp_pool: ""
+
+ipaclient_ssh_trust_dns: True
+
+ipaclient_configure_ssh: True
+
+ipaclient_configure_sshd: True
+
+ipaclient_configure_sshfp: True

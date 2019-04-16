@@ -1,0 +1,14 @@
+---
+
+- name: The required python/firewalld bindings are installed
+  package:
+      name: python3-firewall
+      state: present  # no unintended updates
+
+- name: IPA server services are allowed through firewall
+  firewalld:
+      immediate: True
+      permanent: True
+      service: '{{ item }}'
+      state: 'enabled'
+  with_items: '{{ ipaserver_firewalld_services }}'

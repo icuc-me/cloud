@@ -1,0 +1,57 @@
+---
+
+- name: The ipa_install_result is initialized empty
+  set_fact:
+    ipa_install_result: {}
+
+- when: not ansible_local.ipaclient_installed | default(False,True) | bool
+  block:
+
+    - name: Install IPA Packages
+      package:
+        name: "{{ ipaclient_packages }}"
+        state: present  # no unintended updates
+
+    - name: Critical networking facts are gathered
+      setup:
+        gather_subset: min,network
+
+    - name: Buffer IPA client installation command
+      set_fact:
+        _cmd: >-
+            {%- for line in lookup("template", ipa_install_template).splitlines() -%}
+                {%- if line | trim | length -%}
+                    {{ line | trim }}{{ " " }}
+                {%- endif -%}
+            {%- endfor -%}
+
+    - debug: var=_cmd
+
+    - name: Execute IPA client installation command
+      command: >-
+        {{ _cmd }}
+      # Protect critical/sensitive values
+      environment:
+        IPASERVER_ADMIN_PASSWORD: '{{ ipaserver_admin_password }}'
+        IPASERVER_ADMIN_PRINCIPAL: '{{ ipaserver_admin_principal }}'
+      register: ipa_install_result
+
+  always:
+
+    # An unsuccessful install nearly always required manual intervention
+    - name: Mark installation attempted, successful or not
+      include_tasks: set_local_facts.yml
+      when: ipa_install_result is changed
+
+    - debug:
+        msg: |
+            WARNING: Installation failed, after manual UN-installation,
+                     be sure to remove {{ ipaclient_marker_fact_filepath | trim }}
+      when: ipa_install_result is failed
+
+    # Failure is asserted now, if it is so
+
+- name: Client able to obtain admin kerberos ticket
+  script: 'kinit.exp admin {{ ipaclient_admin_password }} {{ ipaclient_realm }}'
+  no_log: True
+  when: ipaserver_admin_username | default('',True) | trim | length

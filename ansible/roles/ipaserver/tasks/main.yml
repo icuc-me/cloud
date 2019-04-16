@@ -1,0 +1,101 @@
+---
+
+- name: The ipa_install_result is initialized empty
+  set_fact:
+    ipa_install_result: {}
+
+- when: not ansible_local.ipaserver_installed | default(False,True) | bool
+  block:
+
+    - name: The IPA server requires DNS setup
+      set_fact:
+        ipaserver_setup_dns: True
+      when: ipaserver_auto_reverse | bool or
+            ipaserver_forward_policy | trim | length or
+            ipaserver_auto_forwarders | bool or
+            ipaserver_dns_forwarders | length
+
+    - name: Install IPA Packages
+      package:
+        name: "{{ ipaserver_packages }}"
+        state: present  # no unintended updates
+
+    - name: Critical networking facts are gathered
+      setup:
+        gather_subset: min,network
+
+    - name: The temporary command variable is initialized empty
+      set_fact:
+          _cmd: ''
+
+    - when: ipaserver_replica_promote | default(False, True) | bool
+      block:
+
+          - fail:
+              msg: 'FIXME: enroll client, promote to replica: set _cmd'
+
+    - when: not _cmd | default('', True) | trim | length
+      block:
+
+        - name: Buffer IPA server or replica installation command
+          set_fact:
+            _cmd: >-
+                {%- for line in lookup("template", ipa_install_template).splitlines() -%}
+                    {%- if line | trim | length -%}
+                        {{ line | trim }}{{ " " }}
+                    {%- endif -%}
+                {%- endfor -%}
+
+    - debug: var=_cmd
+
+    - name: Execute IPA server or IPA replica installation command
+      command: >-
+        {{ _cmd }}
+      # Protect critical/sensitive values
+      environment:
+        IPASERVER_ADMIN_PASSWORD: '{{ ipaserver_admin_password }}'
+        IPASERVER_DIR_ADMIN_PASSWORD: '{{ ipaserver_admin_password }}'
+        IPASERVER_DIRSRV_PIN: '{{ _ipaserver_dirsrv_pin }}'
+        IPASERVER_HTTP_PIN: '{{ _ipaserver_http_pin }}'
+        IPASERVER_PKINIT_PIN: '{{ _ipaserver_pkinit_pin }}'
+      register: ipa_install_result
+
+  always:
+
+    # An unsuccessful install nearly always required manual intervention
+    - name: Mark installation attempted, successful or not
+      include_tasks: set_local_facts.yml
+      when: ipa_install_result is changed
+
+    - debug:
+        msg: |
+            WARNING: Installation failed, after manual UN-installation,
+                     be sure to remove {{ ipaserver_marker_fact_filepath | trim }}
+      when: ipa_install_result is failed
+
+    # Failure is asserted now, if it is so
+
+- name: The IPA server is running and enabled on boot
+  service:
+    name: ipa
+    enabled: True
+    state: started
+
+- name: All directory services are eventually running
+  script: ipactl_status_good.sh
+  register: ipactl_status_good
+  until: ipactl_status_good is success
+  retries: '{{ ipaserver_running_tries | int }}'
+  delay: '{{ ipaserver_running_delay | int }}'
+
+- name: Obtain admin kerberos ticket
+  script: 'kinit.exp admin {{ ipaserver_admin_password }} {{ ipaserver_realm }}'
+  no_log: True
+
+- name: Obtain CA Certificate
+  command: 'cat /etc/ipa/ca.crt'
+  register: cat_result
+
+- name: Buffer the CA Certificate contents
+  set_fact:
+      ipaserver_ca_cert_contents: '{{ cat_result.stdout }}'

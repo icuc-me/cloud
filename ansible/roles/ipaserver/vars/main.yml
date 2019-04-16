@@ -1,0 +1,44 @@
+---
+
+ansible_become: true
+
+_ipaserver_packages:
+  - ipa-server
+  - bind
+  - bind-dyndb-ldap
+  - ipa-python
+  - sssd-ldap
+  - expect
+
+ipaserver_setup_dns: False
+
+ipaserver_packages: >-
+    {{ _ipaserver_packages | union(["ipa-server-dns"])
+       if ipaserver_setup_dns
+       else _ipaserver_packages }}
+
+ipa_install_template: >-
+    {{ role_path }}/templates/{{ "ipa_replica_promote_command.j2"
+                                  if ipaserver_replica_promote
+                                  else "ipa_server_install_command.j2" }}
+
+ipaserver_marker_fact_filepath: >-
+    /etc/ansible/facts.d/ipaserver_installed.fact
+
+reverse_ipaserver_domain: >-
+    {%- for component in ipaserver_domain.split('.') | reverse -%}
+        {{ component ~ "." }}
+    {%- endfor -%}in-addr.arpa.
+
+_ipaserver_dirsrv_pin: >-
+    {{ ipaserver_dirsrv_pin | trim
+    if ipaserver_dirsrv_pin | default("", True) | trim | length
+    else "" }}
+_ipaserver_http_pin: >-
+    {{ ipaserver_http_pin | trim
+       if ipaserver_http_pin  | default("", True) | trim | length
+       else "" }}
+_ipaserver_pkinit_pin: >-
+    {{ ipaserver_pkinit_pin | trim
+       if ipaserver_pkinit_pin | default("", True) | trim | length
+        else "" }}
