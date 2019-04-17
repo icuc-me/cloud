@@ -4,6 +4,10 @@ set -e
 
 source "$(dirname $0)/lib.sh"
 
+ENV_NAME=$1
+
+[[ -n "$ENV_NAME" ]] || die "Require environment name to test as first argument." 3
+
 STATUS="ERROR"
 RESULT=$(mktemp -p '' $(basename $SCRIPT_FILENAME)_RESULT_XXXXXX)
 NEEDCLEAN=$(mktemp -p '' $(basename $SCRIPT_FILENAME)_NEEDCLEAN_XXXXXX)
@@ -42,22 +46,15 @@ cleanup() {
 
 set +e
 
-[[ -z "$1" ]] || [[ "$1" == "--nolint" ]] || [[ "$1" == "--lintonly" ]] || \
-    die "Usage: $(basename $0) [--nolint | --lintonly]" 1
-
 echo "0" > "$RESULT"
 trap cleanup EXIT
 
-if [[ "$1" != "--nolint" ]]
-then
-    indent 1 "Checking source condition and lint (skip with --nolint)"
-    cd "$SCRIPT_DIRPATH"
-    make verify && make lint
-    echo "$?" > "$RESULT"
-fi
+indent 1 "Checking source condition and lint (skip with --nolint)"
+cd "$SCRIPT_DIRPATH"
+make verify && make lint
+echo "$?" > "$RESULT"
 
-
-if good && [[ "$1" != "--lintonly" ]]
+if good
 then
     STATUS="FAIL: -  |  PASS: lint"
     indent 2 "Creating test environment (skip with --lintonly)"

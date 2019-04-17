@@ -39,7 +39,7 @@ image_name:
 
 .PHONY: validate
 validate:
-	@bash validate/runner.sh
+	@bash validate/runner.sh test
 
 .PHONY: %_env
 %_env:

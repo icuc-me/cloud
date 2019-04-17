@@ -10,11 +10,12 @@ import (
 )
 
 const (
-	clientVersion = "1.0"
-	gacEnvVarName = "GOOGLE_APPLICATION_CREDENTIALS"
-	pidEnvVarName = "GOOGLE_PROJECT_ID"
-	tfCfgDir      = "TF_CFG_DIR"
-	phaseFname    = "n_phases"
+	clientVersion  = "1.0"
+	gacEnvVarName  = "GOOGLE_APPLICATION_CREDENTIALS"
+	pidEnvVarName  = "GOOGLE_PROJECT_ID"
+	envNameVarName = "ENV_NAME"
+	tfCfgDir       = "TF_CFG_DIR"
+	phaseFname     = "n_phases"
 )
 
 var envVars map[string]string
@@ -28,7 +29,7 @@ var requiredOutputKeys = [...]string{
 }
 
 func knownEnvVar(name string) error {
-	if name == gacEnvVarName || name == pidEnvVarName || name == tfCfgDir {
+	if name == gacEnvVarName || name == pidEnvVarName || name == tfCfgDir || name == envNameVarName {
 		return nil
 	}
 	return fmt.Errorf("unknown environment variable '%s'", name)
@@ -98,6 +99,14 @@ func validateEnvVar(value, test string) error {
 			return nil
 		}
 		return fmt.Errorf("not a directory: %s", value)
+	case "names a valid environment":
+		switch value {
+		case "test",
+			"stage",
+			"prod":
+			return nil
+		}
+		return fmt.Errorf("not 'test', 'stage', or 'prod'")
 	}
 	return fmt.Errorf("undefined test '%s'", test)
 }
