@@ -16,6 +16,14 @@ all:
                     ipaserver_setup_ntp: False  # FIXME
                     ipaserver_forward_policy: "only"
                     ipaserver_auto_forwarders: False  # use root servers
+        ipareplicas:
+            hosts:
+                ipa2:
+                    ansible_host: '{{ _vault_home_ipa2_ip }}'
+                    ipaserver_admin_password: '{{ _vault_ipa_admin_userpass }}'
+                    ipaserver_setup_ntp: False  # FIXME
+                    ipaserver_forward_policy: "only"
+                    ipaserver_auto_forwarders: False  # also use root servers
         ipaclients:
             hosts:
                 server1:

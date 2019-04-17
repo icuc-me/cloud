@@ -18,17 +18,11 @@ ipaserver_packages: >-
        else _ipaserver_packages }}
 
 ipa_install_template: >-
-    {{ role_path }}/templates/{{ "ipa_replica_promote_command.j2"
-                                  if ipaserver_replica_promote
+    {{ role_path }}/templates/{{ "ipa_replica_install_command.j2"
+                                  if ipaserver_is_replica
                                   else "ipa_server_install_command.j2" }}
 
-ipaserver_marker_fact_filepath: >-
-    /etc/ansible/facts.d/ipaserver_installed.fact
-
-reverse_ipaserver_domain: >-
-    {%- for component in ipaserver_domain.split('.') | reverse -%}
-        {{ component ~ "." }}
-    {%- endfor -%}in-addr.arpa.
+ipaserver_marker_fact_filepath: /etc/ansible/facts.d/ipaserver_installed.fact
 
 _ipaserver_dirsrv_pin: >-
     {{ ipaserver_dirsrv_pin | trim

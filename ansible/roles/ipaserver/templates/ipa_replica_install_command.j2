@@ -1,11 +1,19 @@
 
-"ipa-server-install"
+"ipa-replica-install
 
 "--unattended"
 
-"--ds-password=$IPASERVER_DIR_ADMIN_PASSWORD"
-
 "--admin-password=$IPASERVER_ADMIN_PASSWORD"
+
+--setup-ca
+
+{% if ipaserver_admin_principal | default("",True) | trim | length %}
+    "--principal=$IPASERVER_ADMIN_PRINCIPAL"
+{% endif %}
+
+{% if ipaserver_admin_password | default("",True) | trim | length %}
+    "--password=$IPASERVER_ADMIN_PASSWORD"
+{% endif %}
 
 {% for _ipaddr in ipaserver_ip_addresses %}
     "--ip-address={{ _ipaddr | trim }}"
@@ -23,18 +31,6 @@
 
 {% if ipaserver_setup_kra | bool %}
     "--setup-kra"
-{% endif %}
-
-{% if ipaserver_idstart | int %}
-    "--idstart={{ ipaserver_idstart | int }}"
-{% endif %}
-
-{% if ipaserver_idmax | int %}
-    "--idmax={{ ipaserver_idmax }}"
-{% endif %}
-
-{% if not ipaserver_hbac_allow | bool %}
-    "--no-hbac-allow"
 {% endif %}
 
 {% if not ipaserver_ui_redirect | bool %}
@@ -97,13 +93,6 @@
 
 {% if not ipaserver_configure_sshfp | bool %}
     "--no-dns-sshfp"
-{% endif %}
-
-{% if ipaserver_ext_ca_opts | default({}, True) | length %}
-    "--external-ca"
-    {% for _key, _value in ipaserver_ext_ca_opts.items() %}
-        "--{{ _key | trim }}={{ _value | trim }}"
-    {% endfor %}
 {% endif %}
 
 {% if ipaserver_setup_dns | bool %}

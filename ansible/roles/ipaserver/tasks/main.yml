@@ -24,16 +24,6 @@
       setup:
         gather_subset: min,network
 
-    - name: The temporary command variable is initialized empty
-      set_fact:
-          _cmd: ''
-
-    - when: ipaserver_replica_promote | default(False, True) | bool
-      block:
-
-          - fail:
-              msg: 'FIXME: enroll client, promote to replica: set _cmd'
-
     - when: not _cmd | default('', True) | trim | length
       block:
 
@@ -53,8 +43,9 @@
         {{ _cmd }}
       # Protect critical/sensitive values
       environment:
-        IPASERVER_ADMIN_PASSWORD: '{{ ipaserver_admin_password }}'
-        IPASERVER_DIR_ADMIN_PASSWORD: '{{ ipaserver_admin_password }}'
+        IPASERVER_ADMIN_PRINCIPAL: '{{ ipaserver_admin_principal }}'  # for replica install
+        IPASERVER_ADMIN_PASSWORD: '{{ ipaserver_admin_password }}'  # for master & replica
+        IPASERVER_DIR_ADMIN_PASSWORD: '{{ ipaserver_admin_password }}'  # master only
         IPASERVER_DIRSRV_PIN: '{{ _ipaserver_dirsrv_pin }}'
         IPASERVER_HTTP_PIN: '{{ _ipaserver_http_pin }}'
         IPASERVER_PKINIT_PIN: '{{ _ipaserver_pkinit_pin }}'
