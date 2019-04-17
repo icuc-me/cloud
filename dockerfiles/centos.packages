@@ -17,6 +17,7 @@ python36
 python36-PyYAML
 rh-git29
 rsync
+skopeo
 sshpass
 sudo
 unzip
