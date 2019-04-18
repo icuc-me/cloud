@@ -1,0 +1,8 @@
+---
+
+- name: The qemu-guest-agent service is enabled and restarted
+  listen: "restart qemu agent"
+  systemd:
+      name: 'qemu-guest-agent'
+      enabled: True
+      state: 'restarted'

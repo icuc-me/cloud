@@ -35,3 +35,6 @@ all:
                 ipa1: {}
                 ipa2: {}
                 server1: {}
+        qemuvms:
+            hosts:
+                ipa2: {}
