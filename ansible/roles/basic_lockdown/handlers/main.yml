@@ -1,0 +1,8 @@
+---
+
+- name: 'Restart ssh daemon due to configuration change by {{ role_path | basename }}'
+  listen: "restart ssh daemon"
+  systemd:
+      name: 'sshd'
+      enabled: True
+      state: 'restarted'

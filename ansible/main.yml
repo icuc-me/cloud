@@ -1,0 +1,13 @@
+---
+
+- hosts: all
+  gather_facts: false
+  roles:
+      - role: ansible_dependencies
+      - role: basic_lockdown
+      - role: ipaclient
+        when: "'ipaclients' in group_names and 'ipaservers' not in group_names"
+      - role: ipafirewall
+        when: "'ipaservers' in group_names"
+      - role: ipaserver
+        when: "'ipaservers' in group_names"

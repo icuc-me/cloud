@@ -1,0 +1,127 @@
+
+"ipa-server-install"
+
+"--unattended"
+
+"--ds-password=$IPASERVER_DIR_ADMIN_PASSWORD"
+
+"--admin-password=$IPASERVER_ADMIN_PASSWORD"
+
+{% for _ipaddr in ipaserver_ip_addresses %}
+    "--ip-address={{ _ipaddr | trim }}"
+{% endfor %}
+
+"--domain={{ ipaserver_domain | trim }}"
+
+"--realm={{ ipaserver_realm | trim }}"
+
+"--hostname={{ ipaserver_hostname | trim }}"
+
+{% if ipaserver_no_host_dns | bool %}
+    "--no-host-dns"
+{% endif %}
+
+{% if ipaserver_setup_kra | bool %}
+    "--setup-kra"
+{% endif %}
+
+{% if ipaserver_idstart | int %}
+    "--idstart={{ ipaserver_idstart | int }}"
+{% endif %}
+
+{% if ipaserver_idmax | int %}
+    "--idmax={{ ipaserver_idmax }}"
+{% endif %}
+
+{% if not ipaserver_hbac_allow | bool %}
+    "--no-hbac-allow"
+{% endif %}
+
+{% if not ipaserver_ui_redirect | bool %}
+    "--no-ui-redirect"
+{% endif %}
+
+{% if ipaserver_file_options | length %}
+    {% for _key, _value in ipaserver_file_options.items() %}
+        "--{{ _key | trim }}={{ _value | trim }}"
+    {% endfor %}
+{% endif %}
+
+{% if ipaserver_dirsrv_pin | default("", True) | trim | length %}
+    "--dirsrv-pin=$IPASERVER_DIRSRV_PIN"
+{% endif %}
+
+{% if ipaserver_http_pin | default("", True) | trim | length %}
+    "--http-pin=$IPASERVER_PIN"
+{% endif %}
+
+{% if ipaserver_pkinit_pin | default("", True) | trim | length %}
+    "--pkinit-pin=$IPASERVER_PKINIT_PIN"
+{% endif %}
+
+{% if ipaserver_cert_names | length %}
+    {% for _key, _value in ipaserver_cert_names.items() %}
+        "--{{ _key | trim }}={{ _value | trim }}"
+    {% endfor %}
+{% endif %}
+
+{% if ipaserver_mkhomedir | bool %}
+    "--mkhomedir"
+{% endif %}
+
+{% if not ipaserver_setup_ntp | bool %}
+    "--no-ntp"
+{% endif %}
+
+{% if ipaserver_ssh_trust_dns | bool %}
+    "--ssh-trust-dns"
+{% endif %}
+
+{% if not ipaserver_configure_ssh | bool %}
+    "--no-ssh"
+{% endif %}
+
+{% if not ipaserver_configure_sshd | bool %}
+    "--no-sshd"
+{% endif %}
+
+{% if not ipaserver_configure_sshfp | bool %}
+    "--no-dns-sshfp"
+{% endif %}
+
+{% if ipaserver_ext_ca_opts | default({}, True) | length %}
+    "--external-ca"
+    {% for _key, _value in ipaserver_ext_ca_opts.items() %}
+        "--{{ _key | trim }}={{ _value | trim }}"
+    {% endfor %}
+{% endif %}
+
+{% if ipaserver_setup_dns | bool %}
+
+    "--setup-dns"
+
+    {% if ipaserver_auto_reverse | bool %}
+        "--auto-reverse"
+    {% else %}
+        "--no-reverse"
+    {% endif %}
+
+    "--forward-policy={{ ipaserver_forward_policy | trim }}"
+
+    {% if ipaserver_auto_forwarders | bool %}
+        "--auto-forwarders"
+    {% else %}
+        {% if ipaserver_dns_forwarders | default([],True) | length %}
+            {% for _forwarder in ipaserver_dns_forwarders | mandatory %}
+                "--forwarder={{ _forwarder | trim }}"
+            {% endfor %}
+        {% else %}
+            "--no-forwarders"
+        {% endif %}
+    {% endif %}
+
+{% endif %}
+
+{% if not ipaserver_dnssec_configure | bool %}
+    --no-dnssec-validation
+{% endif %}

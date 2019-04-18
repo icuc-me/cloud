@@ -1,0 +1,17 @@
+---
+
+- name: The ansible local facts directory exists
+  file:
+    path: "/etc/ansible/facts.d"
+    state: "directory"
+
+- name: IPA server or replica installed flag is set true
+  copy:
+    follow: True
+    mode: "660"
+    dest: '{{ ipaserver_marker_fact_filepath | trim }}'
+    content: "true"
+
+- name: Local facts are re-gathered
+  setup:
+    gather_subset: min

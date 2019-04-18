@@ -1,0 +1,11 @@
+---
+
+ansible_become: true
+
+ipaclient_packages:
+  - ipa-client
+  - ipa-python
+  - expect
+
+ipa_install_template: '{{ role_path }}/templates/ipa_client_install_command.j2'
+ipaclient_marker_fact_filepath: '/etc/ansible/facts.d/ipaclient_installed.fact'

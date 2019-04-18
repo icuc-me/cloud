@@ -1,0 +1,24 @@
+---
+
+all:
+    vars:
+        ansible_connection: 'ssh'
+        ansible_user: '{{ _vault_admin_username }}'
+        ansible_ssh_pass: '{{ _vault_admin_userpass }}'
+        ansible_become_pass: '{{ _vault_admin_userpass }}'
+    children:
+        ipaservers:
+            hosts:
+                ipa1:
+                    ansible_host: '{{ _vault_home_ipa1_ip }}'
+                    ipaserver_admin_password: '{{ _vault_ipa_admin_userpass }}'
+                    ipaserver_dir_admin_password: '{{ _vault_ipa_admin_userpass }}'
+                    ipaserver_setup_ntp: False  # FIXME
+                    ipaserver_forward_policy: "only"
+                    ipaserver_auto_forwarders: False  # use root servers
+        ipaclients:
+            hosts:
+                server1:
+                    ansible_host: '{{ _vault_home_server1_ip }}'
+                    ipaserver_admin_password: '{{ _vault_ipa_admin_userpass }}'
+                    ipaclient_setup_ntp: False  # FIXME
