@@ -1,4 +1,7 @@
+ARG  TAG=latest
 FROM centos:7
+
+ENV BASE_TAG="$TAG"
 
 RUN yum update -y && \
     yum install -y epel-release centos-release-scl && \

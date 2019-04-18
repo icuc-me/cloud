@@ -26,18 +26,20 @@ then
     install -o "$AS_ID" -g "$AS_ID" /etc/skel/.??* /home/$AS_USER
 fi
 
-echo "Recovering cached GOPATH contents"
-rsync --recursive --links \
-    --safe-links --sparse \
-    "/usr/src/go" "/home/$AS_USER"
+if [[ -d "/usr/src/go" ]]
+then
+    echo "Recovering cached GOPATH contents"
+    rsync --recursive --links \
+        --safe-links --sparse \
+        "/usr/src/go" "/home/$AS_USER"
 
-echo "Recovering cached GOCACHE contents"
-rsync --recursive --links \
-    --safe-links --sparse \
-    "/var/cache/go" "/home/$AS_USER/.cache"
+    echo "Recovering cached GOCACHE contents"
+    rsync --recursive --links \
+        --safe-links --sparse \
+        "/var/cache/go" "/home/$AS_USER/.cache"
+fi
 
 # rsync --chown doesn't affect directories somehow(?)
-mkdir -p "/home/$AS_USER/.gnupg"
 echo "Correcting permissions and configuring .bash_profile"
 chown -R $AS_ID:$AS_ID "/home/$AS_USER" &> /dev/null || true  # ignore any ro errors
 install -o "$AS_ID" -g "$AS_ID" -m 0664 "$SRC_DIR/.bash_profile" "/home/$AS_USER/"

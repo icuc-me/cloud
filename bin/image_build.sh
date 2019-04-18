@@ -16,22 +16,21 @@ docker_build() {
     [[ -n "$TAG" ]] || die "${FUNCNAME[0]}() expects \$3 to be non-empty repository tag" 2
 
     cd "$SRC_DIR"
-    CMD="$CONTAINER build ${BA_TAG} -f dockerfiles/${NAME}.dockerfile --tag ${IN} ${XTRA:-} ./"
+    CMD="$CONTAINER build ${BA_TAG} -f dockerfiles/${NAME}.dockerfile --tag ${IN} ./"
     echo "$CMD"
-    $CMD
+    sudo $CMD
     echo "Tagging ${IN} -> ${FQIN}"
     sudo $CONTAINER tag "${IN}" "${FQIN}"
+    if [[ "$CI" == "true" ]] && [[ "$CIRRUS_BRANCH" == "master" ]]
+    then
+        sudo $CONTAINER tag "${IN}" "$REG/$NAME:${TEST_IMG_TAG:-YouFoundABug}"
+    fi
     echo "########################################"
 }
 
 show_env
 
-unset XTRA
-[[ "$CI" != "true" ]] || XTRA="--no-cache"
-docker_build "$REG_NS" "$BASE_IN" "$IMG_TAG" $XTRA
-
-unset XTRA
-for name in "$PACKER_IN" "$TFORM_IN" "$VALID_IN" "$DEVEL_IN"
+for name in "$BASE_IN" "$TOOLS_IN" "$RUN_IN"
 do
     docker_build "$REG_NS" "$name" "$IMG_TAG"
 done

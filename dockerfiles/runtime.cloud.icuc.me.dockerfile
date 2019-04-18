@@ -1,5 +1,5 @@
 ARG  TAG=latest
-FROM terraform.cloud.icuc.me:${TAG}
+FROM tools.cloud.icuc.me:${TAG}
 
 RUN yum update -y && \
     yum clean all && \
@@ -28,9 +28,11 @@ ENV GLCIURL="https://install.goreleaser.com/github.com/golangci/golangci-lint.sh
     GOPATH="/usr/src/go" \
     GOCACHE="/var/cache/go"
 
-COPY /dockerfiles/validate.cloud.icuc.me.dockerfile /root/
+COPY /dockerfiles/runtime.cloud.icuc.me.dockerfile /root/
+COPY /dockerfiles/as_user.sh /usr/local/bin/as_user.sh
 
-RUN mkdir -p "$GOPATH/bin" && \
+RUN chmod 0755 /usr/local/bin/as_user.sh && \
+    mkdir -p "$GOPATH/bin" && \
     mkdir -p "$GOCACHE" && \
     cd /tmp && \
     curl -L -O $GLCIURL && \
@@ -48,3 +50,5 @@ RUN for name in $GOPKGS; do go get $name; done && \
 
 ENV GOPATH="" \
     GOCACHE=""
+
+ENTRYPOINT ["/usr/local/bin/as_user.sh"]

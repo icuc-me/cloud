@@ -12,7 +12,7 @@ source $(dirname $0)/lib.sh
 
 reg_login
 
-for name in "$BASE_IN" "$PACKER_IN" "$TFORM_IN" "$VALID_IN" "$DEVEL_IN"
+for name in "$BASE_IN" "$TOOLS_IN" "$RUN_IN"
 do
     echo "Tagging '$REG_NS/$name:$IMG_TAG' -> 'latest'"
     sudo skopeo copy "docker://$REG_NS/$name:$IMG_TAG" "docker://$REG_NS/$name:latest"

@@ -11,8 +11,9 @@ expr "$CI" : "[Tt]rue" &> /dev/null || \
 
 reg_login
 
-for name in "$BASE_IN" "$PACKER_IN" "$TFORM_IN" "$VALID_IN" "$DEVEL_IN"
+for name in "$BASE_IN" "$TOOLS_IN" "$RUN_IN"
 do
-    echo "Pushing '$REG_NS/$name:$IMG_TAG'"
     $CONTAINER push "$REG_NS/$name:$IMG_TAG"
+    [[ "$IMG_TAG" == "$TEST_IMG_TAG" ]] || \
+        sudo $CONTAINER push "$REG_NS/$name:$TEST_IMG_TAG"
 done
