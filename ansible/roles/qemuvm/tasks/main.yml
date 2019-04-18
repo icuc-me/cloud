@@ -1,0 +1,8 @@
+---
+
+- name: QEMU VM's have the qemu-guest-agent package installed
+  package:
+      name: qemu-guest-agent
+      state: present
+  notify:
+      - "restart qemu agent"

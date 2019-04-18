@@ -1,0 +1,8 @@
+---
+
+- name: The chrony daemon is restarted and enabled
+  listen: "restart chrony daemon"
+  systemd:
+      name: 'chronyd'
+      enabled: True
+      state: 'restarted'
