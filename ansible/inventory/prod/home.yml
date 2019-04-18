@@ -30,3 +30,8 @@ all:
                     ansible_host: '{{ _vault_home_server1_ip }}'
                     ipaserver_admin_password: '{{ _vault_ipa_admin_userpass }}'
                     ipaclient_setup_ntp: False  # FIXME
+        timeclients:
+            hosts:
+                ipa1: {}
+                ipa2: {}
+                server1: {}

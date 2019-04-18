@@ -1,0 +1,14 @@
+---
+
+- name: The chrony package is installed
+  package:
+      name: chrony
+      state: present
+
+- name: The stratum 2 Fedora pool is used as a time source
+  blockinfile:
+      backup: True
+      path: '/etc/chrony.conf'
+      block: 'pool 2.fedora.pool.ntp.org iburst'
+  notify:
+      - "restart chrony daemon"
