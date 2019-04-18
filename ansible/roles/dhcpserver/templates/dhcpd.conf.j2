@@ -1,0 +1,8 @@
+include "/etc/dhcp/dhcpd.conf.head";
+{% if dhcpd_pri_fqdn | default('',True) | trim | length and
+      dhcpd_sec_fqdn | default('',True) | trim | length %}
+include "/etc/dhcp/dhcpd.conf.failover";
+include "/etc/dhcp/dhcpd.conf.key";
+{% endif %}
+include "/etc/dhcp/dhcpd.conf.subnet";
+include "/etc/dhcp/dhcpd.conf.known_hosts";

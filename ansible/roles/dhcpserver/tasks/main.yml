@@ -1,0 +1,62 @@
+---
+
+- name: The ISC dhcpd server packages are installed
+  package:
+      name: dhcp
+      state: present
+  register: _tmp_result
+  until: _tmp_result is success
+
+- name: The OMAPI public-key contents are written
+  copy:
+      backup: True
+      dest: '/etc/dhcp/K{{ dhcpd_omapi_name }}.+{{ dhcpd_omapi_footprint }}.key'
+      content: '{{ dhcpd_omapi_key }}'
+      group: 'root'
+      owner: 'root'
+      mode: '0600'
+      setype: 'dhcp_etc_t'
+  notify: 'The dhcpd server is restarted'
+
+- name: The OMAPI secret-key contents are written
+  copy:
+      backup: True
+      dest: '/etc/dhcp/K{{ dhcpd_omapi_name }}.+{{ dhcpd_omapi_footprint }}.private'
+      content: '{{ dhcpd_omapi_private }}'
+      group: 'root'
+      owner: 'root'
+      mode: '0600'
+      setype: 'dhcp_etc_t'
+  notify: 'The dhcpd server is restarted'
+
+- name: The dhcpd key configuration is written
+  copy:
+      backup: True
+      dest: '/etc/dhcp/dhcpd.conf.key'
+      content: |
+          key {{ dhcpd_omapi_name }} {
+              algorithm {{ dhcpd_omapi_algo }};
+              secret "{{ dhcpd_omapi_key.split(' ') | last }}";
+          }
+      group: 'root'
+      owner: 'root'
+      mode: '0600'
+      setype: 'dhcp_etc_t'
+  notify: 'The dhcpd server is restarted'
+
+- name: Templated dhcpd configuration files are rendered
+  template:
+      backup: True
+      src: '{{ item }}.j2'
+      dest: '/etc/dhcp/{{ item }}'
+      group: 'root'
+      owner: 'root'
+      mode: '0644'
+      setype: 'dhcp_etc_t'
+  with_items:
+      - 'dhcpd.conf.known_hosts'
+      - 'dhcpd.conf.failover'
+      - 'dhcpd.conf.subnet'
+      - 'dhcpd.conf.head'
+      - 'dhcpd.conf'
+  notify: 'The dhcpd server is restarted'

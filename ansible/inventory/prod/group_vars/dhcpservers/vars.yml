@@ -1,0 +1,26 @@
+---
+
+dhcpd_authorative: False  # Only set true if you REALLY mean it
+
+dhcpd_subnet_addr: '{{ _vault_dhcpd_subnet_addr }}'
+dhcpd_subnet_mask: '{{ _vault_dhcpd_subnet_mask }}'
+dhcpd_subnet_broadcast: '{{ _vault_dhcpd_subnet_broadcast }}'
+dhcpd_subnet_gateway: '{{ _vault_dhcpd_subnet_gateway }}'
+dhcpd_subnet_domain: '{{ _vault_dhcpd_subnet_domain }}'
+dhcpd_subnet_dns: '{{ _vault_dhcpd_subnet_dns }}'
+dhcpd_subnet_ntp: '{{ _vault_dhcpd_subnet_ntp }}'
+dhcpd_subnet_smtp: '{{ _vault_dhcpd_subnet_smtp }}'
+dhcpd_subnet_known_pool: '{{ _vault_dhcpd_subnet_known_pool }}'
+dhcpd_subnet_unknown_pool: '{{ _vault_dhcpd_subnet_unknown_pool }}'
+dhcpd_known_hosts: '{{ _vault_dhcpd_known_hosts }}'
+dhcpd_pri_fqdn: '{{ _vault_dhcpd_pri_fqdn }}'
+dhcpd_sec_fqdn: '{{ _vault_dhcpd_sec_fqdn }}'
+dhcpd_peerport: '{{ _vault_dhcpd_peerport }}'
+dhcpd_omapiport: '{{ _vault_dhcpd_omapiport }}'
+dhcpd_omapi_name: '{{ _vault_dhcpd_omapi_name }}'
+dhcpd_omapi_footprint: '{{ _vault_dhcpd_omapi_footprint }}'
+dhcpd_omapi_algo: '{{ _vault_dhcpd_omapi_algo }}'
+dhcpd_omapi_key: '{{ _vault_dhcpd_omapi_key }}'
+dhcpd_omapi_private: '{{ _vault_dhcpd_omapi_private }}'
+
+dhcpd_actual_authorative: False  # And this one also

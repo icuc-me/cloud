@@ -1,0 +1,14 @@
+---
+
+- name: The KSM service package is installed
+  package:
+      name: ksmtuned
+      state: present
+  register: _tmp_result
+  until: _tmp_result is success
+
+- name: The KSM service is enabled and running
+  systemd:
+      name: ksm
+      enabled: True
+      state: started

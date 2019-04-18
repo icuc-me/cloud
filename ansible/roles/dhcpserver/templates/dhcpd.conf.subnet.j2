@@ -1,0 +1,53 @@
+subnet {{ dhcpd_subnet_addr }} netmask {{ dhcpd_subnet_mask }} {
+{% if dhcpd_subnet_mask | default('',True) | trim | length %}
+    option subnet-mask {{ dhcpd_subnet_mask }};
+{% endif %}
+{% if dhcpd_subnet_broadcast | default('',True) | trim | length %}
+     option broadcast-address {{ dhcpd_subnet_broadcast }};
+{% endif %}
+{% if dhcpd_subnet_gateway | default('',True) | trim | length %}
+     option routers {{ dhcpd_subnet_gateway }};
+{% endif %}
+
+{% if dhcpd_subnet_domain | default('',True) | trim | length %}
+     option domain-name "{{ dhcpd_subnet_domain }}";
+{% endif %}
+{% if dhcpd_subnet_dns | default([],True) | length %}
+     option domain-name-servers {{ dhcpd_subnet_dns | default([],True) | join(',') }};
+{% endif %}
+{% if dhcpd_subnet_ntp | default('',True) | trim | length %}
+     option ntp-servers {{ dhcpd_subnet_ntp | default([],True) | join(',') }};
+{% endif %}
+{% if dhcpd_subnet_smtp | default('',True) | trim | length %}
+     option smtp-server {{ dhcpd_subnet_smtp }};
+{% endif %}
+
+{% if dhcpd_subnet_gateway | default('',True) | trim | length %}
+     # static routes (including default route):
+     # <netmask>, <non-zero net octets,,,>, <router>, ... (where bytes with value 0 are omitted
+     option rfc3442-classless-static-routes 0,{{ dhcpd_subnet_gateway | replace('.', ',') }};
+     option ms-classless-static-routes 0,{{ dhcpd_subnet_gateway | replace('.', ',') }};
+{% endif %}
+
+     # known-hosts / servers
+     pool {
+          deny unknown-clients;
+          default-lease-time 36000;  # default to 10 hour leases
+          max-lease-time 180000;     # maximum lease time is 50 hours
+{% if ansible_fqdn in [dhcpd_pri_fqdn, dhcpd_sec_fqdn] %}
+          failover peer "dhcp";
+{% endif %}
+          range {{ dhcpd_subnet_known_pool[0] }} {{ dhcpd_subnet_known_pool[1] }};
+     }
+
+     # unknown / dynamically addresses
+     pool {
+          allow unknown-clients;
+          default-lease-time 1800;  # 30 minutes
+          max-lease-time 3600;      # one hour
+{% if ansible_fqdn in [dhcpd_pri_fqdn, dhcpd_sec_fqdn] %}
+          failover peer "dhcp";
+{% endif %}
+          range {{ dhcpd_subnet_unknown_pool[0] }} {{ dhcpd_subnet_unknown_pool[1] }};
+     }
+}
