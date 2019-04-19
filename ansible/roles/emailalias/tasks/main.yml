@@ -1,3 +1,5 @@
+---
+
 - name: configure /etc/aliases
   lineinfile:
     dest: /etc/aliases
@@ -5,4 +7,3 @@
     regexp: "^{{ item.user }}:"
   with_items: '{{aliases}}'
   notify: update aliases
-
