@@ -2,6 +2,4 @@
 
 aliases:
   - user: postmaster
-    alias: root, user
-  - user: hostmaster
-    alias: root, staff
+    alias: root
