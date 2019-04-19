@@ -54,6 +54,6 @@
     # Failure is asserted now, if it is so
 
 - name: Client able to obtain admin kerberos ticket
-  script: 'kinit.exp admin {{ ipaclient_admin_password }} {{ ipaclient_realm }}'
+  script: 'kinit.exp admin {{ ipaserver_admin_password }} {{ ipaclient_realm }}'
   no_log: True
-  when: ipaserver_admin_username | default('',True) | trim | length
+  when: ipaserver_admin_password | default('',True) | trim | length
