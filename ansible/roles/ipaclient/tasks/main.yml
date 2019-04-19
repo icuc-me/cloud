@@ -11,6 +11,8 @@
       package:
         name: "{{ ipaclient_packages }}"
         state: present  # no unintended updates
+      register: _tmp_result
+      until: _tmp_result is success
 
     - name: Critical networking facts are gathered
       setup:

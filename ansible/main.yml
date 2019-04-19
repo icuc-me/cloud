@@ -5,6 +5,8 @@
   roles:
       - role: ansible_dependencies
       - role: basic_lockdown
+      - role: qemuhost
+        when: "'qemuhosts' in group_names"
       - role: qemuvm
         when: "'qemuvms' in group_names"
       - role: timeclient
@@ -17,3 +19,5 @@
         when: "'ipaservers' in group_names"
       - role: ipaserver
         when: "'ipareplicas' in group_names"
+      - role: dhcpserver
+        when: "'dhcpservers' in group_names"

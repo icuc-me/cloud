@@ -1,0 +1,4 @@
+---
+
+ipaserver_admin_password: '{{ _vault_ipa_admin_userpass }}'
+ipaclient_setup_ntp: False  # use dedicated role
