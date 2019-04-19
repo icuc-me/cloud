@@ -1,0 +1,78 @@
+---
+
+- name: Required packages are installed
+  package:
+      name:
+          - postfix
+          - python3-firewall
+      state: present
+  register: _tmp_result
+  until: _tmp_result is success
+
+- name: SMTP services are allowed through the firewall
+  firewalld:
+      immediate: True
+      permanent: True
+      service: '{{ item }}'
+      state: 'enabled'
+  with_items: '{{ smtpserver_firewalld_services }}'
+
+- name: SMTP ports are allowed through the firewall
+  firewalld:
+      immediate: True
+      permanent: True
+      port: '{{ item }}/tcp'
+      state: 'enabled'
+  with_items: '{{ smtpserver_firewalld_tcp_ports }}'
+
+# Loads into result.postfix_configuration
+- include_tasks: "existing_postfix_config.yml"
+
+- name: Specific postfix options are removed if present
+  command: 'postconf -X {{ item }}'
+  notify:
+    - "reload postfix"
+  when: item in result.postfix_configuration
+  with_items: '{{ postconf_removals }}'
+
+- include_tasks: "existing_postfix_config.yml"
+
+- name: Specific postfix options are added/changed if absent or different
+  command: 'postconf "{{ item.key }}={{ item.value }}"'
+  notify:
+    - "reload postfix"
+  when: item.key not in result.postfix_configuration or
+        item.value != result.postfix_configuration[item.key]
+  with_dict: '{{ postconf_additions }}'
+
+- name: Postfix hash databases and other files are written
+  copy:
+      backup: True
+      dest: '{{ item.key }}'
+      content: '{{ item.value }}'
+  notify:
+    - "reload postfix"
+  with_dict: '{{ postfix_files }}'
+
+- name: The e-mail aliases database is updated
+  include_role:
+    name: emailalias
+  vars:
+    aliases: '{{ email_aliases }}'
+  notify: "reload postfix"
+
+- name: The postfix service is enabled to start on boot
+  systemd:
+    name: postfix
+    enabled: True
+  notify: # database render needed on change
+    - "reload postfix"
+    - "start postfix"
+
+- name: Utility to list non-default settings is installed
+  copy:
+      src: postconf_changed.sh
+      dest: /usr/local/sbin/
+      owner: root
+      group: root
+      mode: 770

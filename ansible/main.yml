@@ -19,3 +19,5 @@
         when: "'ipareplicas' in group_names"
       - role: dhcpserver
         when: "'dhcpservers' in group_names"
+      - role: smtpserver
+        when: "'smtpservers' in group_names"

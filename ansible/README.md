@@ -12,3 +12,5 @@
 
 * Ansible is executed from the `ansible` directory
 * The command used resembles `python3 /usr/bin/ansible-playbook --vault-password-file=$FILEPATH -i inventory/$ENV_NAME main.yml`
+* The local fact-cache is cleared if ansible executed within 5-minutes
+  of any major change to any host which affects an ``ansible_*`` fact.

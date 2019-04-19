@@ -6,8 +6,10 @@ all:
             ansible_host: '{{ _vault_home_ipa1_ip }}'
         ipa2:
             ansible_host: '{{ _vault_home_ipa2_ip }}'
-        server1:
-            ansible_host: '{{ _vault_home_server1_ip }}'
+        vmhost1:
+            ansible_host: '{{ _vault_home_vmhost1_ip }}'
+        smtp1:
+            ansible_host: '{{ _vault_home_smtp1_ip }}'
         dhcp1:
             ansible_host: '{{ _vault_home_dhcp1_ip }}'
         dhcp2:
@@ -26,24 +28,30 @@ all:
                 ipa2: {}
         ipaclients:
             hosts:
-                server1: {}
+                vmhost1: {}
                 dhcp1: {}
                 dhcp2: {}
+                smtp1: {}
         timeclients:
             hosts:
                 ipa1: {}
                 ipa2: {}
-                server1: {}
+                vmhost1: {}
                 dhcp1: {}
                 dhcp2: {}
+                smtp1: {}
         qemuvms:
             hosts:
                 ipa2: {}
                 dhcp1: {}
+                smtp1: {}
         qemuhosts:
             hosts:
-                server1: {}
+                vmhost1: {}
         dhcpservers:
             hosts:
                 dhcp1: {}
                 dhcp2: {}
+        smtpservers:
+            hosts:
+                smtp1: {}
