@@ -13,8 +13,6 @@
         when: "'timeclients' in group_names"
       - role: ipaclient
         when: "'ipaclients' in group_names and 'ipaservers' not in group_names"
-      - role: ipafirewall
-        when: "'ipaservers' in group_names or 'ipareplicas' in group_names"
       - role: ipaserver
         when: "'ipaservers' in group_names"
       - role: ipaserver
