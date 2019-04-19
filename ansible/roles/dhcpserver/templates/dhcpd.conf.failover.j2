@@ -1,0 +1,25 @@
+{% if ansible_fqdn == dhcpd_pri_fqdn | default('',True) | trim %}
+failover peer "dhcp" {
+   primary;
+   address {{ dhcpd_pri_fqdn }};
+   port {{ dhcpd_peerport }};
+   peer address {{ dhcpd_sec_fqdn }};
+   peer port {{ dhcpd_peerport }};
+   max-response-delay 60;
+   max-unacked-updates 10;
+   mclt 600;
+   split 128;
+   load balance max seconds 3;
+}
+{% elif ansible_fqdn == dhcpd_sec_fqdn | default('',True) | trim %}
+failover peer "dhcp" {
+   secondary;
+   address {{ dhcpd_sec_fqdn }};
+   port {{ dhcpd_peerport }};
+   peer address {{ dhcpd_pri_fqdn }};
+   peer port {{ dhcpd_peerport }};
+   max-response-delay 60;
+   max-unacked-updates 10;
+   load balance max seconds 3;
+}
+{% endif %}

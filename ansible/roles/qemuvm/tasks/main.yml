@@ -4,5 +4,13 @@
   package:
       name: qemu-guest-agent
       state: present
+  register: _tmp_result
+  until: _tmp_result is success
   notify:
       - "restart qemu agent"
+
+- name: The chrony daemon is enabled and started
+  systemd:
+      name: chronyd
+      enabled: true
+      state: started

@@ -1,0 +1,23 @@
+group {
+{% for item in dhcpd_known_hosts | default([],True) %}
+
+    {%- if 'fqdn' in item and
+           item.fqdn | default('',True) | trim | length -%}
+        {%- set hostname = item['fqdn'].split('.')[0] -%}
+    {%- else -%}
+        {%- set hostname = "" -%}
+    {%- endif -%}
+{% if 'note' in item %}
+    # {{ item['note'] }}
+{% endif %}
+    host {{ hostname if hostname != "" else "reserved" + loop.index | string }} {
+        hardware ethernet {{ item.mac }};
+{% if hostname != "" %}
+        fixed-address {{ item.fqdn }};
+{% else %}
+        ignore booting;
+{% endif %}
+    }
+{% endfor %}
+
+}

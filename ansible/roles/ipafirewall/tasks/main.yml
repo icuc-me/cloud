@@ -4,6 +4,8 @@
   package:
       name: python3-firewall
       state: present  # no unintended updates
+  register: _tmp_result
+  until: _tmp_result is success
 
 - name: IPA server services are allowed through firewall
   firewalld:

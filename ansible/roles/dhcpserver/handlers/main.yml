@@ -1,0 +1,7 @@
+---
+
+- name: The dhcpd server is restarted
+  systemd:
+      name: dhcpd
+      enabled: True
+      state: restarted

@@ -1,0 +1,15 @@
+{{ "authoritative;            # we are the definitave DHCP server on this network"
+   if dhcpd_authorative | default(False,True) | bool and
+      dhcpd_actual_authorative | default(False,True) | bool
+   else '' }}
+ping-check true;          # try to ping all hosts before committing the address
+one-lease-per-client on;
+ddns-update-style none;   # IPA takes care of this for us
+default-lease-time 10800; # default to 3 hour leases
+max-lease-time 18000;     # maximum lease time is 5 hours
+pid-file-name "/var/run/dhcpd.pid";
+lease-file-name "/var/lib/dhcpd/dhcpd.leases";
+
+# Needed for static-routes
+option rfc3442-classless-static-routes code 121 = array of integer 8;
+option ms-classless-static-routes code 249 = array of integer 8;

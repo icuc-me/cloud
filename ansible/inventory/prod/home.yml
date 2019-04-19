@@ -1,6 +1,17 @@
 ---
 
 all:
+    hosts:
+        ipa1:
+            ansible_host: '{{ _vault_home_ipa1_ip }}'
+        ipa2:
+            ansible_host: '{{ _vault_home_ipa2_ip }}'
+        server1:
+            ansible_host: '{{ _vault_home_server1_ip }}'
+        dhcp1:
+            ansible_host: '{{ _vault_home_dhcp1_ip }}'
+        dhcp2:
+            ansible_host: '{{ _vault_home_dhcp2_ip }}'
     vars:
         ansible_connection: 'ssh'
         ansible_user: '{{ _vault_admin_username }}'
@@ -9,32 +20,30 @@ all:
     children:
         ipaservers:
             hosts:
-                ipa1:
-                    ansible_host: '{{ _vault_home_ipa1_ip }}'
-                    ipaserver_admin_password: '{{ _vault_ipa_admin_userpass }}'
-                    ipaserver_dir_admin_password: '{{ _vault_ipa_admin_userpass }}'
-                    ipaserver_setup_ntp: False  # FIXME
-                    ipaserver_forward_policy: "only"
-                    ipaserver_auto_forwarders: False  # use root servers
+                ipa1: {}
         ipareplicas:
             hosts:
-                ipa2:
-                    ansible_host: '{{ _vault_home_ipa2_ip }}'
-                    ipaserver_admin_password: '{{ _vault_ipa_admin_userpass }}'
-                    ipaserver_setup_ntp: False  # FIXME
-                    ipaserver_forward_policy: "only"
-                    ipaserver_auto_forwarders: False  # also use root servers
+                ipa2: {}
         ipaclients:
             hosts:
-                server1:
-                    ansible_host: '{{ _vault_home_server1_ip }}'
-                    ipaserver_admin_password: '{{ _vault_ipa_admin_userpass }}'
-                    ipaclient_setup_ntp: False  # FIXME
+                server1: {}
+                dhcp1: {}
+                dhcp2: {}
         timeclients:
             hosts:
                 ipa1: {}
                 ipa2: {}
                 server1: {}
+                dhcp1: {}
+                dhcp2: {}
         qemuvms:
             hosts:
                 ipa2: {}
+                dhcp1: {}
+        qemuhosts:
+            hosts:
+                server1: {}
+        dhcpservers:
+            hosts:
+                dhcp1: {}
+                dhcp2: {}

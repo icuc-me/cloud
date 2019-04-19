@@ -1,0 +1,49 @@
+---
+
+dhcpd_authorative: False  # Only set true if you REALLY mean it
+
+dhcpd_subnet_addr: '192.168.0.0'
+dhcpd_subnet_mask: '255.255.255.0'
+dhcpd_subnet_broadcast: '192.168.0.255'
+dhcpd_subnet_gateway: '192.168.0.254'
+dhcpd_subnet_domain: 'example.com'
+dhcpd_subnet_dns:
+    - '192.168.0.1'
+    - '192.168.0.2'
+dhcpd_subnet_ntp:
+    - '192.168.0.3'
+    - '192.168.0.4'
+dhcpd_subnet_smtp: '192.168.0.5'
+
+# Two ranges within subnet pool, one for known (fixed) another for unknown hosts
+dhcpd_subnet_known_pool: ['192.168.0.1', '192.168.0.149']
+dhcpd_subnet_unknown_pool: ['192.168.0.150', '192.168.0.250']
+
+# list of known hosts with fixed/reserved addresses
+dhcpd_known_hosts:
+    - fqdn: 'hostname.example.com'  # fqdn, must exist in DNS if set
+      mac: 'aa:bb:cc:12:34:56'
+    - fqdn: ''  # Empty to generate bogus/reserved entry
+      note: 'rogue client, always ignore'  # add comment to entry
+      mac: 'bb:cc:dd:67:89:01'
+
+dhcpd_pri_fqdn: ''  # Enable failover by setting
+dhcpd_sec_fqdn: ''  # both lines non-empty
+# All options below are required if failover is enabled
+dhcpd_peerport: '847'
+dhcpd_omapiport: '7911'
+# generate with dnssec-keygen -K /tmp -a HMAC-SHA512 -b 512 -n USER snafu
+dhcpd_omapi_name: 'snafu'
+dhcpd_omapi_footprint: '123+09876'
+dhcpd_omapi_algo: 'hmac-sha512'
+dhcpd_omapi_key: 'snafu. IN KEY 0 0 000 fooobaaarrrrbaaazzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz fooooobaaaaarrrrrbaaaaaaazzzzzzz'
+dhcpd_omapi_private: |
+    Private-key-format: v1.3
+    Algorithm: 000 (FOOO_BAR)
+    Key: fooobaaarrrrbaaazzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+    Bits: FOO=
+    Created: 20180414135956
+    Publish: 20190414135956
+    Activate: 20200414135956
+
+dhcpd_actual_authorative: False  # And this one also
