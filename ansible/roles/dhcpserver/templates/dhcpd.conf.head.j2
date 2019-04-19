@@ -1,5 +1,7 @@
-{{ "authoritative;" if dhcpd_authorative and dhcpd_actual_authorative
-   else '# authoritative' }}            # we are the definitave DHCP server on this network
+{{ "authoritative;            # we are the definitave DHCP server on this network"
+   if dhcpd_authorative | default(False,True) | bool and
+      dhcpd_actual_authorative | default(False,True) | bool
+   else '' }}
 ping-check true;          # try to ping all hosts before committing the address
 one-lease-per-client on;
 ddns-update-style none;   # IPA takes care of this for us

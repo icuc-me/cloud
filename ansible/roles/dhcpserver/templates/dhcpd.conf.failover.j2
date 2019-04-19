@@ -1,4 +1,4 @@
-{% if ansible_fqdn == dhcpd_pri_fqdn %}
+{% if ansible_fqdn == dhcpd_pri_fqdn | default('',True) | trim %}
 failover peer "dhcp" {
    primary;
    address {{ dhcpd_pri_fqdn }};
@@ -11,7 +11,7 @@ failover peer "dhcp" {
    split 128;
    load balance max seconds 3;
 }
-{% elif ansible_fqdn == dhcpd_sec_fqdn %}
+{% elif ansible_fqdn == dhcpd_sec_fqdn | default('',True) | trim %}
 failover peer "dhcp" {
    secondary;
    address {{ dhcpd_sec_fqdn }};

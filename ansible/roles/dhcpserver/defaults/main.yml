@@ -27,8 +27,9 @@ dhcpd_known_hosts:
       note: 'rogue client, always ignore'  # add comment to entry
       mac: 'bb:cc:dd:67:89:01'
 
-dhcpd_pri_fqdn: '192.168.0.1'  # Enable failover by setting
-dhcpd_sec_fqdn: '192.168.0.2'  # both lines non-empty
+dhcpd_pri_fqdn: ''  # Enable failover by setting
+dhcpd_sec_fqdn: ''  # both lines non-empty
+# All options below are required if failover is enabled
 dhcpd_peerport: '847'
 dhcpd_omapiport: '7911'
 # generate with dnssec-keygen -K /tmp -a HMAC-SHA512 -b 512 -n USER snafu

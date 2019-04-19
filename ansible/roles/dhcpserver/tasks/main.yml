@@ -2,7 +2,9 @@
 
 - name: The ISC dhcpd server packages are installed
   package:
-      name: dhcp
+      name:
+          - dhcp
+          - python3-firewall
       state: present
   register: _tmp_result
   until: _tmp_result is success
@@ -60,3 +62,24 @@
       - 'dhcpd.conf.head'
       - 'dhcpd.conf'
   notify: 'The dhcpd server is restarted'
+
+- name: DHCPD service is allowed through firewall
+  firewalld:
+      immediate: True
+      permanent: True
+      service: 'dhcp'
+      state: 'enabled'
+
+- when: dhcpd_pri_fqdn | default('',True) | trim | length and
+        dhcpd_sec_fqdn | default('',True) | trim | length
+  block:
+
+    - name: DHCPD failover-cluster ports are open for use
+      firewalld:
+          immediate: True
+          permanent: True
+          port: '{{ item }}/tcp'
+          state: 'enabled'
+      with_items:
+        - '{{ dhcpd_peerport }}'
+        - '{{ dhcpd_omapiport }}'
