@@ -1,5 +1,5 @@
 group {
-{%- for item in dhcpd_known_hosts | default([],True) -%}
+{% for item in dhcpd_known_hosts | default([],True) %}
 
     {%- if 'fqdn' in item and
            item.fqdn | default('',True) | trim | length -%}
