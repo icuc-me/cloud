@@ -1,0 +1,28 @@
+---
+galaxy_info:
+  author: Jeroen Arnoldus
+  description: Updates mail aliases database
+  company: Repleo, Amstelveen, Holland
+  license: BSD
+  min_ansible_version: 1.4
+  github_branch: master
+  platforms:
+    - name: EL
+      versions:
+        - 5
+        - 6
+    - name: Fedora
+      versions:
+        - 16
+        - 17
+        - 18
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - system
+    - mail
+dependencies: []

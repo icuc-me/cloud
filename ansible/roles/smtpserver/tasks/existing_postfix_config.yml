@@ -1,0 +1,18 @@
+---
+
+- name: Existing non-default postfix options are retrieved as a YAML dictionary
+  script: postconf_yaml.sh
+  changed_when: False  # only looking
+  register: result
+
+- name: Buffer is parsed as a YAML dictionary
+  set_fact:
+    result: '{{ result.stdout | from_yaml }}'
+
+- name: Buffer contents are validated
+  assert:
+    that: 'item in result.postfix_configuration'
+  with_items:  # These are always/reliable non-default keys
+    - 'alias_database'
+    - 'alias_maps'
+    - 'mail_owner'

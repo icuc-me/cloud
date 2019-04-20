@@ -1,0 +1,24 @@
+---
+
+- name: The aliases database is (re-)rendered
+  listen: "reload postfix"
+  command: newaliases
+
+- name: The postfix databases are (re-)rendered
+  listen: "reload postfix"
+  command: "postmap -v /etc/postfix/{{ item }}"
+  with_items: '{{ postmap_dbs | default([],True) }}'
+
+- name: The postfix service is started
+  listen: "start postfix"
+  systemd:
+    name: postfix
+    enabled: True
+    state: started
+
+- name: The postfix service is reloaded
+  listen: "reload postfix"
+  systemd:
+    name: postfix
+    enabled: True
+    state: reloaded

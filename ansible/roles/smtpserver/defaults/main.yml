@@ -1,0 +1,43 @@
+---
+
+# Regular user account on system
+smtp_admin_user: 'operator'
+
+smtpserver_firewalld_services:
+    - smtp
+    - smtp-submission
+    - smtps
+
+smtpserver_firewalld_tcp_ports: []
+
+# List of postfix configuration keys that should be removed
+postconf_removals:
+    - "mydomain"  # formerly set, now use default
+    - "myorigin"  # ''
+
+# Dictionary of postfix configuration options to set
+postconf_additions:
+    # Ref: http://www.postfix.org/STANDARD_CONFIGURATION_README.html#null_client
+    relayhost: '[smtp.example.com]' # all mail goes through here, ignore MX from DNS
+    # Required so that /etc/aliases may be used to set the actual destinations for local mail
+    mydestination: '$myhostname, localhost.localdomain localhost $mydomain'  # local mail delivery
+
+# Dictionary mapping of filepaths to their contents to write (e.g. database hashes)
+postfix_files: {}
+
+# List of filenames of databases to process through postmap
+postmap_dbs:
+    - access
+    - canonical
+    - generic
+    - header_checks
+    - relocated
+    - transport
+    - virtual
+
+# List of e-mail aliases to manage, both 'user' and 'alias' are required keys.
+email_aliases:
+    - user: "{{ smtp_admin_user }}"
+      alias: "root"
+    - user: "root"
+      alias: "john_doe@example.com"
