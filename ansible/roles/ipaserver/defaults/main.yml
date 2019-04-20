@@ -70,4 +70,4 @@ ipaserver_running_delay: 30
 ipaserver_is_replica: False
 
 # Goes with ipaserver_admin_password
-ipaserver_admin_principal: "admin@{{ ipaclient_realm }}"
+ipaserver_admin_principal: "admin@{{ ipaserver_realm }}"
