@@ -10,14 +10,17 @@ case "$1" in
     test)
         SRC="test"
         DST="stage"
+        ESB=""
         ;;
     stage)
         SRC="stage"
         DST="prod"
+        ESB="--exclude=*-strongbox.yml"
         ;;
     prod)
         SRC="prod"
         DST="test"
+        ESB="--exclude=*-strongbox.yml"
         ;;
     *) die "First parameter must be 'test', 'stage', or 'prod', got: '$1'." 1
 esac
@@ -40,7 +43,7 @@ do
     rm -rf "$TEMPDIR"/* "$TEMPDIR"/.??*
     make -C "$SRC_DIR/validate" .commits_clean
     rsync --archive --links \
-        --exclude=*-strongbox.yml --exclude=*.auto.tfvars --exclude=.gitignore \
+        $ESB --exclude=*.auto.tfvars --exclude=.gitignore \
         "$TF_DIR/$SRC/" "$TEMPDIR"
     modfiles
     echo ""
@@ -58,7 +61,7 @@ do
 done
 
 rsync --archive --links --delete \
-   --exclude=*-strongbox.yml --exclude=*.auto.tfvars --exclude=.gitignore \
+   $ESB --exclude=*.auto.tfvars --exclude=.gitignore \
    "$TEMPDIR/"  "$TF_DIR/$DST"
 
 cd "$TF_DIR"
