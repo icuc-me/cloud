@@ -5,8 +5,8 @@ variable "project_id" {
 
 locals {
     default = "default"
-    default_in = "default_in"
-    default_out = "default_out"
+    default_in = "default-in"
+    default_out = "default-out"
     testname = "default-${var.project_id}"
     testname_in = "default-in-${var.project_id}"
     testname_out = "default-out-${var.project_id}"

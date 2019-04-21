@@ -2,27 +2,24 @@
 
 # N/B: TEST VALUES: NOT ACTUALLY USED
 
-env_name: "stage"
+env_name: "prod"
 
-suser_display_name: "Jane Doe"
+suser_display_name: "Sal Eiseman"
 
 ci_suser_display_name: "CI Automation Account"
-ci_susername: "ciuser02"
-
-# Terraform 0.11 cannot accept anything except strings
-test_roles_members_bindings: >-
-    roles/storage.admin=other dude, super-man;
-    roles/compute.admin=some young guy,other dude;
-
-stage_roles_members_bindings: >-
-    roles/compute.admin=some young guy,other dude;
-    roles/storage.admin=other dude, super-man;
+img_suser_display_name: "Image Automation Account"
+test_ci_susername: "foo"
+test_img_susername: "bar"
+stage_ci_susername: "baz"
+stage_img_susername: "baz"
+prod_ci_susername: "bar"
+prod_img_susername: "foo"
 
 env_readers: >-
-    prod=value1a,value1b,xxxx,value1c,xxxx;
-    test=value2a,xxxx,value2b,xxxx,value2c;
-    stage=value3a,value3b,xxxx,value3c;
-    prod=this_value_should_not_be_processed;
+    stage=value1a,value1b,xxxx,value1c,xxxx;
+    prod=value2a,xxxx,value2b,xxxx,value2c;
+    stage=this_value_should_not_be_processed;
+    test=value3a,value3b,xxxx,value3c;
 
-tcp_fw_ports: "hg"
-udp_fw_ports: "gh"
+tcp_fw_ports: "zz"
+udp_fw_ports: "th"
