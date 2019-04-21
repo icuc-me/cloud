@@ -5,7 +5,6 @@ set -e
 source $(dirname $0)/lib.sh
 
 MODKEY="NEEDS PER-ENV MODIFICATION"
-EXCLUDE="--exclude=*-strongbox.yml --exclude=*.auto.tfvars --exclude=.gitignore"
 
 case "$1" in
     test)
@@ -38,13 +37,19 @@ modfiles() {
 YorNorR="r"
 while [[ "$YorNorR" == "R" ]] || [[ "$YorNorR" == "r" ]]
 do
+    rm -rf "$TEMPDIR"/* "$TEMPDIR"/.??*
     make -C "$SRC_DIR/validate" .commits_clean
-    rsync --archive --links $EXCLUDE "$TF_DIR/$SRC/" "$TEMPDIR"
+    rsync --archive --links \
+        --exclude=*-strongbox.yml --exclude=*.auto.tfvars --exclude=.gitignore \
+        "$TF_DIR/$SRC/" "$TEMPDIR"
     modfiles
     echo ""
-    echo "$TMPDIR"
-    ls -la $TMPDIR
-    read -N 1 -p "$TMPDIR OKAY to proceed (y), re-edit (r), or abort (n)? " YorNorR
+    echo "$TEMPDIR"
+    ls -la $TEMPDIR
+    diff -Naur \
+        --exclude=*-strongbox.yml --exclude=*.auto.tfvars --exclude=.gitignore \
+        "$TF_DIR/$DST/" "$TEMPDIR/" | less
+    read -N 1 -p "$TEMPDIR OKAY to proceed (y), re-edit/diff (r), or abort (n)? " YorNorR
     echo ""
     if [[ "$YorNorR" == "N" ]] || [[ "$YorNorR" == "n" ]]
     then
@@ -52,7 +57,9 @@ do
     fi
 done
 
-rsync --archive --links --delete $EXCLUDE "$TEMPDIR/"  "$TF_DIR/$DST"
+rsync --archive --links --delete \
+   --exclude=*-strongbox.yml --exclude=*.auto.tfvars --exclude=.gitignore \
+   "$TEMPDIR/"  "$TF_DIR/$DST"
 
 cd "$TF_DIR"
 git status

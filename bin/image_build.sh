@@ -16,9 +16,9 @@ docker_build() {
     [[ -n "$TAG" ]] || die "${FUNCNAME[0]}() expects \$3 to be non-empty repository tag" 2
 
     cd "$SRC_DIR"
-    CMD="$CONTAINER build ${BA_TAG} -f dockerfiles/${NAME}.dockerfile --tag ${IN} ./"
+    CMD="sudo $CONTAINER build ${BA_TAG} -f dockerfiles/${NAME}.dockerfile --tag ${IN} ./"
     echo "$CMD"
-    sudo $CMD
+    $CMD
     echo "Tagging ${IN} -> ${FQIN}"
     sudo $CONTAINER tag "${IN}" "${FQIN}"
     if [[ "$CI" == "true" ]] && [[ "$CIRRUS_BRANCH" == "master" ]]

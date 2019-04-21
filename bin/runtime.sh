@@ -14,13 +14,16 @@ check_usage() {
     elif ! sudo $CONTAINER version &> /dev/null
     then
         die "Sudo access to $CONTAINER is required" 2
-    elif ! echo "$SRC_DIR" egrep -q "/home/$USER/.+"
+    elif ! echo "$SRC_DIR" | egrep -q "/home/$USER/.+"
     then
         die "Expected source to exist as some subdirectory of /home/$USER" 4
     elif ! sudo $CONTAINER image "$RUN_FQIN" &> /dev/null
     then
         if ! sudo $CONTAINER pull "$RUN_FQIN"
         then
+            echo "Trying to build a local version instead"
+            export IMG_TAG="$VERSION"
+            source "$(dirname $0)/lib.sh"
             $SRC_DIR/bin/image_build.sh
         fi
     fi
@@ -30,11 +33,7 @@ host_ro() {
     echo "$HOME/$1:/home/$USER/$1:ro"
 }
 
-
-check_usage
-
-if [[ "$(basename $0)" == "runtime.sh" ]]
-then
+run_container(){
     set -x
     sudo $CONTAINER run -it --rm \
        --security-opt "label=disable" \
@@ -46,19 +45,15 @@ then
        --env "AS_USER=$USER" \
        --env "AS_ID=$UID" \
        "$RUN_FQIN" \
-    "/usr/bin/bash --login -i"
+       "$1"
+}
+
+check_usage
+
+if [[ "$(basename $0)" == "runtime.sh" ]]
+then
+    run_container "/usr/bin/bash --login -i"
 elif [[ "$(basename $0)" == "make.sh" ]]
 then
-    set -x
-    sudo $CONTAINER run -i --rm \
-       --security-opt "label=disable" \
-       --volume "$(host_ro .vimrc)" \
-       --volume "$(host_ro .gitconfig)" \
-       --volume "$SRC_DIR:$SRC_DIR" \
-       --workdir "$SRC_DIR" \
-       --env "SRC_DIR=$SRC_DIR" \
-       --env "AS_USER=$USER" \
-       --env "AS_ID=$UID" \
-       "$RUN_FQIN" \
-    "/usr/bin/make $@"
+    run_container "/usr/bin/make $@"
 fi
