@@ -25,6 +25,11 @@ case "$1" in
     *) die "First parameter must be 'test', 'stage', or 'prod', got: '$1'." 1
 esac
 
+if [[ -d "$TF_DIR/$SRC/.terraform" ]] || [[ -d "$TF_DIR/$DST/.terraform" ]]
+then
+    die "Error, found .terraform directories in $SRC or $DST" 2
+fi
+
 TEMPDIR="$(mktemp -p '' -d ${SCRIPT_FILENAME}_XXXX)"
 trap "rm -rf $TEMPDIR" EXIT
 
