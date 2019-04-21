@@ -67,6 +67,21 @@ output "gateway_private_ip" {
     sensitive = true
 }
 
+module "project_dns" {
+    source = "./modules/project_dns"
+    providers { google = "google" }
+    private_network = "${module.project_networks.private["network_link"]}"
+    testing = "${local.is_prod == 1
+                 ? ""
+                 : var.UUID }"
+    public_fqdn = "${local.strongbox_contents["fqdn"]}"
+}
+
+output "dom_ns" {
+    value = "${module.project_dns.dom_ns}"
+    sensitive = true
+}
+
 output "uuid" {
     value = "${var.UUID}"
     sensitive = true
