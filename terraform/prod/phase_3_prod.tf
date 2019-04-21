@@ -2,7 +2,7 @@ locals {
     ci_svc_acts = "${data.terraform_remote_state.phase_2.ci_svc_acts}"
     ci_act_roles = [
         "roles/storage.admin", "roles/compute.admin", "roles/compute.networkAdmin",
-        "roles/iam.serviceAccountUser"
+        "roles/iam.serviceAccountUser", "roles/dns.admin"
     ]
 
     img_svc_acts = "${data.terraform_remote_state.phase_2.ci_svc_acts}"
