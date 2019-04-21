@@ -75,6 +75,8 @@ resource "google_storage_object_acl" "strongbox_acl" {
                : 0}"
     bucket = "${element(data.template_file.bucket_names.*.rendered, count.index)}"
     object= "${element(module.filter_ids.keys, count.index)}"
+    # TODO Add in automatic/silent convenience values:
+    # owners-<project-number>, editors-<project-number>, and viewers-<project-number>
     role_entity = ["${formatlist("READER:user-%s",
                                  split(local.x,
                                        element(module.filter_ids.values,
