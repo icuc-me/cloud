@@ -3,7 +3,9 @@
 # N/B: TEST VALUES: NOT ACTUALLY USED
 
 env_name: "prod"
-
+fqdn: 'foo.bar'
+cloud_subdomain: "baz"
+site_subdomain: "snafu"
 suser_display_name: "Sal Eiseman"
 
 ci_suser_display_name: "CI Automation Account"

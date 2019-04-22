@@ -75,10 +75,12 @@ module "project_dns" {
                  ? ""
                  : var.UUID }"
     public_fqdn = "${local.strongbox_contents["fqdn"]}"
+    cloud_subdomain = "${local.strongbox_contents["cloud_subdomain"]}"
+    site_subdomain = "${local.strongbox_contents["site_subdomain"]}"
 }
 
-output "dom_ns" {
-    value = "${module.project_dns.dom_ns}"
+output "zone_names" {
+    value = "${module.project_dns.zone_names}"
     sensitive = true
 }
 
