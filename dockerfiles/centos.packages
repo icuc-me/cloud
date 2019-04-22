@@ -15,6 +15,7 @@ openssh-clients
 podman
 python36
 python36-PyYAML
+python36-requests
 rh-git29
 rsync
 skopeo

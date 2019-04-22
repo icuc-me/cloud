@@ -67,7 +67,7 @@ resource "google_dns_record_set" "fqdn_glue" {
     name = "${local.fqdn_glue[count.index]}"
     type = "NS"
     rrdatas = ["${split(local.c, element(local.fqdn_glue_ns, count.index))}"]
-    ttl = 300
+    ttl = 86400
 }
 
 locals {
@@ -88,5 +88,26 @@ resource "google_dns_record_set" "cloud_glue" {
     name = "${local.cloud_glue[count.index]}"
     type = "NS"
     rrdatas = ["${split(local.c, element(local.cloud_glue_ns, count.index))}"]
-    ttl = 300
+    ttl = 86400
+}
+
+module "myip" {
+    source = "./myip"
+}
+
+locals {
+    site_managed_zone = "${google_dns_managed_zone.domains.*.name[1]}"
+}
+
+resource "google_dns_record_set" "site_gateway" {
+    managed_zone = "${local.site_managed_zone}"
+    name = "gateway.${google_dns_managed_zone.domains.*.dns_name[1]}"
+    type = "A"
+    rrdatas = ["${module.myip.ip}"]
+    ttl = 600
+}
+
+output "site_gateway" {
+    value = "${map(google_dns_record_set.site_gateway.name, module.myip.ip)}"
+    sensitive = true
 }
