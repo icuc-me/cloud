@@ -84,6 +84,11 @@ output "zone_names" {
     sensitive = true
 }
 
+output "site_gateway" {
+    value = "${module.project_dns.site_gateway}"
+    sensitive = true
+}
+
 output "uuid" {
     value = "${var.UUID}"
     sensitive = true

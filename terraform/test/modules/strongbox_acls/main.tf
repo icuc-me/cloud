@@ -68,6 +68,15 @@ module "filter_ids" {
     v_re = "^\\s*$"
 }
 
+data "google_project" "project" {}
+
+locals {
+    # Silently added & untracked unless explicitly specified
+    bucket_def_acls = ["OWNER:project-owners-${data.google_project.project.number}",
+                       "OWNER:project-editors-${data.google_project.project.number}",
+                       "READER:project-viewers-${data.google_project.project.number}"]
+}
+
 // ref: https://www.terraform.io/docs/providers/google/r/storage_object_acl.html
 resource "google_storage_object_acl" "strongbox_acl" {
     count = "${var.set_acls == 1
@@ -75,12 +84,11 @@ resource "google_storage_object_acl" "strongbox_acl" {
                : 0}"
     bucket = "${element(data.template_file.bucket_names.*.rendered, count.index)}"
     object= "${element(module.filter_ids.keys, count.index)}"
-    # TODO Add in automatic/silent convenience values:
-    # owners-<project-number>, editors-<project-number>, and viewers-<project-number>
-    role_entity = ["${formatlist("READER:user-%s",
-                                 split(local.x,
-                                       element(module.filter_ids.values,
-                                               count.index)))}"]
+    role_entity = ["${concat(local.bucket_def_acls,
+                             formatlist("READER:user-%s",
+                                        split(local.x,
+                                              element(module.filter_ids.values,
+                                                      count.index))))}"]
 }
 
 output "object_readers" {
