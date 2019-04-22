@@ -51,6 +51,32 @@ output "zone_names" {
     sensitive = true
 }
 
+// Strip off trailing "." in dns_name
+data "template_file" "common_name" {
+    count = "${local.n_subs}"
+    template = "${substr(google_dns_managed_zone.domains.*.dns_name[count.index],
+                         0,
+                         length(google_dns_managed_zone.domains.*.dns_name[count.index]) - 1)}"
+}
+
+output "dns_names" {
+    value = "${zipmap(concat(list("."), slice(local.subnames, 1, local.n_subs)),
+                      data.template_file.common_name.*.rendered)}"
+    sensitive = true
+}
+
+data "template_file" "common_dns" {
+    count = "4"
+    template = "${substr(element(google_dns_managed_zone.domains.*.name_servers[0], count.index),
+                         0,
+                         length(element(google_dns_managed_zone.domains.*.name_servers[0], count.index)) - 1)}"
+}
+
+output "nameservers" {
+    value = ["${data.template_file.common_dns.*.rendered}"]
+    sensitive = true
+}
+
 locals {
     # order must be same as local.subnames
     fqdn_glue = ["${google_dns_managed_zone.domains.*.dns_name[1]}",

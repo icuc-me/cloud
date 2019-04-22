@@ -81,7 +81,56 @@ module "project_dns" {
 
 output "zone_names" {
     value = "${module.project_dns.zone_names}"
-    sensitive = true
+    #sensitive = true
+}
+
+output "dns_names" {
+    value = "${module.project_dns.dns_names}"
+    #sensitive = true
+}
+
+// ref: https://www.terraform.io/docs/providers/acme/r/registration.html
+resource "tls_private_key" "reg_private_key" {
+    algorithm = "RSA"
+    rsa_bits = 4096
+}
+
+resource "acme_registration" "reg" {
+  account_key_pem = "${tls_private_key.reg_private_key.private_key_pem}"
+  email_address   = "${local.strongbox_contents["acme_reg_ename"]
+                      }@${module.project_dns.dns_names["."]}"
+}
+
+resource "tls_private_key" "cert_private_key" {
+    algorithm = "RSA"
+    rsa_bits = 4096
+}
+
+output "debug" {
+    value = ["${module.project_dns.nameservers}"]
+}
+
+resource "acme_certificate" "certificate" {
+    count = "${local.is_prod == 1 ? 1 : 0}"  // requires working DNS for challenge
+    account_key_pem = "${acme_registration.reg.account_key_pem}"
+    common_name = "${module.project_dns.dns_names["."]}"
+    subject_alternative_names = ["*.${module.project_dns.dns_names["."]}"]
+    key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
+    min_days_remaining = "${local.is_prod == 1 ? 20 : 0}"
+    certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
+
+    dns_challenge {
+        provider = "gcloud"
+        // decouple from registrar deligation
+        recursive_nameservers = ["${formatlist("%s:53", module.project_dns.nameservers)}"]
+        config {
+            // 5 & 180 (default) too quick & slow, root entry needs more time
+            GCE_POLLING_INTERVAL = "10"
+            GCE_PROPAGATION_TIMEOUT = "300"
+            GCE_PROJECT = "${local.self["PROJECT"]}"
+            GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
+        }
+    }
 }
 
 output "site_gateway" {
