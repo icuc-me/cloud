@@ -1,139 +1,109 @@
 
-variable "private_network" {
-    description = "Complete URI to the private network"
+provider "google" {
+    alias = "test"
+}
+
+provider "google" {
+    alias = "stage"
+}
+
+provider "google" {
+    alias = "prod"
+}
+
+variable "base_fqdn" {
+    description = "base DNS suffix to append to all managed zone names, e.g. 'example.com'"
 }
 
 variable "testing" {
-    description = "Dummy test sub-domain name guaranteed never to clash"
-}
-
-variable "public_fqdn" {
-    description = "DNS suffix to append when forming zone names, e.g. 'example.com'"
+    description = "test subdomain of base_fqdn to contain test items or blank for prod. use"
 }
 
 variable "cloud_subdomain" {
-    description = "subdomain of public_fqdn for google cloud resources"
+    description = "subdomain for google cloud resources"
 }
 
 variable "site_subdomain" {
-    description = "subdomain of public_fqdn for non-cloud resources"
+    description = "subdomain of for non-cloud resources"
+}
+
+variable "gateway" {
+    description = "IP address of cloud gateway"
 }
 
 locals {
-    e = ""
-    d = "."
-    h = "-"
-    c = ","
-    dom = "${var.testing == ""
-             ? var.public_fqdn
-             : join("-", list(var.testing, var.public_fqdn))}"
-    # order is significant to subsequent, nested resources
-    subnames = ["",
-                "${var.site_subdomain}.",
-                "${var.cloud_subdomain}.",
-                "test.${var.cloud_subdomain}.",
-                "stage.${var.cloud_subdomain}.",
-                "prod.${var.cloud_subdomain}."]
-    n_subs = "${length(local.subnames)}"
+    domain = "${var.testing == ""
+                ? var.public_fqdn
+                : join(".", list(var.testing, var.base_fqdn))}"
 }
 
-// ref: https://www.terraform.io/docs/providers/google/r/dns_managed_zone.html
-resource "google_dns_managed_zone" "domains" {
-  count = "${local.n_subs}"
-  name = "${replace(local.subnames[count.index], local.d, local.h)}${replace(local.dom, local.d, local.h)}"
-  dns_name = "${local.subnames[count.index]}${local.dom}."
-  visibility = "public"  # N/B: only actual when registrar points at assigned NS
-}
-
-output "zone_names" {
-    value = "${zipmap(concat(list("."), slice(local.subnames, 1, local.n_subs)),
-                      google_dns_managed_zone.domains.*.name)}"
-    sensitive = true
-}
-
-// Strip off trailing "." in dns_name
-data "template_file" "common_name" {
-    count = "${local.n_subs}"
-    template = "${substr(google_dns_managed_zone.domains.*.dns_name[count.index],
-                         0,
-                         length(google_dns_managed_zone.domains.*.dns_name[count.index]) - 1)}"
-}
-
-output "dns_names" {
-    value = "${zipmap(concat(list("."), slice(local.subnames, 1, local.n_subs)),
-                      data.template_file.common_name.*.rendered)}"
-    sensitive = true
-}
-
-data "template_file" "common_dns" {
-    count = "4"
-    template = "${substr(element(google_dns_managed_zone.domains.*.name_servers[0], count.index),
-                         0,
-                         length(element(google_dns_managed_zone.domains.*.name_servers[0], count.index)) - 1)}"
-}
-
-output "nameservers" {
-    value = ["${data.template_file.common_dns.*.rendered}"]
-    sensitive = true
+module "base" {
+    source = "./base"
+    providers = { google = "google.prod" }
+    domain = "${local.domain}"
+    cloud_subdomain = "${var.cloud_subdomain}"
+    site_subdomain = "${var.site_subdomain}"
 }
 
 locals {
-    # order must be same as local.subnames
-    fqdn_glue = ["${google_dns_managed_zone.domains.*.dns_name[1]}",
-                 "${google_dns_managed_zone.domains.*.dns_name[2]}"]
-    fqdn_glue_ns = ["${join(local.c, google_dns_managed_zone.domains.*.name_servers[1])}",
-                    "${join(local.c, google_dns_managed_zone.domains.*.name_servers[2])}"]
-    n_fqdn_glue = "${length(local.fqdn_glue)}"
+    cloud_fqdn = "${join(".", list(var.cloud_subdomain, local.domain))}"
+    cloud_name = "${module.base.fqdn_name[local.cloud_fqdn]}"
+
+    site_fqdn = "${join(".", list(var.site_subdomain, local.domain))}"
+    site_name = "${module.base.fqdn_name[local.site_fqdn]}"
 }
 
-// ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html
-resource "google_dns_record_set" "fqdn_glue" {
-    count = "${local.n_fqdn_glue}"
-    managed_zone = "${google_dns_managed_zone.domains.*.name[0]}"
-    name = "${local.fqdn_glue[count.index]}"
-    type = "NS"
-    rrdatas = ["${split(local.c, element(local.fqdn_glue_ns, count.index))}"]
-    ttl = 86400
+module "test" {
+    source = "./sub"
+    providers = {
+        google.base = "google.prod"
+        google.subdomain = "google.test"
+    }
+    base_fqdn = "${local.cloud_fqdn}"
+    base_name = "${local.cloud_name}"
+    subdomain = "test"
 }
 
-locals {
-    cloud_managed_zone = "${google_dns_managed_zone.domains.*.name[2]}"
-    # order must be same as local.subnames
-    cloud_glue = ["${google_dns_managed_zone.domains.*.dns_name[3]}",
-                  "${google_dns_managed_zone.domains.*.dns_name[4]}",
-                  "${google_dns_managed_zone.domains.*.dns_name[5]}"]
-    cloud_glue_ns = ["${join(local.c, google_dns_managed_zone.domains.*.name_servers[3])}",
-                     "${join(local.c, google_dns_managed_zone.domains.*.name_servers[4])}",
-                     "${join(local.c, google_dns_managed_zone.domains.*.name_servers[5])}"]
-    n_cloud_glue = "${length(local.cloud_glue)}"
+module "stage" {
+    source = "./sub"
+    providers = {
+        google.base = "google.prod"
+        google.subdomain = "google.stage"
+    }
+    base_fqdn = "${local.cloud_fqdn}"
+    base_name = "${local.cloud_name}"
+    subdomain = "stage"
 }
 
-resource "google_dns_record_set" "cloud_glue" {
-    count = "${local.n_cloud_glue}"
-    managed_zone = "${local.cloud_managed_zone}"
-    name = "${local.cloud_glue[count.index]}"
-    type = "NS"
-    rrdatas = ["${split(local.c, element(local.cloud_glue_ns, count.index))}"]
-    ttl = 86400
+module "prod" {
+    source = "./sub"
+    providers = {
+        google.base = "google.prod"
+        google.subdomain = "google.prod"
+    }
+    base_fqdn = "${local.cloud_fqdn}"
+    base_name = "${local.cloud_name}"
+    subdomain = "prod"
 }
 
-module "myip" {
-    source = "./myip"
+module "site" {
+    source = "./site"
+    providers = { google = "google.prod" }
+    site_fqdn = "${local.site_fqdn}"
+    site_name = "${local.site_name}"
 }
 
-locals {
-    site_managed_zone = "${google_dns_managed_zone.domains.*.name[1]}"
+output "fqdn" {
+    value = 
 }
 
-resource "google_dns_record_set" "site_gateway" {
-    managed_zone = "${local.site_managed_zone}"
-    name = "gateway.${google_dns_managed_zone.domains.*.dns_name[1]}"
-    type = "A"
-    rrdatas = ["${module.myip.ip}"]
-    ttl = 600
-}
-
-output "site_gateway" {
-    value = "${map(google_dns_record_set.site_gateway.name, module.myip.ip)}"
+output "dns_data" {
+    value = "${merge(module.base.fqdn_names,
+                     module.test.fqdn_name,
+                     module.stage.fqdn_name,
+                     module.prod.fqdn_name,
+                     module.site.fqdn_rrdata,
+                     map("fqdn_ns",
+                         join(",", module.base.fqdn_ns)))}"
     sensitive = true
 }
