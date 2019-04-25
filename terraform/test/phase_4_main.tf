@@ -70,22 +70,42 @@ output "gateway_private_ip" {
 module "project_dns" {
     source = "./modules/project_dns"
     providers {
-        test.google = "test.google",
-        stage.google = "stage.google",
-        prod.google = "prod.google"
+        google.test = "google.test"
+        google.stage = "google.stage"
+        google.prod = "google.prod"
     }
-    base_fqdn = "${local.strongbox_contents["fqdn"]}"
-    testing = "${local.is_prod == 1
-                 ? ""
-                 : var.UUID }"
+    domain = "${local.is_prod == 1
+                ? local.strongbox_contents["fqdn"]
+                : join(".", list(var.UUID, local.strongbox_contents["fqdn"]))}"
     cloud_subdomain = "${local.strongbox_contents["cloud_subdomain"]}"
     site_subdomain = "${local.strongbox_contents["site_subdomain"]}"
     gateway = "${module.gateway.external_ip}"
 }
 
-output "dns_data" {
-    value = "${module.project_dns.dns_data}"
-    sensitive = true
+output "fqdn" {
+    value = "${module.project_dns.fqdn}"
+    #sensitive = true
+}
+
+output "zone" {
+    value = "${module.project_dns.zone}"
+    #sensitive = true
+}
+
+
+output "ns" {
+    value = "${module.project_dns.ns}"
+    #sensitive = true
+}
+
+output "name_to_zone" {
+    value = "${module.project_dns.name_to_zone}"
+    #sensitive = true
+}
+
+output "gateways" {
+    value = "${module.project_dns.gateways}"
+    #sensitive = true
 }
 
 // ref: https://www.terraform.io/docs/providers/acme/r/registration.html

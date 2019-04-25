@@ -1,30 +1,55 @@
 
 provider "google" {}
 
-variable "site_fqdn" {
-    description = "FQDN of site"
+variable "domain" {
+    description = "FQDN of base domain name"
 }
 
-variable "site_name" {
-    description = "Name of managed site zone"
+variable "zone" {
+    description = "Managed zone name of domain"
 }
 
-module "myip" {
-        source = "./myip"
+variable "site" {
+    description = "Name of site subdomain"
+}
+
+variable "gateway" {
+    description = "IP address of gateway"
+}
+
+module "site" {
+    source = "../sub"
+    providers = {
+        google.base = "google"
+        google.subdomain = "google"
+    }
+    domain = "${var.domain}"
+    base_zone = "${var.zone}"
+    subdomain = "${var.site}"
+}
+
+output "debug" { value = "$(module.site.name_to_zone}" }
+
+locals {
+    // add dependency on site module
+    site_zone = "${module.site.name_to_zone[var.site]}"
 }
 
 resource "google_dns_record_set" "gateway" {
-    managed_zone = "${var.site_name}"
-    name = "gateway.${var.site_fqdn}."
+    managed_zone = "${local.site_zone}"
+    name = "gateway.${var.site}.${var.domain}."
     type = "A"
-    rrdatas = ["${module.myip.ip}"]
+    rrdatas = ["${var.gateway}"]
     ttl = 600
 }
 
+output "name_to_zone" {
+    value = "${map(var.site, local.site_zone)}"
+    sensitive = true
+}
 
-output "fqdn_rrdata" {
-    value = "${map(substr(google_dns_record_set.gateway.name
-                          0, length(google_dns_record_set.gateway.name) - 1),
-                   join(",", google_dns_record_set.gateway.rrdatas))}"
+output "gateway" {
+    value = "${substr(google_dns_record_set.gateway.name,
+                      0, length(google_dns_record_set.gateway.name) - 1)}"
     sensitive = true
 }
