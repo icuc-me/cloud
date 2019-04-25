@@ -20,6 +20,9 @@ variable "subdomain" {
     description = "left-most dns name of the subdomain"
 }
 
+variable "project" {
+    description = "Name of project managing these resources"
+}
 
 locals {
     d = "."
@@ -34,6 +37,7 @@ resource "google_dns_managed_zone" "sub" {
     name = "${local.name}"
     dns_name = "${local.fqdn}."
     visibility = "public"
+    description = "Managed by terraform from project ${var.project}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html

@@ -27,6 +27,9 @@ variable "gateway" {
     description = "IP address of cloud gateway"
 }
 
+variable "project" {
+    description = "Name of project managing these resources"
+}
 
 locals {
     d = "."
@@ -38,6 +41,7 @@ resource "google_dns_managed_zone" "domain" {
     name = "${replace(var.domain, local.d, local.h)}"
     dns_name = "${var.domain}."
     visibility = "public"  # N/B: only actual when registrar points at assigned NS
+    description = "Managed by terraform from project ${var.project}"
 }
 
 locals {
@@ -57,6 +61,7 @@ module "cloud" {
     zone = "${google_dns_managed_zone.domain.name}"
     cloud = "${var.cloud_subdomain}"
     gateway = "${var.gateway}"
+    project = "${var.project}"
 }
 
 
@@ -71,6 +76,7 @@ module "site" {
     zone = "${google_dns_managed_zone.domain.name}"
     site = "${var.site_subdomain}"
     gateway = "${module.gateway.ip}"
+    project = "${var.project}"
 }
 
 output "fqdn" {
@@ -87,7 +93,7 @@ output "ns" {
 }
 
 output "name_to_zone" {
-    value = "${merge(map(local.name, google_dns_managed_zone.domain.name),
+    value = "${merge(map("fqdn", google_dns_managed_zone.domain.name),
                      module.cloud.name_to_zone,
                      module.site.name_to_zone)}"
     sensitive = true
