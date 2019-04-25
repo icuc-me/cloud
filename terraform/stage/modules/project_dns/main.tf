@@ -1,37 +1,102 @@
 
-variable "private_network" {
-    description = "Complete URI to the private network"
+provider "google" {
+    alias = "test"
 }
 
-variable "testing" {
-    description = "Dummy test sub-domain name guaranteed never to clash"
+provider "google" {
+    alias = "stage"
 }
 
-variable "public_fqdn" {
-    description = "DNS suffix to append when forming zone names, e.g. 'example.com'"
+provider "google" {
+    alias = "prod"
+}
+
+variable "domain" {
+    description = "base DNS suffix to append to all managed zone names, e.g. 'example.com'"
+}
+
+variable "cloud_subdomain" {
+    description = "subdomain for google cloud resources"
+}
+
+variable "site_subdomain" {
+    description = "subdomain of for non-cloud resources"
+}
+
+variable "gateway" {
+    description = "IP address of cloud gateway"
+}
+
+
+locals {
+    d = "."
+    h = "-"
+}
+
+// ref: https://www.terraform.io/docs/providers/google/r/dns_managed_zone.html
+resource "google_dns_managed_zone" "domain" {
+    name = "${replace(var.domain, local.d, local.h)}"
+    dns_name = "${var.domain}."
+    visibility = "public"  # N/B: only actual when registrar points at assigned NS
 }
 
 locals {
-    e = ""
-    d = "."
-    h = "-"
-    dom = "${var.testing == ""
-             ? var.public_fqdn
-             : join(".", list(var.testing, var.public_fqdn))}"
-    subhnames = ["", "test-", "stage-", "prod-"]
-    subdnames = ["", "test.", "stage.", "prod."]
-    n_subs = "${var.testing == "" ? 4 : 2}"
+    // strip off trailing . & make dependent on resource
+    name = "${substr(google_dns_managed_zone.domain.dns_name,
+                     0, length(google_dns_managed_zone.domain.dns_name) - 1)}"
 }
 
-resource "google_dns_managed_zone" "domains" {
-  count = "${local.n_subs}"
-  name = "${local.subhnames[count.index]}${replace(local.dom, local.d, local.h)}"
-  dns_name = "${local.subdnames[count.index]}${local.dom}."
-  visibility = "public"  # N/B: only actual when registrar points at assigned NS
+module "cloud" {
+    source = "./cloud"
+    providers = {
+        google.test = "google.test"
+        google.stage = "google.stage"
+        google.prod = "google.prod"
+    }
+    domain = "${local.name}"
+    zone = "${google_dns_managed_zone.domain.name}"
+    cloud = "${var.cloud_subdomain}"
+    gateway = "${var.gateway}"
 }
 
-output "dom_ns" {
-    value = "${zipmap(slice(local.subdnames, 0, local.n_subs),
-                      google_dns_managed_zone.domains.*.name_servers)}"
+
+module "gateway" {
+    source = "./myip"
+}
+
+module "site" {
+    source = "./site"
+    providers = { google = "google.prod" }
+    domain = "${local.name}"
+    zone = "${google_dns_managed_zone.domain.name}"
+    site = "${var.site_subdomain}"
+    gateway = "${module.gateway.ip}"
+}
+
+output "fqdn" {
+    value = "${local.name}"
+}
+
+output "zone" {
+    value = "${google_dns_managed_zone.domain.name}"
+}
+
+output "ns" {
+    value = ["${google_dns_managed_zone.domain.name_servers}"]
+    sensitive = true
+}
+
+output "name_to_zone" {
+    value = "${merge(map(local.name, google_dns_managed_zone.domain.name),
+                     module.cloud.name_to_zone,
+                     module.site.name_to_zone)}"
+    sensitive = true
+}
+
+output "gateways" {
+    value = {
+        cloud = "${module.cloud.gateway}"
+        site = "${module.site.gateway}"
+    }
     sensitive = true
 }
