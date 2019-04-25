@@ -67,6 +67,22 @@ output "gateway_private_ip" {
     sensitive = true
 }
 
+locals {
+    domain = "${local.is_prod == 1
+                ? local.strongbox_contents["fqdn"]
+                : join(".", list(var.UUID, local.strongbox_contents["fqdn"]))}"
+    legacy_domains = "${split(",", local.strongbox_contents["legacy_domains"])}"
+    test_legacy_domain_fmt = "%s.${local.domain}"
+}
+
+data "template_file" "legacy_domains" {
+    count = "${length(local.legacy_domains)}"
+    template = "${local.is_prod == 1
+                  ? local.legacy_domains[count.index]
+                  : format(local.test_legacy_domain_fmt,
+                           local.legacy_domains[count.index])}"
+}
+
 module "project_dns" {
     source = "./modules/project_dns"
     providers {
@@ -74,13 +90,13 @@ module "project_dns" {
         google.stage = "google.stage"
         google.prod = "google.prod"
     }
-    domain = "${local.is_prod == 1
-                ? local.strongbox_contents["fqdn"]
-                : join(".", list(var.UUID, local.strongbox_contents["fqdn"]))}"
+    domain = "${local.domain}"
     cloud_subdomain = "${local.strongbox_contents["cloud_subdomain"]}"
     site_subdomain = "${local.strongbox_contents["site_subdomain"]}"
+    legacy_domains = "${data.template_file.legacy_domains.*.rendered}"
     gateway = "${module.gateway.external_ip}"
     project = "${local.self["PROJECT"]}"
+    env_name = "${var.ENV_NAME}"
 }
 
 output "fqdn" {
