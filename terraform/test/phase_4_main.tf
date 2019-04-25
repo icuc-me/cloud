@@ -69,74 +69,85 @@ output "gateway_private_ip" {
 
 module "project_dns" {
     source = "./modules/project_dns"
-    providers { google = "google" }
-    private_network = "${module.project_networks.private["network_link"]}"
-    testing = "${local.is_prod == 1
-                 ? ""
-                 : var.UUID }"
-    public_fqdn = "${local.strongbox_contents["fqdn"]}"
+    providers {
+        google.test = "google.test"
+        google.stage = "google.stage"
+        google.prod = "google.prod"
+    }
+    domain = "${local.is_prod == 1
+                ? local.strongbox_contents["fqdn"]
+                : join(".", list(var.UUID, local.strongbox_contents["fqdn"]))}"
     cloud_subdomain = "${local.strongbox_contents["cloud_subdomain"]}"
     site_subdomain = "${local.strongbox_contents["site_subdomain"]}"
+    gateway = "${module.gateway.external_ip}"
 }
 
-output "zone_names" {
-    value = "${module.project_dns.zone_names}"
+output "fqdn" {
+    value = "${module.project_dns.fqdn}"
     #sensitive = true
 }
 
-output "dns_names" {
-    value = "${module.project_dns.dns_names}"
+output "zone" {
+    value = "${module.project_dns.zone}"
+    #sensitive = true
+}
+
+
+output "ns" {
+    value = "${module.project_dns.ns}"
+    #sensitive = true
+}
+
+output "name_to_zone" {
+    value = "${module.project_dns.name_to_zone}"
+    #sensitive = true
+}
+
+output "gateways" {
+    value = "${module.project_dns.gateways}"
     #sensitive = true
 }
 
 // ref: https://www.terraform.io/docs/providers/acme/r/registration.html
-resource "tls_private_key" "reg_private_key" {
-    algorithm = "RSA"
-    rsa_bits = 4096
-}
-
-resource "acme_registration" "reg" {
-  account_key_pem = "${tls_private_key.reg_private_key.private_key_pem}"
-  email_address   = "${local.strongbox_contents["acme_reg_ename"]
-                      }@${module.project_dns.dns_names["."]}"
-}
-
-resource "tls_private_key" "cert_private_key" {
-    algorithm = "RSA"
-    rsa_bits = 4096
-}
-
-output "debug" {
-    value = ["${module.project_dns.nameservers}"]
-}
-
-resource "acme_certificate" "certificate" {
-    count = "${local.is_prod == 1 ? 1 : 0}"  // requires working DNS for challenge
-    account_key_pem = "${acme_registration.reg.account_key_pem}"
-    common_name = "${module.project_dns.dns_names["."]}"
-    subject_alternative_names = ["*.${module.project_dns.dns_names["."]}"]
-    key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
-    min_days_remaining = "${local.is_prod == 1 ? 20 : 0}"
-    certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
-
-    dns_challenge {
-        provider = "gcloud"
-        // decouple from registrar deligation
-        recursive_nameservers = ["${formatlist("%s:53", module.project_dns.nameservers)}"]
-        config {
-            // 5 & 180 (default) too quick & slow, root entry needs more time
-            GCE_POLLING_INTERVAL = "10"
-            GCE_PROPAGATION_TIMEOUT = "300"
-            GCE_PROJECT = "${local.self["PROJECT"]}"
-            GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
-        }
-    }
-}
-
-output "site_gateway" {
-    value = "${module.project_dns.site_gateway}"
-    sensitive = true
-}
+// resource "tls_private_key" "reg_private_key" {
+//     algorithm = "RSA"
+//     rsa_bits = 4096
+// }
+//
+// resource "acme_registration" "reg" {
+//     account_key_pem = "${tls_private_key.reg_private_key.private_key_pem}"
+//     email_address   = "${local.strongbox_contents["acme_reg_ename"]
+//                          }@${local.strongbox_contents["fqdn"]}"
+// }
+//
+// resource "tls_private_key" "cert_private_key" {
+//     algorithm = "RSA"
+//     rsa_bits = 4096
+// }
+//
+// resource "acme_certificate" "certificate" {
+//     account_key_pem = "${acme_registration.reg.account_key_pem}"
+//     common_name = "${local.strongbox_contents["fqdn"]}"
+//     subject_alternative_names = ["*.${local.strongbox_contents["fqdn"]}"]
+//     key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
+//     min_days_remaining = "${local.is_prod == 1 ? 20 : 0}"
+//     certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
+//
+//     dns_challenge {
+//         provider = "gcloud"
+//         // decouple from default nameservers on runtime host
+//         recursive_nameservers = ["${formatlist("%s:53",
+//                                                split(",",
+//                                                      module.project_dns.dns_data["fqdn_ns"]))}"]
+//         config {
+//             // 5 & 180 (default) too quick & slow, root entry needs more time
+//             GCE_POLLING_INTERVAL = "10"
+//             GCE_PROPAGATION_TIMEOUT = "300"
+//             GCE_PROJECT = "${local.self["PROJECT"]}"
+//             GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
+//         }
+//     }
+// }
 
 output "uuid" {
     value = "${var.UUID}"
