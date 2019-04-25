@@ -27,12 +27,17 @@ variable "gateway" {
     description = "IP address of cloud gateway"
 }
 
+variable "project" {
+    description = "Name of project managing these resources"
+}
+
 module "cloud" {
     source = "../sub"
     providers = {
         google.base = "google.prod"
         google.subdomain = "google.prod"
     }
+    project = "${var.project}"
     domain = "${var.domain}"
     base_zone = "${var.zone}"
     subdomain = "${var.cloud}"
@@ -48,6 +53,7 @@ module "test" {
         google.base = "google.prod"
         google.subdomain = "google.test"
     }
+    project = "${var.project}"
     domain = "${var.cloud}.${var.domain}"
     base_zone = "${local.cloud_zone}"
     subdomain = "test"
@@ -59,6 +65,7 @@ module "stage" {
         google.base = "google.prod"
         google.subdomain = "google.stage"
     }
+    project = "${var.project}"
     domain = "${var.cloud}.${var.domain}"
     base_zone = "${local.cloud_zone}"
     subdomain = "stage"
@@ -70,6 +77,7 @@ module "prod" {
         google.base = "google.prod"
         google.subdomain = "google.prod"
     }
+    project = "${var.project}"
     domain = "${var.cloud}.${var.domain}"
     base_zone = "${local.cloud_zone}"
     subdomain = "prod"

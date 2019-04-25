@@ -17,12 +17,17 @@ variable "gateway" {
     description = "IP address of gateway"
 }
 
+variable "project" {
+    description = "Name of project managing these resources"
+}
+
 module "site" {
     source = "../sub"
     providers = {
         google.base = "google"
         google.subdomain = "google"
     }
+    project = "${var.project}"
     domain = "${var.domain}"
     base_zone = "${var.zone}"
     subdomain = "${var.site}"

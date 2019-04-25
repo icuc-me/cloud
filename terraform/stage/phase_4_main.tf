@@ -80,32 +80,33 @@ module "project_dns" {
     cloud_subdomain = "${local.strongbox_contents["cloud_subdomain"]}"
     site_subdomain = "${local.strongbox_contents["site_subdomain"]}"
     gateway = "${module.gateway.external_ip}"
+    project = "${local.self["PROJECT"]}"
 }
 
 output "fqdn" {
     value = "${module.project_dns.fqdn}"
-    #sensitive = true
+    sensitive = true
 }
 
 output "zone" {
     value = "${module.project_dns.zone}"
-    #sensitive = true
+    sensitive = true
 }
 
 
 output "ns" {
     value = "${module.project_dns.ns}"
-    #sensitive = true
+    sensitive = true
 }
 
 output "name_to_zone" {
     value = "${module.project_dns.name_to_zone}"
-    #sensitive = true
+    sensitive = true
 }
 
 output "gateways" {
     value = "${module.project_dns.gateways}"
-    #sensitive = true
+    sensitive = true
 }
 
 // ref: https://www.terraform.io/docs/providers/acme/r/registration.html
