@@ -4,7 +4,9 @@
   gather_facts: false
   roles:
       - role: ansible_dependencies
+      - role: hostname
       - role: basic_lockdown
+
       - role: qemuhost
         when: "'qemuhosts' in group_names"
       - role: qemuvm
