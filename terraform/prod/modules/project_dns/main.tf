@@ -23,12 +23,21 @@ variable "site_subdomain" {
     description = "subdomain of for non-cloud resources"
 }
 
+variable "legacy_domains" {
+    description = "List of legacy FQDNs to manage with CNAMES into var.domain"
+    type = "list"
+}
+
 variable "gateway" {
     description = "IP address of cloud gateway"
 }
 
 variable "project" {
     description = "Name of project managing these resources"
+}
+
+variable "env_name" {
+    description = "Name of the current environment (test, stage, prod)"
 }
 
 locals {
@@ -50,6 +59,19 @@ locals {
                      0, length(google_dns_managed_zone.domain.dns_name) - 1)}"
 }
 
+output "fqdn" {
+    value = "${local.name}"
+}
+
+output "zone" {
+    value = "${google_dns_managed_zone.domain.name}"
+}
+
+output "ns" {
+    value = ["${google_dns_managed_zone.domain.name_servers}"]
+    sensitive = true
+}
+
 module "cloud" {
     source = "./cloud"
     providers = {
@@ -62,8 +84,8 @@ module "cloud" {
     cloud = "${var.cloud_subdomain}"
     gateway = "${var.gateway}"
     project = "${var.project}"
+    env_name = "${var.env_name}"
 }
-
 
 module "gateway" {
     source = "./myip"
@@ -79,23 +101,22 @@ module "site" {
     project = "${var.project}"
 }
 
-output "fqdn" {
-    value = "${local.name}"
+module "legacy" {
+    source = "./legacy"
+    providers = { google = "google.prod" }
+    legacy_domains = "${var.legacy_domains}"
+    domain = "${local.name}"
+    project = "${var.project}"
 }
 
-output "zone" {
-    value = "${google_dns_managed_zone.domain.name}"
-}
-
-output "ns" {
-    value = ["${google_dns_managed_zone.domain.name_servers}"]
-    sensitive = true
+locals {
+    name_to_zone = "${merge(map("fqdn", google_dns_managed_zone.domain.name),
+                            module.cloud.name_to_zone,
+                            module.site.name_to_zone)}"
 }
 
 output "name_to_zone" {
-    value = "${merge(map("fqdn", google_dns_managed_zone.domain.name),
-                     module.cloud.name_to_zone,
-                     module.site.name_to_zone)}"
+    value = "${local.name_to_zone}"
     sensitive = true
 }
 
@@ -105,4 +126,36 @@ output "gateways" {
         site = "${module.site.gateway}"
     }
     sensitive = true
+}
+
+resource "google_dns_record_set" "mail" {
+    managed_zone = "${local.name_to_zone["fqdn"]}"
+    name = "mail.${google_dns_managed_zone.domain.dns_name}"
+    type = "CNAME"
+    rrdatas = ["${module.site.gateway}."]
+    ttl = "300"
+}
+
+resource "google_dns_record_set" "domain_mx" {
+    managed_zone = "${local.name_to_zone["fqdn"]}"
+    name = "${google_dns_managed_zone.domain.dns_name}"
+    type = "MX"
+    rrdatas = ["10 mail.${google_dns_managed_zone.domain.dns_name}"]
+    ttl = "300"
+}
+
+resource "google_dns_record_set" "home" {
+    managed_zone = "${local.name_to_zone["fqdn"]}"
+    name = "home.${google_dns_managed_zone.domain.dns_name}"
+    type = "CNAME"
+    rrdatas = ["${module.site.gateway}."]
+    ttl = "300"
+}
+
+resource "google_dns_record_set" "www" {
+    managed_zone = "${local.name_to_zone["fqdn"]}"
+    name = "www.${google_dns_managed_zone.domain.dns_name}"
+    type = "CNAME"
+    rrdatas = ["${module.site.gateway}."]
+    ttl = "300"
 }

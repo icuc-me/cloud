@@ -17,18 +17,21 @@ variable "gateway" {
     description = "IP address of gateway"
 }
 
+variable "project" {
+    description = "Name of project managing these resources"
+}
+
 module "site" {
     source = "../sub"
     providers = {
         google.base = "google"
         google.subdomain = "google"
     }
+    project = "${var.project}"
     domain = "${var.domain}"
     base_zone = "${var.zone}"
     subdomain = "${var.site}"
 }
-
-output "debug" { value = "$(module.site.name_to_zone}" }
 
 locals {
     // add dependency on site module
@@ -40,7 +43,7 @@ resource "google_dns_record_set" "gateway" {
     name = "gateway.${var.site}.${var.domain}."
     type = "A"
     rrdatas = ["${var.gateway}"]
-    ttl = 600
+    ttl = "600"
 }
 
 output "name_to_zone" {

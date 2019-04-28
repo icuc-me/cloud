@@ -31,6 +31,10 @@ variable "project" {
     description = "Name of project managing these resources"
 }
 
+variable "env_name" {
+    description = "Name of the current environment (test, stage, prod)"
+}
+
 module "cloud" {
     source = "../sub"
     providers = {
@@ -41,6 +45,7 @@ module "cloud" {
     domain = "${var.domain}"
     base_zone = "${var.zone}"
     subdomain = "${var.cloud}"
+    create = "1"
 }
 
 locals {
@@ -57,6 +62,7 @@ module "test" {
     domain = "${var.cloud}.${var.domain}"
     base_zone = "${local.cloud_zone}"
     subdomain = "test"
+    create = "0"
 }
 
 module "stage" {
@@ -69,6 +75,7 @@ module "stage" {
     domain = "${var.cloud}.${var.domain}"
     base_zone = "${local.cloud_zone}"
     subdomain = "stage"
+    create = "0"
 }
 
 module "prod" {
@@ -81,11 +88,12 @@ module "prod" {
     domain = "${var.cloud}.${var.domain}"
     base_zone = "${local.cloud_zone}"
     subdomain = "prod"
+    create = "1"
 }
 
 resource "google_dns_record_set" "gateway" {
     managed_zone = "${module.prod.name_to_zone["prod"]}"
-    name = "gateway.prod.${var.cloud}.${var.domain}."
+    name = "gateway.${var.env_name}.${var.cloud}.${var.domain}."
     type = "A"
     rrdatas = ["${var.gateway}"]
     ttl = 600

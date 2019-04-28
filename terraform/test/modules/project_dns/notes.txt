@@ -1,0 +1,23 @@
+
+
+example.com
+|
++-------(MX -> mail.example.com)
+|
++-------mail (cname -> gateway.site.example.com)
+|
++-------www (cname -> gateway.site.example.com)
+|
++-------home (cname -> gateway.site.example.com)
+|
++-------cloud
+|       |
+|       +----(mx -> mail.example.com)
+|       |
+|       +-----gateway (A)
+|
++-------site
+        |
+        +-----(mx -> mail.example.com)
+        |
+        +-----gateway (A)

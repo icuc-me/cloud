@@ -68,6 +68,7 @@ files - one per environment.  Each must contain the following values:
 * ``fqdn``: Top-most DNS domain to manage in google cloud DNS
 * ``cloud_subdomain``: "sub-domain where google-cloud resources exist"
 * ``site_subdomain``: "sub-domain where site resources exist"
+* ``legacy_domains``: "CSV of legacy fqdns to manage with CNAMES into fqdn"
 * ``suser_display_name``: Full name / description to assign when creating the main service accounts
   for each project (test, stage, prod)
 * ``ci_suser_display_name``: Human-friendly name for bot accounts (``*_ci_susername``)

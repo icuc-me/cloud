@@ -18,7 +18,7 @@ resource "google_compute_network" "automatic" {
     name = "${var.project_id == "test"
               ? local.testname
               : local.default}"
-    description = "Auto-allocated network for general use"
+    description = "Auto-allocated network for general use (managed by ${var.project_id})"
     auto_create_subnetworks = "true"
     project = "${var.project_id}"
 }
