@@ -1,1 +1,2 @@
 **/vault.yml -text -diff
+inventory/prod/host_vars/*.yml -text -diff
