@@ -130,32 +130,32 @@ output "gateways" {
 
 resource "google_dns_record_set" "mail" {
     managed_zone = "${local.name_to_zone["fqdn"]}"
-    name = "mail.${google_dns_managed_zone.domain.name}"
+    name = "mail.${google_dns_managed_zone.domain.dns_name}"
     type = "CNAME"
-    rrdatas = ["${module.site.gateway}"]
+    rrdatas = ["${module.site.gateway}."]
     ttl = "300"
 }
 
 resource "google_dns_record_set" "domain_mx" {
     managed_zone = "${local.name_to_zone["fqdn"]}"
-    name = "${google_dns_managed_zone.domain.name}"
+    name = "${google_dns_managed_zone.domain.dns_name}"
     type = "MX"
-    rrdatas = ["10 ${google_dns_record_set.mail.name}"]
+    rrdatas = ["10 mail.${google_dns_managed_zone.domain.dns_name}"]
     ttl = "300"
 }
 
 resource "google_dns_record_set" "home" {
     managed_zone = "${local.name_to_zone["fqdn"]}"
-    name = "home.${google_dns_managed_zone.domain.name}"
+    name = "home.${google_dns_managed_zone.domain.dns_name}"
     type = "CNAME"
-    rrdatas = ["${module.site.gateway}"]
+    rrdatas = ["${module.site.gateway}."]
     ttl = "300"
 }
 
 resource "google_dns_record_set" "www" {
     managed_zone = "${local.name_to_zone["fqdn"]}"
-    name = "home.${google_dns_managed_zone.domain.name}"
+    name = "www.${google_dns_managed_zone.domain.dns_name}"
     type = "CNAME"
-    rrdatas = ["${module.site.gateway}"]
+    rrdatas = ["${module.site.gateway}."]
     ttl = "300"
 }

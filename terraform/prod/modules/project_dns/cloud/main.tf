@@ -52,14 +52,6 @@ locals {
     cloud_zone = "${module.cloud.name_to_zone[var.cloud]}"
 }
 
-resource "google_dns_record_set" "cloud_mx" {
-    managed_zone = "${local.cloud_zone}"
-    name = "${var.cloud}.${var.domain}."
-    type = "MX"
-    rrdatas = ["10 mail.${var.domain}."]
-    ttl = "300"
-}
-
 module "test" {
     source = "../sub"
     providers = {
