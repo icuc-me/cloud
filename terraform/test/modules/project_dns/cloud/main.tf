@@ -45,65 +45,22 @@ module "cloud" {
     domain = "${var.domain}"
     base_zone = "${var.zone}"
     subdomain = "${var.cloud}"
-    create = "1"
 }
 
 locals {
     cloud_zone = "${module.cloud.name_to_zone[var.cloud]}"
 }
 
-module "test" {
-    source = "../sub"
-    providers = {
-        google.base = "google.prod"
-        google.subdomain = "google.test"
-    }
-    project = "${var.project}"
-    domain = "${var.cloud}.${var.domain}"
-    base_zone = "${local.cloud_zone}"
-    subdomain = "test"
-    create = "1"
-}
-
-module "stage" {
-    source = "../sub"
-    providers = {
-        google.base = "google.prod"
-        google.subdomain = "google.stage"
-    }
-    project = "${var.project}"
-    domain = "${var.cloud}.${var.domain}"
-    base_zone = "${local.cloud_zone}"
-    subdomain = "stage"
-    create = "1"
-}
-
-module "prod" {
-    source = "../sub"
-    providers = {
-        google.base = "google.prod"
-        google.subdomain = "google.prod"
-    }
-    project = "${var.project}"
-    domain = "${var.cloud}.${var.domain}"
-    base_zone = "${local.cloud_zone}"
-    subdomain = "prod"
-    create = "1"
-}
-
 resource "google_dns_record_set" "gateway" {
-    managed_zone = "${module.prod.name_to_zone["prod"]}"
-    name = "gateway.${var.env_name}.${var.cloud}.${var.domain}."
+    managed_zone = "${module.cloud.name_to_zone[var.cloud]}"
+    name = "gateway.${var.cloud}.${var.domain}."
     type = "A"
     rrdatas = ["${var.gateway}"]
     ttl = 600
 }
 
 output "name_to_zone" {
-    value = "${merge(map("cloud", local.cloud_zone),
-                     module.test.name_to_zone,
-                     module.stage.name_to_zone,
-                     module.prod.name_to_zone)}"
+    value = "${merge(map("cloud", local.cloud_zone))}"
     sensitive = true
 }
 

@@ -31,7 +31,6 @@ module "site" {
     domain = "${var.domain}"
     base_zone = "${var.zone}"
     subdomain = "${var.site}"
-    create = "1"
 }
 
 locals {

@@ -14,26 +14,10 @@ example.com
 |       |
 |       +----(mx -> mail.example.com)
 |       |
-|       +-----prod
-|       |     |
-|       |     +---(mx -> mail.example.com)
-|       |     |
-|       |     +---gateway (A)
-|       |
-|       +-----stage
-|       |     |
-|       |     +---(mx -> mail.example.com)
-|       |     |
-|       |     +---gateway (A)
-|       |
-|       +-----test
-|       |     |
-|       |     +---(mx -> mail.example.com)
-|       |     |
-|       |     +---gateway (A)
+|       +-----gateway (A)
 |
 +-------site
-|
-+-------(MX -> mail.example.com)
-|
-+-------gateway (A)
+        |
+        +-----(mx -> mail.example.com)
+        |
+        +-----gateway (A)

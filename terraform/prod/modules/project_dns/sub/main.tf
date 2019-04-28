@@ -68,6 +68,6 @@ resource "google_dns_record_set" "mx" {
 
 output "name_to_zone" {
     // short-name to zone-name
-    value = "${map(var.subdomain, var.create == 0 ? "" : google_dns_managed_zone.sub.*.name[0])}"
+    value = "${map(var.subdomain, var.create == 0 ? "" : local.name)}"
     sensitive = true
 }

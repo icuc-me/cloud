@@ -87,7 +87,7 @@ module "cloud" {
     env_name = "${var.env_name}"
 }
 
-module "gateway" {
+module "site_gateway" {
     source = "./myip"
 }
 
@@ -97,7 +97,7 @@ module "site" {
     domain = "${local.name}"
     zone = "${google_dns_managed_zone.domain.name}"
     site = "${var.site_subdomain}"
-    gateway = "${module.gateway.ip}"
+    gateway = "${module.site_gateway.ip}"
     project = "${var.project}"
 }
 
