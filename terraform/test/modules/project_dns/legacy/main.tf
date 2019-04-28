@@ -42,7 +42,7 @@ resource "google_dns_record_set" "mx" {
     managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
     name = "${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
     type = "MX"
-    rrdatas = ["10 mail.${var.domain}"]
+    rrdatas = ["10 mail.${var.domain}."]
     ttl = "3600"
 }
 
@@ -52,7 +52,7 @@ resource "google_dns_record_set" "mail" {
     managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
     name = "mail.${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
     type = "CNAME"
-    rrdatas = ["mail.${var.domain}"]
+    rrdatas = ["mail.${var.domain}."]
     ttl = "3600"
 }
 
@@ -62,7 +62,7 @@ resource "google_dns_record_set" "www" {
     managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
     name = "www.${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
     type = "CNAME"
-    rrdatas = ["www.${var.domain}"]
+    rrdatas = ["www.${var.domain}."]
     ttl = "3600"
 }
 
@@ -72,7 +72,7 @@ resource "google_dns_record_set" "home" {
     managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
     name = "home.${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
     type = "CNAME"
-    rrdatas = ["home.${var.domain}"]
+    rrdatas = ["home.${var.domain}."]
     ttl = "3600"
 }
 

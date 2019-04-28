@@ -39,14 +39,6 @@ locals {
     site_zone = "${module.site.name_to_zone[var.site]}"
 }
 
-resource "google_dns_record_set" "site_mx" {
-    managed_zone = "${local.site_zone}"
-    name = "${var.site}.${var.domain}."
-    type = "MX"
-    rrdatas = ["10 mail.${var.domain}."]
-    ttl = "300"
-}
-
 resource "google_dns_record_set" "gateway" {
     managed_zone = "${local.site_zone}"
     name = "gateway.${var.site}.${var.domain}."
