@@ -21,7 +21,9 @@
       - role: ipaserver
         when: "'ipareplicas' in group_names"
       - role: ipaserver_config
+        strategy: serial
         when: "'ipaservers' in group_names or 'ipareplicas' in group_names"
+
       - role: ipaclient
         when: "'ipaclients' in group_names and
                ( 'ipaservers' not in group_names or

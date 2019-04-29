@@ -1,5 +1,13 @@
 ---
 
+- debug:
+    msg: "Managing an IPA Server"
+  when: not ipaserver_is_replica | bool
+
+- debug:
+    msg: "Managing an IPA Replica"
+  when: ipaserver_is_replica | bool
+
 - name: The ipa_install_result is initialized empty
   set_fact:
     ipa_install_result: {}
@@ -52,8 +60,6 @@
                         {{ line | trim }}{{ " " }}
                     {%- endif -%}
                 {%- endfor -%}
-
-    - debug: var=_cmd
 
     - name: Execute IPA server or IPA replica installation command
       command: >-

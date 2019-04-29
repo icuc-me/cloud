@@ -27,6 +27,8 @@ all:
         ipareplicas:
             hosts:
                 ipa2: {}
+            vars:
+                ipaserver_is_replica: True
         ipaclients:
             hosts:
                 vmhost1: {}
