@@ -5,3 +5,8 @@ ipaserver_dir_admin_password: '{{ _vault_ipa_admin_userpass if inventory_hostnam
 ipaserver_setup_ntp: False  # use dedicated role
 ipaserver_forward_policy: "only"
 ipaserver_auto_forwarders: False  # use root servers
+
+# List of dictionaries containing keys for ipa_dnsrecord parameters:
+# name*, ttl, type, value*, state, zone*
+# (* == mandatory)
+ipaserver_dnsrecords: '{{ _vault_ipaserver_dnsrecords }}'
