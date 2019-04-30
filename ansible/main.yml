@@ -20,8 +20,10 @@
         when: "'ipaservers' in group_names"
       - role: ipaserver
         when: "'ipareplicas' in group_names"
-      - role: ipaserver_config
-        strategy: serial
+
+      # configuration is shared
+      - strategy: serial
+        role: ipaconfig
         when: "'ipaservers' in group_names or 'ipareplicas' in group_names"
 
       - role: ipaclient
