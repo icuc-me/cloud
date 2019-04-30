@@ -19,16 +19,16 @@
   register: _tmp_result
   until: _tmp_result is success
 
-- name: IPA server services are allowed through firewall
-  firewalld:
-      immediate: True
-      permanent: True
-      service: '{{ item }}'
-      state: 'enabled'
-  with_items: '{{ ipaserver_firewalld_services }}'
-
 - when: not ansible_local.ipaserver_installed | default(False,True) | bool
   block:
+
+    - name: IPA server services are allowed through firewall
+      firewalld:
+          immediate: True
+          permanent: True
+          service: '{{ item }}'
+          state: 'enabled'
+      with_items: '{{ ipaserver_firewalld_services }}'
 
     - name: The IPA server requires DNS setup
       set_fact:
