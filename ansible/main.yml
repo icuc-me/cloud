@@ -7,6 +7,11 @@
       - role: hostname
       - role: basic_lockdown
 
+      - role: slimserver
+        when: "'gateways' in group_names"
+      - role: gateway
+        when: "'gateways' in group_names"
+
       - role: qemuhost
         when: "'qemuhosts' in group_names"
       - role: qemuvm

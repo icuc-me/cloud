@@ -1,0 +1,1 @@
+wipe_zone.sh

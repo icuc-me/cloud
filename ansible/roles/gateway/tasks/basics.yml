@@ -1,0 +1,58 @@
+---
+
+- name: The firewalld python bindings are installed
+  package:
+      name:
+          - python3-firewall
+      state: present
+  register: _tmp_result
+  until: _tmp_result is success
+
+- name: firewalld main configuration is deployed
+  lineinfile:
+      path: '/etc/firewalld/firewalld.conf'
+      line: '{{ item.key }}={{ item.value }}'
+      regexp: '{{ item.key }}=.*'
+  register: firewalld_config
+  with_dict:
+      DefaultZone: '{{ gateway_lan_zone }}'
+      Lockdown: 'yes'
+
+- name: Firewalld is reloaded when it's configuration changes
+  systemd:
+      name: firewalld
+      state: restarted
+  when: firewalld_config is changed
+
+- name: Zones exist for Lan and Wan
+  firewalld:
+      zone: '{{ item }}'
+      state: 'present'
+      permanent: True
+  notify: Firewalld reloaded when permanent
+  with_items:
+      - '{{ gateway_wan_zone }}'
+      - '{{ gateway_lan_zone }}'
+
+- name: NetworkManager connections are zoned
+  command: >-
+      nmcli connection modify \
+      {% if not gateway_settings_permanent %}--temporary{% endif %} \
+      {{ item.key }} \
+      +connection.zone {{ item.value }}
+  notify: Firewalld reloaded when permanent
+  with_dict:
+      '{{ gateway_wan_interface }}': '{{ gateway_wan_zone }}'
+      '{{ gateway_lan_interface }}': '{{ gateway_lan_zone }}'
+
+- name: Lan and Wan interfaces are zoned
+  firewalld:
+      interface: '{{ item.key }}'
+      zone: '{{ item.value }}'
+      permanent: '{{ gateway_settings_permanent }}'
+      state: 'enabled'
+      immediate: True
+  notify: Firewalld reloaded when permanent
+  with_dict:
+      '{{ gateway_wan_interface }}': '{{ gateway_wan_zone }}'
+      '{{ gateway_lan_interface }}': '{{ gateway_lan_zone }}'

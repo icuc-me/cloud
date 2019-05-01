@@ -8,9 +8,11 @@ subnet {{ dhcpd_subnet_addr }} netmask {{ dhcpd_subnet_mask }} {
 {% if dhcpd_subnet_gateway | default('',True) | trim | length %}
      option routers {{ dhcpd_subnet_gateway }};
 {% endif %}
-
 {% if dhcpd_subnet_domain | default('',True) | trim | length %}
      option domain-name "{{ dhcpd_subnet_domain }}";
+{% endif %}
+{% if dhcpd_domain_search | default([], True) | length %}
+     option domain-search {% for domain in dhcpd_domain_search %}"{{ domain }}"{% if domain != dhcpd_domain_search[-1] %}, {% endif %}{% endfor %};
 {% endif %}
 {% if dhcpd_subnet_dns | default([],True) | length %}
      option domain-name-servers {{ dhcpd_subnet_dns | default([],True) | join(',') }};

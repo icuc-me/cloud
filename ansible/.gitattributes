@@ -1,2 +1,3 @@
-**/vault.yml -text -diff
-inventory/prod/host_vars/*.yml -text -diff
+# requires: git config --global diff.ansible-vault.textconv "ansible-vault view"
+**/vault.yml diff=ansible-vault merge=binary
+inventory/prod/host_vars/*.yml diff=ansible-vault merge=binary

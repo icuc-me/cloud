@@ -1,0 +1,19 @@
+---
+
+# Set true to make all settings permanent
+gateway_settings_permanent: False
+
+gateway_wan_zone: external
+gateway_wan_interface: eth0
+# firewall-cmd services and port descriptor strings
+gateway_wan_services: ['ssh']
+gateway_wan_ports: []
+gateway_wan_rr: []  # Rich rules
+
+gateway_lan_zone: internal
+gateway_lan_interface: eth1
+gateway_lan_source: 192.168.1.0/24
+# firewall-cmd services and port descriptor strings
+gateway_lan_services: ['ssh']
+gateway_lan_ports: []
+gateway_lan_rr: []

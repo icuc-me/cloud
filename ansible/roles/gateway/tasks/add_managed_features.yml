@@ -1,0 +1,68 @@
+---
+
+- name: Wan zone services are allowed
+  firewalld:
+      zone: '{{ gateway_wan_zone }}'
+      service: '{{ item }}'
+      permanent: '{{ gateway_settings_permanent }}'
+      state: 'enabled'
+      immediate: True
+  notify: Firewalld reloaded when permanent
+  with_items: '{{ gateway_wan_services }}'
+
+- name: Wan zone ports are allowed
+  firewalld:
+      zone: '{{ gateway_wan_zone }}'
+      service: '{{ item }}'
+      permanent: '{{ gateway_settings_permanent }}'
+      state: 'enabled'
+      immediate: True
+  notify: Firewalld reloaded when permanent
+  with_items: '{{ gateway_wan_ports }}'
+
+- name: Wan rich-rules are applied
+  firewalld:
+      rich_rule: '{{ item }}'
+      permanent: '{{ gateway_settings_permanent }}'
+      state: 'enabled'
+      immediate: True
+  notify: Firewalld reloaded when permanent
+  with_items: '{{ gateway_wan_rr }}'
+
+
+- name: Lan zone services are allowed
+  firewalld:
+      zone: '{{ gateway_lan_zone }}'
+      service: '{{ item }}'
+      permanent: '{{ gateway_settings_permanent }}'
+      state: 'enabled'
+      immediate: True
+  notify: Firewalld reloaded when permanent
+  with_items: '{{ gateway_lan_services }}'
+
+- name: Lan zone ports are allowed
+  firewalld:
+      zone: '{{ gateway_lan_zone }}'
+      service: '{{ item }}'
+      permanent: '{{ gateway_settings_permanent }}'
+      state: 'enabled'
+      immediate: True
+  notify: Firewalld reloaded when permanent
+  with_items: '{{ gateway_lan_ports }}'
+
+- name: Lan zone source is defined
+  firewalld:
+      zone: '{{ gateway_lan_zone }}'
+      source: '{{ gateway_lan_source }}'
+      state: 'enabled'
+      immediate: True
+  notify: Firewalld reloaded when permanent
+
+- name: Lan rich-rules are applied
+  firewalld:
+      rich_rule: '{{ item }}'
+      permanent: '{{ gateway_settings_permanent }}'
+      state: 'enabled'
+      immediate: True
+  notify: Firewalld reloaded when permanent
+  with_items: '{{ gateway_lan_rr }}'
