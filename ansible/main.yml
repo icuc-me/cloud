@@ -4,7 +4,9 @@
   gather_facts: false
   roles:
       - role: ansible_dependencies
+      - role: hostname
       - role: basic_lockdown
+
       - role: qemuhost
         when: "'qemuhosts' in group_names"
       - role: qemuvm
@@ -18,10 +20,16 @@
         when: "'ipaservers' in group_names"
       - role: ipaserver
         when: "'ipareplicas' in group_names"
+
+      # configuration is shared
+      - strategy: serial
+        role: ipaconfig
+        when: "'ipaservers' in group_names or 'ipareplicas' in group_names"
+
       - role: ipaclient
         when: "'ipaclients' in group_names and
-               'ipaservers' not in group_names and
-               'ipareplicas' not in group_names"
+               ( 'ipaservers' not in group_names or
+                 'ipareplicas' not in group_names )"
 
       - role: dhcpserver
         when: "'dhcpservers' in group_names"

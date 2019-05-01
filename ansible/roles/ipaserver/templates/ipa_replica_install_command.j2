@@ -1,18 +1,14 @@
 
-"ipa-replica-install
+"ipa-replica-install"
 
 "--unattended"
 
 "--admin-password=$IPASERVER_ADMIN_PASSWORD"
 
---setup-ca
+"--setup-ca"
 
 {% if ipaserver_admin_principal | default("",True) | trim | length %}
     "--principal=$IPASERVER_ADMIN_PRINCIPAL"
-{% endif %}
-
-{% if ipaserver_admin_password | default("",True) | trim | length %}
-    "--password=$IPASERVER_ADMIN_PASSWORD"
 {% endif %}
 
 {% for _ipaddr in ipaserver_ip_addresses %}

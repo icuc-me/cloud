@@ -1,0 +1,33 @@
+---
+
+- name: The system's FQDN is set in /etc/hostname
+  copy:
+    backup: True
+    dest: '/etc/hostname'
+    content: |
+        {{ system_hostname }}
+  register: etc_hostname
+
+- name: The system's short hostname is the first component of system_hostname
+  set_fact:
+      system_hostname_short: '{{ system_hostname.split(".")[0] }}'
+
+- name: The system's hostname is set in /etc/hosts
+  copy:
+    backup: True
+    dest: '/etc/hosts'
+    content: |
+        127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+        ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+        {{ ansible_default_ipv4.address }}    {{ system_hostname }} {{ system_hostname_short }}
+  register: etc_hosts
+
+- when: etc_hostname is changed or etc_hosts is changed
+  block:
+
+    - name: The system's runtime hostname is updated when required
+      hostname:
+        name: '{{ system_hostname }}'
+
+    - name: Setup is re-run on host when required
+      setup:

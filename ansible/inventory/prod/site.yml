@@ -3,22 +3,23 @@
 all:
     hosts:
         ipa1:
-            ansible_host: '{{ _vault_home_ipa1_ip }}'
+            ansible_host: '{{ _vault_site_ipa1_ip }}'
         ipa2:
-            ansible_host: '{{ _vault_home_ipa2_ip }}'
+            ansible_host: '{{ _vault_site_ipa2_ip }}'
         vmhost1:
-            ansible_host: '{{ _vault_home_vmhost1_ip }}'
+            ansible_host: '{{ _vault_site_vmhost1_ip }}'
         smtp1:
-            ansible_host: '{{ _vault_home_smtp1_ip }}'
+            ansible_host: '{{ _vault_site_smtp1_ip }}'
         dhcp1:
-            ansible_host: '{{ _vault_home_dhcp1_ip }}'
+            ansible_host: '{{ _vault_site_dhcp1_ip }}'
         dhcp2:
-            ansible_host: '{{ _vault_home_dhcp2_ip }}'
+            ansible_host: '{{ _vault_site_dhcp2_ip }}'
     vars:
         ansible_connection: 'ssh'
         ansible_user: '{{ _vault_admin_username }}'
         ansible_ssh_pass: '{{ _vault_admin_userpass }}'
         ansible_become_pass: '{{ _vault_admin_userpass }}'
+        system_hostname: '{{ _vault_system_hostname }}'
     children:
         ipaservers:
             hosts:
@@ -26,6 +27,8 @@ all:
         ipareplicas:
             hosts:
                 ipa2: {}
+            vars:
+                ipaserver_is_replica: True
         ipaclients:
             hosts:
                 vmhost1: {}

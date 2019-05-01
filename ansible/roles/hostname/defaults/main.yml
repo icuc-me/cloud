@@ -1,0 +1,4 @@
+---
+
+# FQDN of host
+system_hostname: '{{ ansible_fqdn }}'
