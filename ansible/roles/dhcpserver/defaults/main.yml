@@ -32,6 +32,7 @@ dhcpd_sec_fqdn: ''  # both lines non-empty
 # All options below are required if failover is enabled
 dhcpd_peerport: '847'
 dhcpd_omapiport: '7911'
+
 # generate with dnssec-keygen -K /tmp -a HMAC-SHA512 -b 512 -n USER snafu
 dhcpd_omapi_name: 'snafu'
 dhcpd_omapi_footprint: '123+09876'

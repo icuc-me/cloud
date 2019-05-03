@@ -1,6 +1,6 @@
 subnet {{ dhcpd_subnet_addr }} netmask {{ dhcpd_subnet_mask }} {
 {% if dhcpd_subnet_mask | default('',True) | trim | length %}
-    option subnet-mask {{ dhcpd_subnet_mask }};
+     option subnet-mask {{ dhcpd_subnet_mask }};
 {% endif %}
 {% if dhcpd_subnet_broadcast | default('',True) | trim | length %}
      option broadcast-address {{ dhcpd_subnet_broadcast }};
@@ -15,8 +15,8 @@ subnet {{ dhcpd_subnet_addr }} netmask {{ dhcpd_subnet_mask }} {
 {% if dhcpd_subnet_dns | default([],True) | length %}
      option domain-name-servers {{ dhcpd_subnet_dns | default([],True) | join(',') }};
 {% endif %}
-{% if dhcpd_subnet_ntp | default('',True) | trim | length %}
-     option ntp-servers {{ dhcpd_subnet_ntp | default([],True) | join(',') }};
+{% if dhcpd_subnet_ntp | default([],True) | length %}
+     option ntp-servers {{ dhcpd_subnet_ntp | join(',') }};
 {% endif %}
 {% if dhcpd_subnet_smtp | default('',True) | trim | length %}
      option smtp-server {{ dhcpd_subnet_smtp }};

@@ -2,3 +2,5 @@
 
 # Required for use of older python/firewalld bindings
 ansible_python_interpreter: 'python3'
+
+dhcp_backup_suffix: '.{{ ansible_uptime_seconds }}.{{ ansible_date_time.date }}@{{ ansible_date_time.time }}~'
