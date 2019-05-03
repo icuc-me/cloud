@@ -1,9 +1,22 @@
 ---
 
+- name: Postconf to YAML conversion script is deployed
+  copy:
+      dest: '/usr/local/sbin/'
+      src: 'postconf_yaml.sh'
+      owner: 'root'
+      group: 'root'
+      mode: '0750'
+
 - name: Existing non-default postfix options are retrieved as a YAML dictionary
-  script: postconf_yaml.sh
+  command: /usr/local/sbin/postconf_yaml.sh
   changed_when: False  # only looking
   register: result
+
+- name: Stderr output from script is debugged
+  debug:
+      msg: '{{ result.stderr }}'
+  when: result.stderr | default('',True) | trim | length
 
 - name: Buffer is parsed as a YAML dictionary
   set_fact:

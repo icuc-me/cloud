@@ -1,3 +1,6 @@
 ---
 
+# Required for use of older python/firewalld bindings
+ansible_python_interpreter: 'python3'
+
 result:

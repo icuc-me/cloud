@@ -1,5 +1,8 @@
 ---
 
+- name: Current system facts are up to date
+  setup:
+
 - name: The ISC dhcpd server packages are installed
   package:
       name:
@@ -9,60 +12,6 @@
   register: _tmp_result
   until: _tmp_result is success
 
-- name: The OMAPI public-key contents are written
-  copy:
-      backup: True
-      dest: '/etc/dhcp/K{{ dhcpd_omapi_name }}.+{{ dhcpd_omapi_footprint }}.key'
-      content: '{{ dhcpd_omapi_key }}'
-      group: 'root'
-      owner: 'root'
-      mode: '0600'
-      setype: 'dhcp_etc_t'
-  notify: 'The dhcpd server is restarted'
-
-- name: The OMAPI secret-key contents are written
-  copy:
-      backup: True
-      dest: '/etc/dhcp/K{{ dhcpd_omapi_name }}.+{{ dhcpd_omapi_footprint }}.private'
-      content: '{{ dhcpd_omapi_private }}'
-      group: 'root'
-      owner: 'root'
-      mode: '0600'
-      setype: 'dhcp_etc_t'
-  notify: 'The dhcpd server is restarted'
-
-- name: The dhcpd key configuration is written
-  copy:
-      backup: True
-      dest: '/etc/dhcp/dhcpd.conf.key'
-      content: |
-          key {{ dhcpd_omapi_name }} {
-              algorithm {{ dhcpd_omapi_algo }};
-              secret "{{ dhcpd_omapi_key.split(' ') | last }}";
-          }
-      group: 'root'
-      owner: 'root'
-      mode: '0600'
-      setype: 'dhcp_etc_t'
-  notify: 'The dhcpd server is restarted'
-
-- name: Templated dhcpd configuration files are rendered
-  template:
-      backup: True
-      src: '{{ item }}.j2'
-      dest: '/etc/dhcp/{{ item }}'
-      group: 'root'
-      owner: 'root'
-      mode: '0644'
-      setype: 'dhcp_etc_t'
-  with_items:
-      - 'dhcpd.conf.known_hosts'
-      - 'dhcpd.conf.failover'
-      - 'dhcpd.conf.subnet'
-      - 'dhcpd.conf.head'
-      - 'dhcpd.conf'
-  notify: 'The dhcpd server is restarted'
-
 - name: DHCPD service is allowed through firewall
   firewalld:
       immediate: True
@@ -70,16 +19,107 @@
       service: 'dhcp'
       state: 'enabled'
 
-- when: dhcpd_pri_fqdn | default('',True) | trim | length and
-        dhcpd_sec_fqdn | default('',True) | trim | length
-  block:
+# Ensure cleanup of temporary directory
+- block:
 
-    - name: DHCPD failover-cluster ports are open for use
-      firewalld:
-          immediate: True
-          permanent: True
-          port: '{{ item }}/tcp'
-          state: 'enabled'
+    - name: A temporary staging directory exists for configuration files
+      tempfile:
+          prefix: 'ansible_{{ role_path | basename }}_role_'
+          suffix: '_tempdir'
+          state: directory
+      register: dhcpd_conf_tmpdir
+
+    - name: Configuration tree exists inside temporary staging directory
+      file:
+          path: '{{ dhcpd_conf_tmpdir.path }}/etc/dhcp'
+          state: directory
+
+    - name: Templated dhcpd configuration files are rendered
+      template:
+          backup: True
+          src: '{{ item }}.j2'
+          dest: '{{ dhcpd_conf_tmpdir.path }}/etc/dhcp/{{ item }}'
+          group: 'root'
+          owner: 'root'
+          mode: '0644'
+          setype: 'dhcp_etc_t'
       with_items:
-        - '{{ dhcpd_peerport }}'
-        - '{{ dhcpd_omapiport }}'
+          - 'dhcpd.conf.known_hosts'
+          - 'dhcpd.conf.failover'
+          - 'dhcpd.conf.subnet'
+          - 'dhcpd.conf.head'
+          - 'dhcpd.conf'
+      notify: 'The dhcpd server is restarted'
+
+    - when: dhcpd_pri_fqdn | default('',True) | trim | length and
+            dhcpd_sec_fqdn | default('',True) | trim | length
+      block:
+
+        - name: DHCPD failover-cluster ports are open for use
+          firewalld:
+              immediate: True
+              permanent: True
+              port: '{{ item }}/tcp'
+              state: 'enabled'
+          with_items:
+            - '{{ dhcpd_peerport }}'
+            - '{{ dhcpd_omapiport }}'
+
+        - name: The OMAPI public-key contents are written
+          copy:
+              backup: True
+              dest: '{{ dhcpd_conf_tmpdir.path }}/etc/dhcp/K{{ dhcpd_omapi_name }}.+{{ dhcpd_omapi_footprint }}.key'
+              content: '{{ dhcpd_omapi_key }}'
+              group: 'root'
+              owner: 'root'
+              mode: '0600'
+              setype: 'dhcp_etc_t'
+          notify: 'The dhcpd server is restarted'
+
+        - name: The OMAPI secret-key contents are written
+          copy:
+              backup: True
+              dest: '{{ dhcpd_conf_tmpdir.path }}/etc/dhcp/K{{ dhcpd_omapi_name }}.+{{ dhcpd_omapi_footprint }}.private'
+              content: '{{ dhcpd_omapi_private }}'
+              group: 'root'
+              owner: 'root'
+              mode: '0600'
+              setype: 'dhcp_etc_t'
+          notify: 'The dhcpd server is restarted'
+
+        - name: The dhcpd key configuration is written
+          copy:
+              backup: True
+              dest: '{{ dhcpd_conf_tmpdir.path }}/etc/dhcp/dhcpd.conf.key'
+              content: |
+                  key {{ dhcpd_omapi_name }} {
+                      algorithm {{ dhcpd_omapi_algo }};
+                      secret "{{ dhcpd_omapi_key.split(' ') | last }}";
+                  }
+              group: 'root'
+              owner: 'root'
+              mode: '0600'
+              setype: 'dhcp_etc_t'
+          notify: 'The dhcpd server is restarted'
+
+    - name: The dhcp server test-loads configuration successfully
+      command: "dhcpd -f -d -t -cf ./etc/dhcp/dhcpd.conf"
+      args:
+          chdir: '{{ dhcpd_conf_tmpdir.path }}'
+
+    - name: The staged dhcpd server configuration is made permanent
+      # suffix mimics the format used by ansible backup: true
+      command: >-
+          rsync --checksum --perms --owner --group --itemize-changes \
+                --backup --suffix={{ dhcp_backup_suffix }} \
+                --stats --delay-updates --recursive \
+                {{ dhcpd_conf_tmpdir.path }}/etc/dhcp/ /etc/dhcp/
+      args:
+          chdir: '/'
+
+  always:
+
+    - name: temporary staging directory is removed
+      file:
+          path: '{{ dhcpd_conf_tmpdir.path }}'
+          state: absent

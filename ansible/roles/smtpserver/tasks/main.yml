@@ -50,6 +50,9 @@
       backup: True
       dest: '{{ item.key }}'
       content: '{{ item.value }}'
+      owner: root
+      group: root
+      mode: '0600'
   notify:
     - "reload postfix"
   with_dict: '{{ postfix_files }}'
@@ -75,4 +78,4 @@
       dest: /usr/local/sbin/
       owner: root
       group: root
-      mode: 770
+      mode: '0755'
