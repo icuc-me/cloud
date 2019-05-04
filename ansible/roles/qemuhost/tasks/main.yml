@@ -1,8 +1,10 @@
 ---
 
-- name: The KSM service package is installed
+- name: Essential host packages are installed
   package:
-      name: ksmtuned
+      name:
+        - ksmtuned
+        - libvirt-client
       state: present
   register: _tmp_result
   until: _tmp_result is success
@@ -11,4 +13,21 @@
   systemd:
       name: ksm
       enabled: True
-      state: started
+      state: '{{ "restarted" when _tmp_result is changed else "started" }}'
+
+- name: The libvirt-guest configuration is set
+  lineinfile:
+      backup: True
+      path: '/etc/sysconfig/libvirt-guest'
+      line: '{{ item }}'
+  register: _lvg_tmp
+  with_items:
+      - 'ON_BOOT=start'
+      - 'ON_SHUTDOWN=suspend'
+      - 'SYNC_TIME=1'  # doesn't work with windows guests
+
+- name: The libvirt-guest service is enabled and running
+  systemd:
+      name: libvirt-guests
+      enabled: True
+      state: '{{ "restarted" when _lvg_tmp is changed else "started" }}'
