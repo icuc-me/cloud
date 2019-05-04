@@ -1,0 +1,6 @@
+---
+
+- name: Undesireable packages are absent
+  package:
+      name: '{{ undesireable_packages | default([],True) }}'
+      state: absent
