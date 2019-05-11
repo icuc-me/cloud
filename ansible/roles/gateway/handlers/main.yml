@@ -1,0 +1,7 @@
+---
+
+- name: Firewalld reloaded when permanent
+  systemd:
+      name: firewalld
+      state: reloaded
+  when: gateway_settings_permanent | default(False,True) | bool

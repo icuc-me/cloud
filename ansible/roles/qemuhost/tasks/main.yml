@@ -13,12 +13,12 @@
   systemd:
       name: ksm
       enabled: True
-      state: '{{ "restarted" when _tmp_result is changed else "started" }}'
+      state: '{{ "restarted" if _tmp_result | changed else "started" }}'
 
 - name: The libvirt-guest configuration is set
   lineinfile:
       backup: True
-      path: '/etc/sysconfig/libvirt-guest'
+      path: '/etc/sysconfig/libvirt-guests'
       line: '{{ item }}'
   register: _lvg_tmp
   with_items:
@@ -30,4 +30,4 @@
   systemd:
       name: libvirt-guests
       enabled: True
-      state: '{{ "restarted" when _lvg_tmp is changed else "started" }}'
+      state: '{{ "restarted" if _lvg_tmp is changed else "started" }}'

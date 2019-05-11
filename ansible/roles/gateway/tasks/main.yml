@@ -1,0 +1,11 @@
+---
+
+# N/B: Order is significant, don't lock out ansible host!
+
+#- import_tasks: 'basics.yml'
+
+#- import_tasks: 'add_managed_features.yml'
+
+#- import_tasks: 'configure_forwarding.yml'
+
+- import_tasks: 'remove_unmanaged_features.yml'

@@ -14,6 +14,8 @@ all:
             ansible_host: '{{ _vault_site_dhcp1_ip }}'
         dhcp2:
             ansible_host: '{{ _vault_site_dhcp2_ip }}'
+        gateway1:
+            ansible_host: '{{ _vault_site_gateway1_ip }}'
     vars:
         ansible_connection: 'ssh'
         ansible_user: '{{ _vault_admin_username }}'
@@ -21,6 +23,9 @@ all:
         ansible_become_pass: '{{ _vault_admin_userpass }}'
         system_hostname: '{{ _vault_system_hostname }}'
     children:
+        gateways:
+            hosts:
+                gateway1: {}
         ipaservers:
             hosts:
                 ipa1: {}
@@ -35,6 +40,7 @@ all:
                 dhcp1: {}
                 dhcp2: {}
                 smtp1: {}
+                gateway1: {}
         timeclients:
             hosts:
                 ipa1: {}
@@ -43,6 +49,7 @@ all:
                 dhcp1: {}
                 dhcp2: {}
                 smtp1: {}
+                gateway1: {}
         qemuvms:
             hosts:
                 ipa2: {}

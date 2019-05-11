@@ -1,0 +1,15 @@
+---
+
+# Set true to make all settings permanent
+gateway_settings_permanent: True
+
+gateway_wan_interface: '{{ _vault_gateway_wan_interface }}'
+gateway_wan_services: '{{ _vault_gateway_wan_services }}'
+gateway_wan_ports: '{{ _vault_gateway_wan_ports }}'
+gateway_wan_rr: '{{ _vault_gateway_wan_rr }}'
+
+gateway_lan_interface: '{{ _vault_gateway_lan_interface }}'
+gateway_lan_source: '{{ _vault_gateway_lan_source }}'
+gateway_lan_services: '{{ _vault_gateway_lan_services }}'
+gateway_lan_ports: '{{ _vault_gateway_lan_ports }}'
+gateway_lan_rr: '{{ _vault_gateway_lan_rr }}'
