@@ -45,6 +45,11 @@ output "strongbox_acls" {
     sensitive = true
 }
 
+resource "google_compute_project_metadata_item" "sshkeys" {
+    key = "ssh-keys"
+    value = "${local.strongbox_contents["sshkeys"]}"
+}
+
 output "uuid" {
     value = "${var.UUID}"
     sensitive = true

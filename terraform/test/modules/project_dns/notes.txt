@@ -1,23 +1,79 @@
 
+For test environment:
 
-example.com
+    - DO NOT manage $BASE_FQDN == "test" + "cloud" + $FQDN (handled by prod)
+    - DO manage instances records "<name>-$ENV_UUID" + $BASE_FQDN
+
+For stage environment:
+
+    - DO NOT manage $BASE_FQDN == "stage" + "cloud" + $FQDN (handled by prod)
+    - DO manage instances records "<name>" + $BASE_FQDN
+
+For prod environment:
+
+    - Manage "test" + "cloud" + $FQDN (in test project)
+    - Manage "stage" + "cloud" + $FQDN (in stage project)
+    - Manage "cloud" + $FQDN (in prod project)
+    - Manage prod instance records "<name>" + "cloud" + $BASE_FQDN
+    - Manage legacy domains & CNAMES
+
+
+Global DNS Tree (all envs deployed):
+
+example.com ($BASE_FQDN)
 |
 +-------(MX -> mail.example.com)
 |
-+-------mail (cname -> gateway.site.example.com)
++-------mail (CNAME -> gateway.site.example.com)
 |
-+-------www (cname -> gateway.site.example.com)
++-------www (CNAME -> gateway.site.example.com)
 |
-+-------home (cname -> gateway.site.example.com)
++-------file (CNAME -> gateway.site.example.com)
 |
 +-------cloud
 |       |
-|       +----(mx -> mail.example.com)
+|       +----(MX -> mail.example.com)
+|       |
+|       +-----mail (CNAME -> mail.example.com)
+|       |
+|       +-----www (CNAME -> www.example.com)
+|       |
+|       +-----file (CNAME -> file.example.com)
 |       |
 |       +-----gateway (A)
+|       |
+|       +-----test
+|       |     |
+|       |     +--- (MX -> mail-$ENV_UUID.test.cloud.example.com)
+|       |     |
+|       |     +--- mail (CNAME -> gateway-$ENV_UUID.test.cloud.example.com)
+|       |     |
+|       |     +--- www (CNAME -> gateway-$ENV_UUID.test.cloud.example.com)
+|       |     |
+|       |     +--- file (CNAME -> gateway-$ENV_UUID.test.cloud.example.com)
+|       |     |
+|       |     +--- gateway-$ENV_UUID (A)
+|       |
+|       +-----stage
+|             |
+|             +--- (MX -> mailstage.cloud.example.com)
+|             |
+|             +--- mail (CNAME -> gateway.stage.cloud.example.com)
+|             |
+|             +--- www (CNAME -> gateway.stage.cloud.example.com)
+|             |
+|             +--- file (CNAME -> gateway.stage.cloud.example.com)
+|             |
+|             +--- gateway (A)
 |
 +-------site
         |
-        +-----(mx -> mail.example.com)
+        +----(MX -> mail.example.com)
+        |
+        +-----mail (CNAME -> mail.example.com)
+        |
+        +-----www (CNAME -> www.example.com)
+        |
+        +-----file (CNAME -> file.example.com)
         |
         +-----gateway (A)
