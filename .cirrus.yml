@@ -23,7 +23,7 @@ timeout_in: 30m
 docker_builder:
     name: 'docker_builder'
     build_script: './bin/image_build.sh'
-    push_script: './bin/image_push.sh'  # push all $IMG_TAG and $TEST_IMG_TAG
+    push_script: './bin/ci.sh push'  # push all $IMG_TAG and $TEST_IMG_TAG
 
 docker_builder_validate_task:
     only_if: $CIRRUS_BRANCH != "master"
@@ -34,11 +34,21 @@ docker_builder_validate_task:
     container:
         # Must match FQIN produced by bin/lib.sh
         image: "${IMG_FQIN}:${TEST_IMG_TAG}"
-        cpu: 2
-        memory: 2
-    untag_script: 'env CONTAINER=podman $CIRRUS_WORKING_DIR/bin/image_del.sh'  # ephemeral
-    setup_script: '$CIRRUS_WORKING_DIR/bin/validate_setup.sh'
-    validate_script: 'make validate'
+        cpu: 4
+        memory: 8
+    env:
+        ENV_NAME: "test"
+    setup_script: './bin/ci.sh setup'
+    # validate_script: '$CIRRUS_WORKING_DIR/bin/validate_run.sh'
+    # Break script steps out below, to separate outputs for debugging ease
+    verify_script: './bin/ci.sh verify'
+    lint_script: './bin/ci.sh lint'
+    deploy_test_env_script: './bin/ci.sh deploy'
+    smoke_test_env_script: './bin/ci.sh smoke'
+    validate_test_env_script: './bin/ci.sh validate'
+    always:
+        untag_script: './bin/ci.sh untag'  # ephemeral image
+        clean_script: './bin/ci.sh clean'
 
 validate_task:
     only_if: $CIRRUS_BRANCH == "master"
@@ -48,8 +58,17 @@ validate_task:
         - 'docker_builder'
     container:
         image: '${IMG_FQIN}:${TEST_IMG_TAG}'
-        cpu: 2
-        memory: 2
-    setup_script: '$CIRRUS_WORKING_DIR/bin/validate_setup.sh'
-    validate_script: '$CIRRUS_WORKING_DIR/bin/validate_run.sh'
-    tag_script: 'env CONTAINER=podman $CIRRUS_WORKING_DIR/bin/image_tag.sh'  # tag all $IMG_TAG -> latest
+        cpu: 4
+        memory: 8
+    env:
+        ENV_NAME: "test"
+    # Exact same as in docker_builder_validate_task w/ tag instead of untag
+    setup_script: './bin/ci.sh setup'
+    verify_script: './bin/ci.sh verify'
+    lint_script: './bin/ci.sh lint'
+    deploy_test_env_script: './bin/ci.sh deploy'
+    smoke_test_env_script: './bin/ci.sh smoke'
+    validate_test_env_script: './bin/ci.sh validate'
+    tag_script: './bin/ci.sh tag'  # make latest
+    always:
+        clean_script: './bin/ci.sh clean'
