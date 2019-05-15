@@ -57,46 +57,49 @@ module "gateway" {
     private_subnetwork = "${module.project_networks.private["subnetwork_name"]}"
 }
 
-output "gateway_external_ip" {
+output "cloud_gateway_external_ip" {
     value = "${module.gateway.external_ip}"
     sensitive = true
 }
 
-output "gateway_private_ip" {
+output "cloud_gateway_private_ip" {
     value = "${module.gateway.private_ip}"
     sensitive = true
 }
 
 locals {
-    domain = "${local.is_prod == 1
-                ? local.strongbox_contents["fqdn"]
-                : join(".", list(var.UUID, local.strongbox_contents["fqdn"]))}"
-    legacy_domains = "${split(",", local.strongbox_contents["legacy_domains"])}"
-    test_legacy_domain_fmt = "%s.${local.domain}"
-}
-
-data "template_file" "legacy_domains" {
-    count = "${length(local.legacy_domains)}"
-    template = "${local.is_prod == 1
-                  ? local.legacy_domains[count.index]
-                  : format(local.test_legacy_domain_fmt,
-                           local.legacy_domains[count.index])}"
+    e = ""
+    c = ","
+    d = "."
+    t = "%s"
+    // see modules/project_dns/notes.txt
+    test_fqdn_parent = "${join(local.d, list("test", local.strongbox_contents["fqdn"]))}"
+    test_fqdn = "${join(local.d, list(var.UUID, local.test_fqdn_parent))}"
+    test_glue_fqdn = "${local.is_test == 1
+                        ? local.test_fqdn_parent
+                        : local.e}"
+    // assumed to be shortnames unless prod-environment
+    legacy_domains = ["${split(local.c, local.strongbox_contents["legacy_domains"])}"]
+    legacy_domain_fmt = "${local.is_prod == 1
+                           ? local.t
+                           : join(local.d, list(local.t, local.test_glue_fqdn))}"
+    canonical_legacy_domains = ["${formatlist(local.legacy_domain_fmt, local.legacy_domains)}"]
 }
 
 module "project_dns" {
     source = "./modules/project_dns"
-    providers {
+    providers {  // N/B: In test & stage, these are NOT the actual named providers!
         google.test = "google.test"
         google.stage = "google.stage"
         google.prod = "google.prod"
     }
-    domain = "${local.domain}"
-    cloud_subdomain = "${local.strongbox_contents["cloud_subdomain"]}"
-    site_subdomain = "${local.strongbox_contents["site_subdomain"]}"
-    legacy_domains = "${data.template_file.legacy_domains.*.rendered}"
-    gateway = "${module.gateway.external_ip}"
-    project = "${local.self["PROJECT"]}"
+    glue_fqdn = "${local.test_glue_fqdn}"
+    domain_fqdn = "${local.is_test == 1
+                     ? local.test_fqdn
+                     : local.strongbox_contents["fqdn"]}"
+    legacy_domains = ["${local.canonical_legacy_domains}"]
     env_name = "${var.ENV_NAME}"
+    env_uuid = "${var.UUID}"
 }
 
 output "fqdn" {
@@ -109,7 +112,6 @@ output "zone" {
     sensitive = true
 }
 
-
 output "ns" {
     value = "${module.project_dns.ns}"
     sensitive = true
@@ -120,9 +122,43 @@ output "name_to_zone" {
     sensitive = true
 }
 
-output "gateways" {
-    value = "${module.project_dns.gateways}"
+data "template_file" "legacy_shortnames" {
+    count = "${length(local.canonical_legacy_domains)}"
+    template = "${element(split(local.d, element(local.canonical_legacy_domains, count.index)), 0)}"
+}
+
+data "template_file" "legacy_zones" {
+    count = "${length(local.canonical_legacy_domains)}"
+    template = "${lookup(module.project_dns.name_to_zone,
+                         data.template_file.legacy_shortnames.*.rendered[count.index])}"
+}
+
+// Assumed that production environment deployment always happens behind the site gateway
+module "site_gateway_ip" {
+    source = "./modules/myip"
+}
+
+output "site_gateway_external_ip" {
+    value = "${module.site_gateway_ip.ip}"
     sensitive = true
+}
+
+module "dns_records" {
+    source = "./modules/dns_records"
+    domain_zone = "${module.project_dns.zone}"
+    // FIXME
+    gateways = "${map(
+        lookup(module.project_dns.name_to_zone, "cloud"), module.gateway.external_ip,
+        lookup(module.project_dns.name_to_zone, "site"), module.site_gateway_ip.ip
+    )}"
+    service_destinations {
+        mail = "${lookup(module.project_dns.name_to_zone, "site")}"
+        www = "${lookup(module.project_dns.name_to_zone, "site")}"
+        file = "${lookup(module.project_dns.name_to_zone, "site")}"
+    }
+    managed_zones = ["${concat(data.template_file.legacy_zones.*.rendered,
+                               list(lookup(module.project_dns.name_to_zone, "cloud"),
+                                    lookup(module.project_dns.name_to_zone, "site")))}"]
 }
 
 // ref: https://www.terraform.io/docs/providers/acme/r/registration.html
@@ -143,19 +179,20 @@ resource "tls_private_key" "cert_private_key" {
 
 locals {
     wildfmt = "*.%s"
-    site_fqdn = "${local.strongbox_contents["cloud_subdomain"]}.${local.strongbox_contents["fqdn"]}"
-    cloud_fqdn = "${local.strongbox_contents["site_subdomain"]}.${local.strongbox_contents["fqdn"]}"
+    site_fqdn = "site.${local.strongbox_contents["fqdn"]}"
+    cloud_fqdn = "cloud.${local.strongbox_contents["fqdn"]}"
     _sans = ["${formatlist(local.wildfmt,
                            concat(list(local.strongbox_contents["fqdn"],
                                        local.site_fqdn,
                                        local.cloud_fqdn),
-                                  data.template_file.legacy_domains.*.rendered,
+                                  local.canonical_legacy_domains,
                                   ))}"]
-    sans = ["${concat(data.template_file.legacy_domains.*.rendered,
+    sans = ["${concat(local.canonical_legacy_domains,
                       local._sans)}"]
 }
 
 resource "acme_certificate" "fqdn_certificate" {
+    depends_on = ["module.project_dns"]
     account_key_pem = "${acme_registration.reg.account_key_pem}"
     common_name = "${local.strongbox_contents["fqdn"]}"
     subject_alternative_names = ["${local.sans}"]

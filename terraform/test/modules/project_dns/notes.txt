@@ -3,11 +3,13 @@ For test environment:
 
     - DO NOT manage $BASE_FQDN == "test" + "cloud" + $FQDN (handled by prod)
     - DO manage instances records "<name>-$ENV_UUID" + $BASE_FQDN
+      i.e. create gateway-$ENV_UUID.test.cloud.$FQDN
 
 For stage environment:
 
     - DO NOT manage $BASE_FQDN == "stage" + "cloud" + $FQDN (handled by prod)
     - DO manage instances records "<name>" + $BASE_FQDN
+      i.e. create gateway-$ENV_UUID.stage.cloud.$FQDN
 
 For prod environment:
 
@@ -32,7 +34,7 @@ example.com ($BASE_FQDN)
 |
 +-------cloud
 |       |
-|       +----(MX -> mail.example.com)
+|       +-----(MX -> mail.example.com)
 |       |
 |       +-----mail (CNAME -> mail.example.com)
 |       |
@@ -40,31 +42,52 @@ example.com ($BASE_FQDN)
 |       |
 |       +-----file (CNAME -> file.example.com)
 |       |
-|       +-----gateway (A)
-|       |
 |       +-----test
 |       |     |
-|       |     +--- (MX -> mail-$ENV_UUID.test.cloud.example.com)
+|       |     +--- test-12345678 ($ENV_UUID)
+|       |     |    |
+|       |     |    +--- (MX -> mail.$ENV_UUID.test.cloud.example.com)
+|       |     |    |
+|       |     |    +--- mail (CNAME -> gateway.$ENV_UUID.test.cloud.example.com)
+|       |     |    |
+|       |     |    +--- www (CNAME -> gateway.$ENV_UUID.test.cloud.example.com)
+|       |     |    |
+|       |     |    +--- file (CNAME -> gateway.$ENV_UUID.test.cloud.example.com)
+|       |     |    |
+|       |     |    +--- gateway (A -> external ip address)
+|       |     |    |
+|       |     |    +--- cloud
+|       |     |    |    +---- test...
+|       |     |    |    +---- stage...
+|       |     |    |    +---- prod...
+|       |     |    +---- site...
+|       |     |    +---- legacy...
 |       |     |
-|       |     +--- mail (CNAME -> gateway-$ENV_UUID.test.cloud.example.com)
-|       |     |
-|       |     +--- www (CNAME -> gateway-$ENV_UUID.test.cloud.example.com)
-|       |     |
-|       |     +--- file (CNAME -> gateway-$ENV_UUID.test.cloud.example.com)
-|       |     |
-|       |     +--- gateway-$ENV_UUID (A)
+|       |     +-- ...
 |       |
 |       +-----stage
+|       |     |
+|       |     +--- (MX -> mail.stage.cloud.example.com)
+|       |     |
+|       |     +--- mail (CNAME -> gateway.stage.cloud.example.com)
+|       |     |
+|       |     +--- www (CNAME -> gateway.stage.cloud.example.com)
+|       |     |
+|       |     +--- file (CNAME -> gateway.stage.cloud.example.com)
+|       |     |
+|       |     +--- gateway (A -> external ip address)
+|       |
+|       +-----prod
 |             |
-|             +--- (MX -> mailstage.cloud.example.com)
+|             +--- (MX -> mail.prod.cloud.example.com)
 |             |
-|             +--- mail (CNAME -> gateway.stage.cloud.example.com)
+|             +--- mail (CNAME -> gateway.prod.cloud.example.com)
 |             |
-|             +--- www (CNAME -> gateway.stage.cloud.example.com)
+|             +--- www (CNAME -> gateway.prod.cloud.example.com)
 |             |
-|             +--- file (CNAME -> gateway.stage.cloud.example.com)
+|             +--- file (CNAME -> gateway.prod.cloud.example.com)
 |             |
-|             +--- gateway (A)
+|             +--- gateway (A -> external ip address)
 |
 +-------site
         |
@@ -76,4 +99,4 @@ example.com ($BASE_FQDN)
         |
         +-----file (CNAME -> file.example.com)
         |
-        +-----gateway (A)
+        +-----gateway (A -> external ip address)
