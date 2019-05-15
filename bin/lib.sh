@@ -59,7 +59,7 @@ RUN_FQIN="${REG_NS}/${RUN_IN}:${IMG_TAG}"
 
 show_env(){
     ENVNAMES="$(env | egrep '^CIRRUS.+=' | cut -d '=' -f 1)
-        $(go env | egrep '^.+=' | cut -d '=' -f 1)
+        $(go env | egrep '^.+=' | cut -d '=' -f 1 || true)
         USER
         HOME
         PATH

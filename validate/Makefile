@@ -21,6 +21,7 @@ SRC_DIR=$(shell realpath "../")
 ENV_NAME?=test
 TF_CFG_DIR?=$(SRC_DIR)/terraform/$(ENV_NAME)
 ANCESTOR_BRANCH_COMMIT?=$(shell git merge-base origin/master HEAD)
+HEAD_COMMIT?=HEAD
 SEED=$(shell date +%s)
 
 VERBOSE?=0
@@ -57,16 +58,16 @@ clean:
 .PHONY: .commits_clean
 .commits_clean: .all_commited
 	@echo "Verifying whitespace errors and conflict markers"
-	test -z "$(shell git diff --check $(ANCESTOR_BRANCH_COMMIT)..HEAD)"
+	test -z "$(shell git diff --check $(ANCESTOR_BRANCH_COMMIT)..$(HEAD_COMMIT) 2>&1)"
 
 .PHONY: .gofmt
 .gofmt: .pathok
 	@echo "Verifying no files are in need of gofmt."
-	test -z "$(shell find . -name '*.go' ! -path './vendor/*' -exec gofmt -e -s -l {} \+)"
+	test -z "$(shell find . -name '*.go' -not -path './vendor/*' -exec gofmt -e -s -l {} \+ 2>&1)"
 
 .PHONY: format
 format:
-	find . -name '*.go' ! -path './vendor/*' -exec gofmt -e -s -w {} \+
+	find . -name '*.go' -not -path './vendor/*' -exec gofmt -e -s -w {} \+
 
 verify: .pathok .all_commited .commits_clean .gofmt
 	@touch verify

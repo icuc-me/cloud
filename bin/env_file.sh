@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -e
+set +x
+set -eo pipefail
 
 source $(dirname $0)/lib.sh
 
