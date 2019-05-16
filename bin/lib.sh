@@ -89,8 +89,8 @@ reg_login(){
     echo "Logging in to remote repository"
     set +ex
     sudo $CONTAINER login -u="${REG_LOGIN}" -p="${REG_PASSWD}" quay.io
-    history -c
     RET=$?
+    history -c
     set -e
     [[ "$RET" == 0 ]] || \
         die "Error logging in to registry, check \$REG_LOGIN and/or \$REG_PASSWD" 33

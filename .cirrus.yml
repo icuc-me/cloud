@@ -22,6 +22,8 @@ timeout_in: 30m
 
 docker_builder:
     name: 'docker_builder'
+    env:
+        CONTAINER: "docker"
     build_script: './bin/image_build.sh'
     push_script: './bin/ci.sh push'  # push all $IMG_TAG and $TEST_IMG_TAG
 
@@ -38,6 +40,7 @@ docker_builder_validate_task:
         memory: 8
     env:
         ENV_NAME: "test"
+        CONTAINER: "podman"
     setup_script: './bin/ci.sh setup'
     # validate_script: '$CIRRUS_WORKING_DIR/bin/validate_run.sh'
     # Break script steps out below, to separate outputs for debugging ease
@@ -62,6 +65,7 @@ validate_task:
         memory: 8
     env:
         ENV_NAME: "test"
+        CONTAINER: "podman"
     # Exact same as in docker_builder_validate_task w/ tag instead of untag
     setup_script: './bin/ci.sh setup'
     verify_script: './bin/ci.sh verify'

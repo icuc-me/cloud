@@ -80,7 +80,6 @@ case "$1" in
         ;;
     untag)
         echo "Removing testing image"
-        export CONTAINER=podman
         [[ "$VERSION_MAJ" -ne "0" ]] || [[ "$IMG_TAG" == "latest" ]] || \
             die "Refusing to delete non-ephemeral image" 38
         reg_login
