@@ -1,0 +1,54 @@
+---
+
+variables:
+    IBI_BASE_NAME: 'image-builder-image'
+    GCP_ACCOUNT_FILE:
+    GCP_PROJECT_ID:
+    GCP_SERVICE_ACCOUNT_NAME:
+    GCE_ZONE:
+    TIMESTAMP: '{{timestamp}}'
+
+# Don't leak sensitive values in error messages / output
+sensitive-variables:
+    - GCP_ACCOUNT_FILE
+    - GCP_PROJECT_ID
+    - GCP_SERVICE_ACCOUNT_NAME
+    - GCE_ZONE
+
+# What images to produce in which cloud
+builders:
+    - type: 'googlecompute'
+      account_file: '{{user `GCP_ACCOUNT_FILE`}}'
+      project_id: '{{user `GCP_PROJECT_ID`}}'
+      source_image_family: 'centos-7'
+      zone: '{{user `GCE_ZONE` }}'
+      image_family: '{{user `IBI_BASE_NAME`}}-{{user `TIMESTAMP`}}'
+      image_licenses:
+          - "projects/centos-cloud/global/licenses/centos-7"
+          - "projects/vm-options/global/licenses/enable-vmx"
+      image_labels:
+          used: '{{user `TIMESTAMP`}}'
+      instance_name: '{{user `IBI_BASE_NAME`}}-{{user `TIMESTAMP`}}'
+      image_name: '{{user `IBI_BASE_NAME`}}-{{user `TIMESTAMP`}}'
+      source_image_project_id: 'centos-cloud'
+      service_account_email: '{{user `GCP_SERVICE_ACCOUNT_NAME`}}@{{user `GCP_PROJECT_ID`}}.gserviceaccount.com'
+      communicator: 'ssh'
+      ssh_username: '{{user `GCP_SERVICE_ACCOUNT_NAME`}}'
+      ssh_pty: 'true'
+
+provisioners:
+    - type: 'shell'
+      inline:
+        - 'mkdir -p /tmp/{{user `TIMESTAMP`}}'
+
+    - type: 'file'
+      source: '{{pwd}}'
+      destination: '/tmp/{{user `TIMESTAMP`}}'
+
+    - type: 'shell'
+      inline:
+        - '/tmp/{{user `TIMESTAMP`}}/{{user `IBI_BASE_NAME`}}_setup.sh'
+
+post-processors:
+    - type: 'manifest'
+      output: 'phase_1-manifest.json'

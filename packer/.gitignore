@@ -1,0 +1,6 @@
+*.json
+cidata.ssh
+cidata.ssh.pub
+meta-data
+user-data
+cidata.iso
