@@ -129,45 +129,55 @@ output "gateways" {
 }
 
 // ref: https://www.terraform.io/docs/providers/acme/r/registration.html
-// resource "tls_private_key" "reg_private_key" {
-//     algorithm = "RSA"
-//     rsa_bits = 4096
-// }
-//
-// resource "acme_registration" "reg" {
-//     account_key_pem = "${tls_private_key.reg_private_key.private_key_pem}"
-//     email_address   = "${local.strongbox_contents["acme_reg_ename"]
-//                          }@${local.strongbox_contents["fqdn"]}"
-// }
-//
-// resource "tls_private_key" "cert_private_key" {
-//     algorithm = "RSA"
-//     rsa_bits = 4096
-// }
-//
-// resource "acme_certificate" "certificate" {
-//     account_key_pem = "${acme_registration.reg.account_key_pem}"
-//     common_name = "${local.strongbox_contents["fqdn"]}"
-//     subject_alternative_names = ["*.${local.strongbox_contents["fqdn"]}"]
-//     key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
-//     min_days_remaining = "${local.is_prod == 1 ? 20 : 0}"
-//     certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
-//
-//     dns_challenge {
-//         provider = "gcloud"
-//         // decouple from default nameservers on runtime host
-//         recursive_nameservers = ["${formatlist("%s:53",
-//                                                split(",",
-//                                                      module.project_dns.dns_data["fqdn_ns"]))}"]
-//         config {
-//             // 5 & 180 (default) too quick & slow, root entry needs more time
-//             GCE_POLLING_INTERVAL = "10"
-//             GCE_PROPAGATION_TIMEOUT = "300"
-//             GCE_PROJECT = "${local.self["PROJECT"]}"
-//             GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
-//         }
-//     }
-// }
+resource "tls_private_key" "reg_private_key" {
+    algorithm = "RSA"
+    rsa_bits = 4096
+}
+
+resource "acme_registration" "reg" {
+    account_key_pem = "${tls_private_key.reg_private_key.private_key_pem}"
+    email_address   = "${local.strongbox_contents["acme_reg_ename"]}"
+}
+
+resource "tls_private_key" "cert_private_key" {
+    algorithm = "RSA"
+    rsa_bits = 4096
+}
+
+locals {
+    wildfmt = "*.%s"
+    site_fqdn = "${local.strongbox_contents["cloud_subdomain"]}.${module.project_dns.fqdn}"
+    cloud_fqdn = "${local.strongbox_contents["site_subdomain"]}.${module.project_dns.fqdn}"
+    __sans = ["${compact(concat(list(local.is_prod == 1 ? module.project_dns.fqdn : "",
+                                     local.site_fqdn,
+                                     local.cloud_fqdn),
+                                data.template_file.legacy_domains.*.rendered))}"]
+    _sans = ["${formatlist(local.wildfmt, local.__sans)}"]
+    sans = ["${concat(data.template_file.legacy_domains.*.rendered,
+                      compact(local._sans))}"]
+}
+
+resource "acme_certificate" "fqdn_certificate" {
+    account_key_pem = "${acme_registration.reg.account_key_pem}"
+    common_name = "${module.project_dns.fqdn}"
+    subject_alternative_names = ["${local.sans}"]
+    key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
+    min_days_remaining = "${local.is_prod == 1 ? 20 : 0}"
+    certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
+    recursive_nameservers = ["8.8.8.8:53", "8.8.4.4:53"]  // docs say they need ports
+
+    dns_challenge {
+        provider = "gcloud"
+        // decouple from default nameservers on runtime host
+        config {
+            // 5 & 180 (default) too quick & slow, root entry needs more time
+            GCE_POLLING_INTERVAL = "10"
+            GCE_PROPAGATION_TIMEOUT = "300"
+            GCE_PROJECT = "${local.self["PROJECT"]}"
+            GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
+        }
+    }
+}
 
 output "uuid" {
     value = "${var.UUID}"
