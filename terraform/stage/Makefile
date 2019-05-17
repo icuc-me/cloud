@@ -21,7 +21,8 @@ $(_PHASE)/plan.bin: guard-PHASE $(_PHASE) runtime.auto.tfvars test-strongbox.yml
 .PHONY: $(_PHASE)/apply
 $(_PHASE)/apply: guard-PHASE $(_PHASE)/plan.bin $(SRCFILES)
 	-@read -t 10 -p "$(_PHASE) Pause: press enter, wait 10 seconds to continue, or ctrl-c to abort."
-	TF_IN_AUTOMATION=1 terraform apply -input=false -auto-approve "$(_PHASE)/plan.bin"
+	TF_LOG_PATH="$(_PHASE)/apply.log" TF_LOG=DEBUG TF_IN_AUTOMATION=1 \
+				terraform apply -input=false -auto-approve "$(_PHASE)/plan.bin"
 
 .PHONY: destroy
 destroy: guard-PHASE $(_PHASE)/plan.bin $(SRCFILES)
