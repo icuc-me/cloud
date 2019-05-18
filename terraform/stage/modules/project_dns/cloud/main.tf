@@ -70,7 +70,7 @@ module "test" {
     domain = "${var.cloud}.${var.domain}"
     base_zone = "${local.cloud_zone}"
     subdomain = "test"
-    create = "1"
+    create = "0"
 }
 
 module "stage" {
@@ -83,7 +83,7 @@ module "stage" {
     domain = "${var.cloud}.${var.domain}"
     base_zone = "${local.cloud_zone}"
     subdomain = "stage"
-    create = "1"
+    create = "0"
 }
 
 module "prod" {

@@ -58,15 +58,16 @@ resource "google_dns_record_set" "glue" {
 
 resource "google_dns_record_set" "mx" {
     count = "${var.create == 0 ? 0 : 1}"
+    provider = "google.subdomain"
     managed_zone = "${google_dns_managed_zone.sub.name}"
-    name = "${google_dns_managed_zone.sub.dns_name}"
+    name = "${local.fqdn}."
     type = "MX"
-    rrdatas = ["10 mail.${var.domain}"]
+    rrdatas = ["10 mail.${var.domain}."]
     ttl = "3600"
 }
 
 output "name_to_zone" {
     // short-name to zone-name
-    value = "${map(var.subdomain, var.create == 0 ? "" : google_dns_managed_zone.sub.*.name[0])}"
+    value = "${map(var.subdomain, var.create == 0 ? "" : local.name)}"
     sensitive = true
 }
