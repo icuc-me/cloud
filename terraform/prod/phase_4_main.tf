@@ -162,11 +162,11 @@ resource "acme_certificate" "fqdn_certificate" {
     key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
     min_days_remaining = "${local.is_prod == 1 ? 20 : 0}"
     certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
+    // decouple from default nameservers on runtime host
+    recursive_nameservers = ["8.8.8.8:53", "8.8.4.4:53"]  // docs say they need ports
 
     dns_challenge {
         provider = "gcloud"
-        // decouple from default nameservers on runtime host
-        recursive_nameservers = ["8.8.8.8:53", "8.8.4.4:53"]  // docs say they need ports
         config {
             // 5 & 180 (default) too quick & slow, root entry needs more time
             GCE_POLLING_INTERVAL = "10"
