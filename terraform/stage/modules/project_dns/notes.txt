@@ -1,39 +1,49 @@
 
+This module ONLY establishes the Public DNS tree structure, it does not
+add any records except for nameserver glue between zones.
 
-example.com
+For test and stage environments:
+
+    - Creates, manages and glues testing subdomain ${ENV_NAME}_${ENV_UUID} onto ${FQDN}
+      (e.g. test_1234abcd.test.cloud.example.com)
+    - Creates and manages entire DNS tree, including legacy domains under the
+      testing subdomain.  (e.g. foo.bar.test_1234abcd.test.cloud.example.com)
+    - Manages glue records for the above, so all names/records are reachable.
+
+For prod environment:
+
+    - Manage "cloud" and "site" subdomains (e.g. cloud.example.com)
+    - Manage legacy domains & records (e.g. foo.bar.baz)
+    - Manage "test" and "stage" zones in their respective projects
+      (e.g. test.cloud.example.com and stage.cloud.example.com)
+    - Manages glue records for "test" and "stage" zones in prod. project
+      (e.g. zone for cloud.example.com)
+    - Manages "prod" zone in prod. project
+
+Global DNS Tree with all envs deployed, assuming top-level base FQDN of 'example.com':
+
+example.com (zone) [managed by prod]
 |
-+-------(MX -> mail.example.com)
-|
-+-------mail (cname -> gateway.site.example.com)
-|
-+-------www (cname -> gateway.site.example.com)
-|
-+-------home (cname -> gateway.site.example.com)
-|
-+-------cloud
++-------cloud (zone) [managed by prod]
 |       |
-|       +----(mx -> mail.example.com)
+|       +-----test (zone in test project) [managed by prod, used by test for glue]
+|       |     |
+|       |     +--- test-12345678 (zone in test project) [managed by test]
+|       |     |    +--- cloud (zone in test project) [managed by test]
+|       |     |    +--- site (zone in test project) [managed by test]
+|       |     |    +--- legacy (zone in test project) [managed by test]
+|       |     |
+|       |     +-- ... (other environments being tested)
 |       |
-|       +-----prod
+|       +-----stage (zone in stage project) [managed by prod used by stage for glue]
 |       |     |
-|       |     +---(mx -> mail.example.com)
-|       |     |
-|       |     +---gateway (A)
+|       |     +--- cloud (zone in stage project) [managed by stage]
+|       |     |    +---- ...
+|       |     +--- site (zone in stage project) [managed by stage]
+|       |     |    +---- ...
+|       |     +--- legacy (zone in stage project) [managed by stage]
+|       |          +---- ...
 |       |
-|       +-----stage
-|       |     |
-|       |     +---(mx -> mail.example.com)
-|       |     |
-|       |     +---gateway (A)
-|       |
-|       +-----test
-|       |     |
-|       |     +---(mx -> mail.example.com)
-|       |     |
-|       |     +---gateway (A)
+|       +-----prod (zone in prod project) [managed by prod]
 |
-+-------site
-|
-+-------(MX -> mail.example.com)
-|
-+-------gateway (A)
++-------site (zone in prod project) [managed by prod]

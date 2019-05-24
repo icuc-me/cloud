@@ -5,5 +5,5 @@ data "external" "myip" {
 
 output "ip" {
     value = "${data.external.myip.result.ip}"
-    #sensitive = true
+    sensitive = true
 }

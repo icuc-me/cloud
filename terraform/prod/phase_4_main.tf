@@ -55,6 +55,9 @@ module "gateway" {
     env_uuid = "${var.UUID}"
     public_subnetwork = "${module.project_networks.public["subnetwork_name"]}"
     private_subnetwork = "${module.project_networks.private["subnetwork_name"]}"
+    admin_username = "${local.strongbox_contents["admin_username"]}"
+    admin_sshkey = "${local.strongbox_contents["admin_sshkey"]}"
+    setup_data = "${local.strongbox_contents["gateway_setup_data"]}"
 }
 
 output "cloud_gateway_external_ip" {
