@@ -46,7 +46,7 @@ resource "google_dns_managed_zone" "domain" {
     name = "${replace(var.domain_fqdn, local.d, local.h)}"
     dns_name = "${var.domain_fqdn}."
     visibility = "public"
-    description = "Managed for terraform environment ${var.env_uuid} by project ${data.google_client_config.domain.project}"
+    description = "Managed by terraform environment ${var.env_uuid} for project ${data.google_client_config.domain.project}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html

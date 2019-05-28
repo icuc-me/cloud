@@ -36,7 +36,7 @@ resource "google_dns_managed_zone" "subdomain" {
     name = "${local.subdomain_zone}"
     dns_name = "${var.subdomain_fqdn}."
     visibility = "public"
-    description = "Managed for terraform environment ${var.env_uuid} by project ${data.google_client_config.subdomain.project}"
+    description = "Managed by terraform environment ${var.env_uuid} for project ${data.google_client_config.subdomain.project}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html
