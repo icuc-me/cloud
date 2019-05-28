@@ -20,6 +20,10 @@ variable "gateways" {
     type = "map"
 }
 
+variable "gateway_count" {
+    description = "Number of gateways present in gateways variable."
+}
+
 variable "service_destinations" {
     description = "Mapping of service names ('mail', 'www', etc.) to destination 'gateway' zone"
     type = "map"
@@ -35,13 +39,13 @@ variable "managed_zones" {
 /*****/
 
 data "google_dns_managed_zone" "gateway" {
-    count = "${length(var.gateways)}"
+    count = "${var.gateway_count}"
     name = "${element(keys(var.gateways), count.index)}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html
 resource "google_dns_record_set" "primary_a" {
-    count = "${length(data.google_dns_managed_zone.gateway.*.name)}"
+    count = "${var.gateway_count}"
     managed_zone = "${element(keys(var.gateways), count.index)}"
     name = "gateway.${data.google_dns_managed_zone.gateway.*.dns_name[count.index]}"
     type = "A"
@@ -96,6 +100,7 @@ data "template_file" "managed_zones" {
                   : ""}"
 }
 
+// Impossible to loop with modules
 module "managed_zone1" {
     source = "./managed_zone"
     managed_zone = "${element(local.managed_zones, 0)}"

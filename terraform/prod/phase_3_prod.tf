@@ -5,7 +5,7 @@ locals {
         "roles/iam.serviceAccountUser", "roles/dns.admin"
     ]
 
-    img_svc_acts = "${data.terraform_remote_state.phase_2.ci_svc_acts}"
+    img_svc_acts = "${data.terraform_remote_state.phase_2.img_svc_acts}"
     img_act_roles = [
         "roles/compute.admin", "roles/iam.serviceAccountUser"
     ]

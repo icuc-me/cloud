@@ -1,22 +1,4 @@
 
-/*
-Create this structure:
-
-    subdomain.example.com  "${subdomain}"   - assumed to not exist
-       |
-       +----- ...records...
-
-    and
-
-    example.com  "${domain}"   - assumed to already exist
-        |
-        +-----subdomain.example.com (NS) ---> nameservers
-
-    Where creation of all leaf nodes (except glue record) are all optional.
-
-Output: A dictionary with ${subdomain} as key and managed zone name as value.
-*/
-
 provider "google" {
     alias = "domain"   // provider owning the 'domain'
 }
@@ -26,8 +8,7 @@ provider "google" {
 }
 
 variable "glue_zone" {
-    description = "Optional, zone name managed by google.domain to contain glue record"
-    default = ""
+    description = "Zone name managed by google.domain to contain glue record"
 }
 
 variable "subdomain_fqdn" {
@@ -55,12 +36,11 @@ resource "google_dns_managed_zone" "subdomain" {
     name = "${local.subdomain_zone}"
     dns_name = "${var.subdomain_fqdn}."
     visibility = "public"
-    description = "Managed by terraform environment ${var.env_uuid} for project ${data.google_client_config.subdomain.project}"
+    description = "Managed for terraform environment ${var.env_uuid} by project ${data.google_client_config.subdomain.project}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html
 resource "google_dns_record_set" "glue" {
-    count = "${var.glue_zone != "" ? 1 : 0}"
     provider = "google.domain"
     managed_zone = "${var.glue_zone}"
     name = "${google_dns_managed_zone.subdomain.dns_name}"
@@ -73,5 +53,19 @@ output "name_to_zone" {
     // short-name to zone-name
     value = "${map(element(split(local.d, google_dns_managed_zone.subdomain.dns_name), 0),
                    google_dns_managed_zone.subdomain.name)}"
+    sensitive = true
+}
+
+output "name_to_ns" {
+    value = "${map(element(split(local.d, google_dns_managed_zone.subdomain.dns_name), 0),
+                   google_dns_managed_zone.subdomain.name_servers)}"
+    sensitive = true
+}
+
+output "name_to_fqdn" {
+    value = "${map(element(split(local.d, google_dns_managed_zone.subdomain.dns_name), 0),
+                   substr(google_dns_managed_zone.subdomain.dns_name,
+                          0,
+                          length(google_dns_managed_zone.subdomain.dns_name) - 1))}"
     sensitive = true
 }

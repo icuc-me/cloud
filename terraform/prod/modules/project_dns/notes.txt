@@ -2,17 +2,13 @@
 This module ONLY establishes the Public DNS tree structure, it does not
 add any records except for nameserver glue between zones.
 
-For test environment:
+For test and stage environments:
 
-    - Creates and manages and glues testing subdomain ${ENV_NAME}_${ENV_UUID} into top-level base
+    - Creates, manages and glues testing subdomain ${ENV_NAME}_${ENV_UUID} onto ${FQDN}
       (e.g. test_1234abcd.test.cloud.example.com)
     - Creates and manages entire DNS tree, including legacy domains under the
       testing subdomain.  (e.g. foo.bar.test_1234abcd.test.cloud.example.com)
     - Manages glue records for the above, so all names/records are reachable.
-
-For stage environment:
-
-    - Same as test but without extra ${ENV_NAME}_${ENV_UUID} subdomain (e.g. stage.cloud.example.com)
 
 For prod environment:
 

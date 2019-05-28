@@ -15,6 +15,18 @@ variable "private_subnetwork" {
     description = "The self-link of the private-facing subnetwork"
 }
 
+variable "admin_username" {
+    description = "Username of the admin user"
+}
+
+variable "admin_sshkey" {
+    description = "Ssh private-key contents for admin user"
+}
+
+variable "setup_data" {
+    description = "Data to write into file passed as setup script parameter"
+}
+
 // Ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_subnetwork.html
 data "google_compute_subnetwork" "public" {
     name = "${var.public_subnetwork}"
@@ -54,15 +66,22 @@ resource "google_compute_address" "gateway" {
     }
 }
 
+data "tls_public_key" "admin_pubsshkey" {
+    private_key_pem = "${var.admin_sshkey}"
+}
+
 locals {
+    c = ":"  // illegal character
     _gateway_nat_ip = "${concat(google_compute_address.gateway-ephemeral-external.*.address,
                                 google_compute_address.gateway-static-external.*.address)}"
+    _script_filepath = "/var/tmp/setup.sh"
+    _data_filepath = "/var/tmp/setup.data"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/d/datasource_compute_instance.html
 resource "google_compute_instance" "gateway-instance" {
     name = "gateway-${var.env_uuid}-${count.index}"
-    machine_type = "f1-micro"
+    machine_type = "n1-standard-1"
     count = 1
     description = "Gateway system for managing/routing traffic in/out of VPC"
     boot_disk {
@@ -85,6 +104,30 @@ resource "google_compute_instance" "gateway-instance" {
         subnetwork = "${data.google_compute_subnetwork.private.self_link}"
         network_ip = "${google_compute_address.gateway.1.address}"
         // N/B: must *NOT* have an access_config block to prevent NAT address assignment
+    }
+    metadata {
+        ssh-keys = "${var.admin_username}:${data.tls_public_key.admin_pubsshkey.public_key_openssh}"
+    }
+
+    connection {
+        type = "ssh"
+        host = "${element(local._gateway_nat_ip, 0)}"
+        user = "${var.admin_username}"
+        private_key = "${var.admin_sshkey}"
+    }
+
+    provisioner "file" {
+        destination = "${local._script_filepath}"
+        content = "${file("${path.module}/setup.sh")}"
+    }
+
+    provisioner "file" {
+        destination = "${local._data_filepath}"
+        content = "${var.setup_data}"
+    }
+
+    provisioner "remote-exec" {
+        inline = ["/bin/bash ${local._script_filepath} ${local._data_filepath}"]
     }
 }
 
