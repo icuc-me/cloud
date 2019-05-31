@@ -1,4 +1,5 @@
 
+// N/B: In stage and test environments, all three providers will be the same!
 provider "google" {
     alias = "test"
 }
@@ -8,37 +9,31 @@ provider "google" {
 }
 
 provider "google" {
-    alias = "prod"
+   alias = "prod"
 }
 
-variable "domain" {
-    description = "base DNS suffix to append to all managed zone names, e.g. 'example.com'"
+/*****/
+
+variable "domain_fqdn" {
+    description = "Base DNS name to create and manage.  For test and stage env. this is assumed to be their respective, complete subdomain, including the additional env_uuid prefix"
 }
 
-variable "cloud_subdomain" {
-    description = "subdomain for google cloud resources"
-}
-
-variable "site_subdomain" {
-    description = "subdomain of for non-cloud resources"
+variable "glue_zone" {
+    description = "When non-empty, add glue record to this zone, referring to domain_fqdn nameservers.  Also modifies the layout slightly for entries under the cloud subdomain."
 }
 
 variable "legacy_domains" {
-    description = "List of legacy FQDNs to manage with CNAMES into var.domain"
+    description = "List of complete legacy FQDNs to manage."
     type = "list"
 }
 
-variable "gateway" {
-    description = "IP address of cloud gateway"
+variable "env_uuid" {
+    description = "UUID of the current environment for zone descriptions"
 }
 
-variable "project" {
-    description = "Name of project managing these resources"
-}
+/*****/
 
-variable "env_name" {
-    description = "Name of the current environment (test, stage, prod)"
-}
+data "google_client_config" "domain" { provider = "google.prod" }
 
 locals {
     d = "."
@@ -47,115 +42,142 @@ locals {
 
 // ref: https://www.terraform.io/docs/providers/google/r/dns_managed_zone.html
 resource "google_dns_managed_zone" "domain" {
-    name = "${replace(var.domain, local.d, local.h)}"
-    dns_name = "${var.domain}."
-    visibility = "public"  # N/B: only actual when registrar points at assigned NS
-    description = "Managed by terraform from project ${var.project}"
+    provider = "google.prod"
+    name = "${replace(var.domain_fqdn, local.d, local.h)}"
+    dns_name = "${var.domain_fqdn}."
+    visibility = "public"
+    description = "Managed by terraform environment ${var.env_uuid} for project ${data.google_client_config.domain.project}"
+}
+
+// ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html
+resource "google_dns_record_set" "domain_glue" {
+    count = "${var.glue_zone == "" ? 0 : 1}"
+    provider = "google.prod"
+    managed_zone = "${replace(var.glue_zone, local.d, local.h)}"
+    name = "${google_dns_managed_zone.domain.dns_name}"
+    type = "NS"
+    rrdatas = ["${google_dns_managed_zone.domain.name_servers}"]
+    ttl = "${60 * 60 * 24}"
 }
 
 locals {
-    // strip off trailing . & make dependent on resource
-    name = "${substr(google_dns_managed_zone.domain.dns_name,
-                     0, length(google_dns_managed_zone.domain.dns_name) - 1)}"
+    // Other tooling dislikes the final trailing "."
+    domain = "${substr(google_dns_managed_zone.domain.dns_name,
+                       0,
+                       length(google_dns_managed_zone.domain.dns_name) - 1)}"
 }
 
-output "fqdn" {
-    value = "${local.name}"
-}
+/*****/
 
-output "zone" {
-    value = "${google_dns_managed_zone.domain.name}"
-}
-
-output "ns" {
-    value = ["${google_dns_managed_zone.domain.name_servers}"]
-    sensitive = true
-}
-
-module "cloud" {
-    source = "./cloud"
+module "cloud_subdomain" {
+    source = "./subdomain"
     providers = {
-        google.test = "google.test"
-        google.stage = "google.stage"
-        google.prod = "google.prod"
+        google.domain = "google.prod"
+        google.subdomain = "google.prod"
     }
-    domain = "${local.name}"
-    zone = "${google_dns_managed_zone.domain.name}"
-    cloud = "${var.cloud_subdomain}"
-    gateway = "${var.gateway}"
-    project = "${var.project}"
-    env_name = "${var.env_name}"
+    glue_zone = "${google_dns_managed_zone.domain.name}"
+    subdomain_fqdn = "cloud.${local.domain}"
+    env_uuid = "${var.env_uuid}"
 }
 
-module "site_gateway" {
-    source = "./myip"
+locals {
+    cloud_zone = "${element(values(module.cloud_subdomain.name_to_zone), 0)}"
+    cloud_fqdn = "${element(keys(module.cloud_subdomain.name_to_zone), 0)}.${local.domain}"
+    cloud_fqdn_elements = ["${split(local.d, local.cloud_fqdn)}"]
+    // Workaround: Google does not support deeper than 6 levels of domains
+    short_cloud_fqdn = "${join(local.d,
+                               slice(local.cloud_fqdn_elements, 1, length(local.cloud_fqdn_elements)))}"
+    short_cloud_zone = "${replace(local.short_cloud_fqdn, local.d, local.h)}"
 }
 
-module "site" {
-    source = "./site"
-    providers = { google = "google.prod" }
-    domain = "${local.name}"
-    zone = "${google_dns_managed_zone.domain.name}"
-    site = "${var.site_subdomain}"
-    gateway = "${module.site_gateway.ip}"
-    project = "${var.project}"
+
+module "test_cloud_subdomain" {
+    source = "./subdomain"
+    providers = {
+        google.domain = "google.prod"
+        google.subdomain = "google.test"
+    }
+    glue_zone = "${var.glue_zone == ""
+                   ? local.cloud_zone
+                   : local.short_cloud_zone}"
+    subdomain_fqdn = "test.${var.glue_zone == ""
+                             ? local.cloud_fqdn
+                             : local.short_cloud_fqdn}"
+    env_uuid = "${var.env_uuid}"
 }
+
+module "stage_cloud_subdomain" {
+    source = "./subdomain"
+    providers = {
+        google.domain = "google.prod"
+        google.subdomain = "google.stage"
+    }
+    glue_zone = "${var.glue_zone == ""
+                   ? local.cloud_zone
+                   : local.short_cloud_zone}"
+    subdomain_fqdn = "stage.${var.glue_zone == ""
+                             ? local.cloud_fqdn
+                             : local.short_cloud_fqdn}"
+    env_uuid = "${var.env_uuid}"
+}
+
+/*****/
+
+module "site_subdomain" {
+    source = "./subdomain"
+    providers = {
+        google.domain = "google.prod"
+        google.subdomain = "google.prod"
+    }
+    glue_zone = "${google_dns_managed_zone.domain.name}"
+    subdomain_fqdn = "site.${local.domain}"
+    env_uuid = "${var.env_uuid}"
+}
+
+/*****/
 
 module "legacy" {
     source = "./legacy"
     providers = { google = "google.prod" }
-    legacy_domains = "${var.legacy_domains}"
-    domain = "${local.name}"
-    project = "${var.project}"
-}
-
-locals {
-    name_to_zone = "${merge(map("fqdn", google_dns_managed_zone.domain.name),
-                            module.cloud.name_to_zone,
-                            module.site.name_to_zone)}"
+    legacy_domains = ["${var.legacy_domains}"]
+    domain_zone = "${google_dns_managed_zone.domain.name}"
+    glue_count = "${var.glue_zone == ""
+                    ? 0
+                    : length(var.legacy_domains)}"
+    env_uuid = "${var.env_uuid}"
 }
 
 output "name_to_zone" {
-    value = "${local.name_to_zone}"
+    value = "${merge(map("domain", google_dns_managed_zone.domain.name),
+                     module.cloud_subdomain.name_to_zone,
+                     module.test_cloud_subdomain.name_to_zone,
+                     module.stage_cloud_subdomain.name_to_zone,
+                     module.site_subdomain.name_to_zone,
+                     module.legacy.name_to_zone)}"
     sensitive = true
 }
 
-output "gateways" {
-    value = {
-        cloud = "${module.cloud.gateway}"
-        site = "${module.site.gateway}"
-    }
+output "name_to_ns" {
+    value = "${merge(map("domain", google_dns_managed_zone.domain.name_servers),
+                     module.cloud_subdomain.name_to_ns,
+                     module.test_cloud_subdomain.name_to_ns,
+                     module.stage_cloud_subdomain.name_to_ns,
+                     module.site_subdomain.name_to_ns,
+                     module.legacy.name_to_ns)}"
     sensitive = true
 }
 
-resource "google_dns_record_set" "mail" {
-    managed_zone = "${local.name_to_zone["fqdn"]}"
-    name = "mail.${google_dns_managed_zone.domain.dns_name}"
-    type = "CNAME"
-    rrdatas = ["${module.site.gateway}."]
-    ttl = "300"
+output "name_to_fqdn" {
+    value = "${merge(map("domain", local.domain),
+                     module.cloud_subdomain.name_to_fqdn,
+                     module.test_cloud_subdomain.name_to_fqdn,
+                     module.stage_cloud_subdomain.name_to_fqdn,
+                     module.site_subdomain.name_to_fqdn,
+                     module.legacy.name_to_fqdn)}"
+    sensitive = true
 }
 
-resource "google_dns_record_set" "domain_mx" {
-    managed_zone = "${local.name_to_zone["fqdn"]}"
-    name = "${google_dns_managed_zone.domain.dns_name}"
-    type = "MX"
-    rrdatas = ["10 mail.${google_dns_managed_zone.domain.dns_name}"]
-    ttl = "300"
-}
-
-resource "google_dns_record_set" "home" {
-    managed_zone = "${local.name_to_zone["fqdn"]}"
-    name = "home.${google_dns_managed_zone.domain.dns_name}"
-    type = "CNAME"
-    rrdatas = ["${module.site.gateway}."]
-    ttl = "300"
-}
-
-resource "google_dns_record_set" "www" {
-    managed_zone = "${local.name_to_zone["fqdn"]}"
-    name = "www.${google_dns_managed_zone.domain.dns_name}"
-    type = "CNAME"
-    rrdatas = ["${module.site.gateway}."]
-    ttl = "300"
+output "legacy_shortnames" {
+    value = ["${keys(module.legacy.name_to_zone)}"]
+    sensitive = true
 }
