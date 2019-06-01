@@ -108,8 +108,7 @@ output "site_gateway_external_ip" {
 
 locals {
     gateways = "${map(lookup(local.name_to_zone, "cloud"), module.gateway.external_ip,
-                      lookup(local.name_to_zone, "site"), module.site_gateway_ip.ip
-    )}"
+                      lookup(local.name_to_zone, "site"), module.site_gateway_ip.ip)}"
 }
 
 module "dns_records" {

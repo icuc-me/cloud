@@ -31,7 +31,7 @@ resource "google_dns_managed_zone" "legacy" {
     name = "${replace(var.legacy_domains[count.index], local.d, local.h)}"
     dns_name = "${var.legacy_domains[count.index]}."
     visibility = "public"
-    description = "Managed for terraform environment ${var.env_uuid} by project ${data.google_client_config.domain.project}"
+    description = "Managed by terraform environment ${var.env_uuid} for project ${data.google_client_config.domain.project}"
 }
 
 // ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html
@@ -45,14 +45,14 @@ resource "google_dns_record_set" "glue" {
 }
 
 data "template_file" "shortnames" {
-    count = "${length(google_dns_managed_zone.legacy.*.dns_name)}"
+    count = "${length(var.legacy_domains)}"
     template = "${element(split(local.d,
                                 google_dns_managed_zone.legacy.*.dns_name[count.index]),
                           0)}"
 }
 
 data "template_file" "fqdns" {
-    count = "${length(google_dns_managed_zone.legacy.*.dns_name)}"
+    count = "${length(var.legacy_domains)}"
     template = "${substr(google_dns_managed_zone.legacy.*.dns_name[count.index],
                          0,
                          length(google_dns_managed_zone.legacy.*.dns_name[count.index]) - 1)}"
