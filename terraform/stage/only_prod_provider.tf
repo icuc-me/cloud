@@ -1,6 +1,6 @@
 
 provider "acme" {
-    version = "~> 1.1"
+    version = "~> 1.3"
     server_url = "https://acme-v02.api.letsencrypt.org/directory"
 }
 
