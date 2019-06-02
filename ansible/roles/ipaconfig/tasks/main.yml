@@ -24,10 +24,30 @@
     record_ttl: '{{ item.ttl if "ttl" in item else "300" }}'
     record_type: '{{ item.type if "type" in item else omit }}'
     record_value: '{{ item.value | mandatory }}'
-    state: '{{ item.state if "state" in item else omit }}'
+    state: '{{ item.state if "state" in item else "present" }}'
     zone_name: '{{ item.zone | mandatory }}'
   environment:
     IPA_HOST: '{{ ipaserver_hostname }}'
     IPA_USER: '{{ ipaserver_admin_principal }}'
     IPA_PASS: '{{ ipaserver_admin_password }}'
   with_items: '{{ ipaserver_dnsrecords }}'
+
+- name: User entries exist
+  ipa_user:
+    displayname: '{{ item.displayname if "displayname" in item else omit }}'
+    gidnumber: '{{ item.gidnumber if "gidnumber" in item else omit }}'
+    givenname: '{{ item.givenname if "givenname" in item else omit }}'
+    loginshell: '{{ item.loginshell if "loginshell" in item else omit }}'
+    mail: '{{ item.mail if "mail" in item else omit }}'
+    password: '{{ item.password if "password" in item else omit }}'
+    sn: '{{ item.sn if "sn" in item else omit }}'
+    sshpubkey: '{{ item.sshpubkey if "sshpubkey" in item else omit }}'
+    state: '{{ item.state if "state" in item else "present" }}'
+    uid: '{{ item.uid | mandatory }}'
+    uidnumber: '{{ item.uidnumber if "uidnumber" in item else omit }}'
+    update_password: '{{ item.update_password if "update_password" in item else "on_create" }}'
+  environment:
+    IPA_HOST: '{{ ipaserver_hostname }}'
+    IPA_USER: '{{ ipaserver_admin_principal }}'
+    IPA_PASS: '{{ ipaserver_admin_password }}'
+  with_items: '{{ ipaserver_users }}'

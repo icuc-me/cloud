@@ -11,3 +11,8 @@ ipaserver_admin_password: "Secret123"
 # name*, ttl, type, value*, state, zone*
 # (* == mandatory)
 ipaserver_dnsrecords: []
+
+# List of dictionaries containing keys for ipa_user parameters:
+# uid*, uidnumber, gid, ...
+# (* == mandatory)
+ipaserver_users: []

@@ -4,3 +4,5 @@
 # name*, ttl, type, value*, state, zone*
 # (* == mandatory)
 ipaserver_dnsrecords: '{{ _vault_ipaserver_dnsrecords }}'
+
+ipaserver_users: '{{ _vault_ipaserver_users }}'
