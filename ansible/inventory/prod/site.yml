@@ -34,6 +34,10 @@ all:
                 ipa2: {}
             vars:
                 ipaserver_is_replica: True
+        ipaconfig:
+            hosts:
+                ipa1: {}
+                ipa2: {}
         ipaclients:
             hosts:
                 vmhost1: {}

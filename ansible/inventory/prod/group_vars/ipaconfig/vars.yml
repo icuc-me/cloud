@@ -1,0 +1,6 @@
+---
+
+# List of dictionaries containing keys for ipa_dnsrecord parameters:
+# name*, ttl, type, value*, state, zone*
+# (* == mandatory)
+ipaserver_dnsrecords: '{{ _vault_ipaserver_dnsrecords }}'

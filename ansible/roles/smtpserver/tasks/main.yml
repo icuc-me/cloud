@@ -62,7 +62,6 @@
     name: emailalias
   vars:
     aliases: '{{ email_aliases }}'
-  notify: "reload postfix"
 
 - name: The postfix service is enabled to start on boot
   systemd:
