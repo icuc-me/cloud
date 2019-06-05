@@ -20,8 +20,8 @@ const (
 
 var envVars map[string]string
 var requiredOutputKeys = [...]string{
-	"gateway_external_ip",
-	"gateway_private_ip",
+	"cloud_gateway_external_ip",
+	"cloud_gateway_private_ip",
 	"private_network",
 	"public_network",
 	"strongbox_uris",
