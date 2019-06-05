@@ -81,57 +81,6 @@ output "legacy_shortnames" {
     value = ["${module.project_dns.legacy_shortnames}"]
     sensitive = true
 }
-
-// ref: https://www.terraform.io/docs/providers/acme/r/registration.html
-resource "tls_private_key" "reg_private_key" {
-    algorithm = "RSA"
-    rsa_bits = 4096
-}
-
-resource "acme_registration" "reg" {
-    account_key_pem = "${tls_private_key.reg_private_key.private_key_pem}"
-    email_address   = "${local.strongbox_contents["acme_reg_ename"]}"
-}
-
-resource "tls_private_key" "cert_private_key" {
-    algorithm = "RSA"
-    rsa_bits = 4096
-}
-
-locals {
-    wildfmt = "*.%s"
-    sans = ["${formatlist(local.wildfmt,
-                          concat(list(lookup(module.project_dns.name_to_fqdn, "domain"),
-                                      lookup(module.project_dns.name_to_fqdn, "site"),
-                                      lookup(module.project_dns.name_to_fqdn, "cloud")),
-                                 local.canonical_legacy_domains,
-                                 ))}"]
-}
-
-resource "acme_certificate" "fqdn_certificate" {
-    depends_on = ["module.project_dns"]  // not all resources are direct
-    account_key_pem = "${acme_registration.reg.account_key_pem}"
-    common_name = "${module.project_dns.name_to_fqdn["domain"]}"
-    subject_alternative_names = ["${local.sans}"]
-    key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
-    min_days_remaining = "${local.is_prod == 1 ? 20 : 0}"
-    certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
-    // decouple from default nameservers on runtime host
-    recursive_nameservers = ["8.8.8.8:53", "8.8.4.4:53"]  // docs say they need ports
-
-    dns_challenge {
-        provider = "gcloud"
-        config {
-            // 5 & 180 (default) too quick & slow, root entry needs more time
-            GCE_POLLING_INTERVAL = "10"
-            GCE_PROPAGATION_TIMEOUT = "300"
-            GCE_TTL = "60"
-            GCE_PROJECT = "${local.self["PROJECT"]}"
-            GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
-        }
-    }
-}
-
 output "uuid" {
     value = "${var.UUID}"
     sensitive = true
