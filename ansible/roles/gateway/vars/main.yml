@@ -1,8 +1,5 @@
 ---
 
-# Required for use of older python/firewalld bindings
-ansible_python_interpreter: 'python3'
-
 gateway_keep_zones:
     - 'block'
     - 'drop'

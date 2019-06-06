@@ -24,6 +24,7 @@ all:
         ansible_ssh_pass: '{{ _vault_admin_userpass }}'
         ansible_become_pass: '{{ _vault_admin_userpass }}'
         system_hostname: '{{ _vault_system_hostname }}'
+        ansible_python_interpreter: 'python3'
     children:
         gateways:
             hosts:
