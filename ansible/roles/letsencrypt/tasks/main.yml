@@ -1,0 +1,32 @@
+---
+
+- name: Local copy of certificate and key exist
+  assert:
+      that:
+          - 'letsencrypt_cert_filepath is file'
+          - 'letsencrypt_key_filepath is file'
+
+- name: The ca-certificates package is always the latest version
+  package:
+      name: ca-certificates
+      state: latest
+  notify: Refresh Trusted CAs
+
+- name: Let's Encrypt intermediate and related root certificates are downloaded
+  command: 'curl -LO "{{ item }}"'
+  args:
+      chdir: '/etc/pki/ca-trust/source/anchors/'
+      creates: '/etc/pki/ca-trust/source/anchors/{{ item | basename }}'
+  notify: Refresh Trusted CAs
+  with_items: '{{ letsencrypt_chain_urls }}'
+
+- name: Deploy Let's Encrypt certificate file
+  copy:
+      src: '{{ item.key }}'
+      dest: '{{ item.value }}'
+      mode: '0644'
+      owner: 'root'
+      group: 'root'
+  with_dict:
+      '{{ letsencrypt_cert_filepath }}': '/etc/pki/tls/certs/letsencrypt.cert.pem'
+      '{{ letsencrypt_key_filepath }}': '/etc/pki/tls/private/letsencrypt.key'

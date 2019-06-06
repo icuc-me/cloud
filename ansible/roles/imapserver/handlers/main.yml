@@ -1,0 +1,6 @@
+---
+
+- name: Dovecot service is resetarted
+  systemd:
+    name: "dovecot"
+    state: "restarted"

@@ -1,0 +1,37 @@
+---
+
+- name: Required packages are installed
+  package:
+    name: "{{ dovecot_packages }}"
+    state: present
+
+- name: IMAP services are allowed through the firewall
+  firewalld:
+      immediate: True
+      permanent: True
+      service: '{{ item }}'
+      state: 'enabled'
+  with_items:
+      - "imaps"
+      - "imap"
+
+- name: Render dovecot configuration from templates
+  template:
+    src: "{{ item }}"
+    dest: "/etc/dovecot/conf.d/{{ item }}"
+    backup: True
+    lstrip_blocks: True
+    mode: "0640"
+    owner: "root"
+    group: "root"
+    setype: "dovecot_etc_t"
+  with_fileglob:
+      - '{{ role_path }}/templates/'
+  notify:
+    - restart dovecot
+
+- name: Dovecot service is enabled and started
+  systemd:
+    name: "dovecot"
+    state: "started"
+    enabled: "True"

@@ -1,0 +1,7 @@
+---
+
+dovecot_packages:
+    - dovecot
+    - cyrus-sasl-plain
+    - postfix
+    - python3-firewall
