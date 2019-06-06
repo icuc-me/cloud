@@ -1,13 +1,13 @@
 
 provider "acme" {
-    version = "~> 1.1"
+    version = "~> 1.3"
     server_url = "https://acme-v02.api.letsencrypt.org/directory"
 }
 
 // Default for this environment
 
 provider "google" {
-    version = "~> 2.2"
+    version = "~> 2.5"
     credentials = "${var.PROD_SECRETS["CREDENTIALS"]}"
     project = "${var.PROD_SECRETS["PROJECT"]}"
     region = "${var.PROD_SECRETS["REGION"]}"
@@ -18,7 +18,7 @@ provider "google" {
 // Aliases for all environments
 
 provider "google" {
-    version = "~> 2.2"
+    version = "~> 2.5"
     alias = "test"
     credentials = "${var.TEST_SECRETS["CREDENTIALS"]}"
     project = "${var.TEST_SECRETS["PROJECT"]}"
@@ -28,7 +28,7 @@ provider "google" {
 }
 
 provider "google" {
-    version = "~> 2.2"
+    version = "~> 2.5"
     alias = "stage"
     credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
     project = "${var.STAGE_SECRETS["PROJECT"]}"
@@ -38,7 +38,7 @@ provider "google" {
 }
 
 provider "google" {
-    version = "~> 2.2"
+    version = "~> 2.5"
     alias = "prod"
     credentials = "${var.PROD_SECRETS["CREDENTIALS"]}"
     project = "${var.PROD_SECRETS["PROJECT"]}"

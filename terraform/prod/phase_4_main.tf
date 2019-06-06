@@ -10,8 +10,23 @@ data "terraform_remote_state" "phase_2" {
     workspace = "phase_2"
 }
 
+data "terraform_remote_state" "phase_3" {
+    backend = "gcs"
+    config {
+        credentials = "${local.self["CREDENTIALS"]}"
+        project = "${local.self["PROJECT"]}"
+        region = "${local.self["REGION"]}"
+        bucket = "${local.self["BUCKET"]}"
+        prefix = "${local.self["PREFIX"]}"
+    }
+    workspace = "phase_3"
+}
+
 locals {
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
+    name_to_zone = "${data.terraform_remote_state.phase_3.name_to_zone}"
+    legacy_shortnames = ["${data.terraform_remote_state.phase_3.legacy_shortnames}"]
+    canonical_legacy_domains = ["${data.terraform_remote_state.phase_3.canonical_legacy_domains}"]
 }
 
 // VPC subnetworks and firewalls required by all instances and containers
@@ -47,6 +62,11 @@ output "private_network" {
     sensitive = true
 }
 
+resource "tls_private_key" "admin_sshkey" {
+  algorithm   = "RSA"
+  ecdsa_curve = "4096"
+}
+
 // Main firewall and VPN for filtering external traffic to internal subnetwork
 module "gateway" {
     source = "./modules/gateway"
@@ -55,126 +75,55 @@ module "gateway" {
     env_uuid = "${var.UUID}"
     public_subnetwork = "${module.project_networks.public["subnetwork_name"]}"
     private_subnetwork = "${module.project_networks.private["subnetwork_name"]}"
+    admin_username = "${local.strongbox_contents["admin_username"]}"
+    admin_sshkey = "${tls_private_key.admin_sshkey.private_key_pem}"
+    setup_data = "${local.strongbox_contents["gateway_setup_data"]}"
 }
 
-output "gateway_external_ip" {
+output "cloud_gateway_external_ip" {
     value = "${module.gateway.external_ip}"
     sensitive = true
 }
 
-output "gateway_private_ip" {
+output "cloud_gateway_private_ip" {
     value = "${module.gateway.private_ip}"
     sensitive = true
 }
 
-locals {
-    domain = "${local.is_prod == 1
-                ? local.strongbox_contents["fqdn"]
-                : join(".", list(var.UUID, local.strongbox_contents["fqdn"]))}"
-    legacy_domains = "${split(",", local.strongbox_contents["legacy_domains"])}"
-    test_legacy_domain_fmt = "%s.${local.domain}"
+data "template_file" "legacy_zones" {
+    count = "${length(local.legacy_shortnames)}"
+    template = "${lookup(local.name_to_zone,
+                         local.legacy_shortnames[count.index])}"
 }
 
-data "template_file" "legacy_domains" {
-    count = "${length(local.legacy_domains)}"
-    template = "${local.is_prod == 1
-                  ? local.legacy_domains[count.index]
-                  : format(local.test_legacy_domain_fmt,
-                           local.legacy_domains[count.index])}"
+// Assumed that production environment deployment always happens behind the site gateway
+module "site_gateway_ip" {
+    source = "./modules/myip"
 }
 
-module "project_dns" {
-    source = "./modules/project_dns"
-    providers {
-        google.test = "google.test"
-        google.stage = "google.stage"
-        google.prod = "google.prod"
-    }
-    domain = "${local.domain}"
-    cloud_subdomain = "${local.strongbox_contents["cloud_subdomain"]}"
-    site_subdomain = "${local.strongbox_contents["site_subdomain"]}"
-    legacy_domains = "${data.template_file.legacy_domains.*.rendered}"
-    gateway = "${module.gateway.external_ip}"
-    project = "${local.self["PROJECT"]}"
-    env_name = "${var.ENV_NAME}"
-}
-
-output "fqdn" {
-    value = "${module.project_dns.fqdn}"
+output "site_gateway_external_ip" {
+    value = "${module.site_gateway_ip.ip}"
     sensitive = true
-}
-
-output "zone" {
-    value = "${module.project_dns.zone}"
-    sensitive = true
-}
-
-
-output "ns" {
-    value = "${module.project_dns.ns}"
-    sensitive = true
-}
-
-output "name_to_zone" {
-    value = "${module.project_dns.name_to_zone}"
-    sensitive = true
-}
-
-output "gateways" {
-    value = "${module.project_dns.gateways}"
-    sensitive = true
-}
-
-// ref: https://www.terraform.io/docs/providers/acme/r/registration.html
-resource "tls_private_key" "reg_private_key" {
-    algorithm = "RSA"
-    rsa_bits = 4096
-}
-
-resource "acme_registration" "reg" {
-    account_key_pem = "${tls_private_key.reg_private_key.private_key_pem}"
-    email_address   = "${local.strongbox_contents["acme_reg_ename"]}"
-}
-
-resource "tls_private_key" "cert_private_key" {
-    algorithm = "RSA"
-    rsa_bits = 4096
 }
 
 locals {
-    wildfmt = "*.%s"
-    site_fqdn = "${local.strongbox_contents["cloud_subdomain"]}.${local.strongbox_contents["fqdn"]}"
-    cloud_fqdn = "${local.strongbox_contents["site_subdomain"]}.${local.strongbox_contents["fqdn"]}"
-    _sans = ["${formatlist(local.wildfmt,
-                           concat(list(local.strongbox_contents["fqdn"],
-                                       local.site_fqdn,
-                                       local.cloud_fqdn),
-                                  data.template_file.legacy_domains.*.rendered,
-                                  ))}"]
-    sans = ["${concat(data.template_file.legacy_domains.*.rendered,
-                      local._sans)}"]
+    gateways = "${map(lookup(local.name_to_zone, "cloud"), module.gateway.external_ip,
+                      lookup(local.name_to_zone, "site"), module.site_gateway_ip.ip)}"
 }
 
-resource "acme_certificate" "fqdn_certificate" {
-    account_key_pem = "${acme_registration.reg.account_key_pem}"
-    common_name = "${local.strongbox_contents["fqdn"]}"
-    subject_alternative_names = ["${local.sans}"]
-    key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
-    min_days_remaining = "${local.is_prod == 1 ? 20 : 0}"
-    certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
-
-    dns_challenge {
-        provider = "gcloud"
-        // decouple from default nameservers on runtime host
-        recursive_nameservers = ["8.8.8.8:53", "8.8.4.4:53"]  // docs say they need ports
-        config {
-            // 5 & 180 (default) too quick & slow, root entry needs more time
-            GCE_POLLING_INTERVAL = "10"
-            GCE_PROPAGATION_TIMEOUT = "300"
-            GCE_PROJECT = "${local.self["PROJECT"]}"
-            GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
-        }
+module "dns_records" {
+    source = "./modules/dns_records"
+    domain_zone = "${lookup(local.name_to_zone, "domain")}"
+    gateways = "${local.gateways}"
+    gateway_count = "2"
+    service_destinations {
+        mail = "${lookup(local.name_to_zone, "site")}"
+        www = "${lookup(local.name_to_zone, "site")}"
+        file = "${lookup(local.name_to_zone, "site")}"
     }
+    managed_zones = ["${concat(data.template_file.legacy_zones.*.rendered,
+                               list(lookup(local.name_to_zone, "cloud"),
+                                    lookup(local.name_to_zone, "site")))}"]
 }
 
 output "uuid" {

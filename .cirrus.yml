@@ -5,6 +5,7 @@ env:
     CIRRUS_SHELL: '/bin/bash'
     CIRRUS_WORKING_DIR: '/root/$CIRRUS_REPO_NAME'
     ANCESTOR_BRANCH_COMMIT: "${CIRRUS_BASE_SHA}"
+    TEST_UNTAG: "true"
 
     # Images
     REG_NS: "quay.io/r4z0r7o3"
@@ -18,7 +19,7 @@ env:
     TEST_SECRETS: ENCRYPTED[35d9973aad5c5f825cf594bfb932e7c6a32f2195d2408773b47dfaf0aeb9f0c756df59c995fc3ca15948736494a3ced4]
     TEST_CREDS: ENCRYPTED[ead785ff17f0a2d00b912af4a2531658cc0dc28b4aedf08e1f9ca3d6e7167cbb99d30e09c4234377a9cd507273053a7e]
 
-timeout_in: 30m
+timeout_in: 60m
 
 docker_builder:
     name: 'docker_builder'
@@ -50,8 +51,9 @@ docker_builder_validate_task:
     smoke_test_env_script: './bin/ci.sh smoke'
     validate_test_env_script: './bin/ci.sh validate'
     always:
-        untag_script: './bin/ci.sh untag'  # ephemeral image
+        untag_script: 'test $TEST_UNTAG != true || ./bin/ci.sh untag'  # ephemeral image
         clean_script: './bin/ci.sh clean'
+    timeout_in: 30m
 
 validate_task:
     only_if: $CIRRUS_BRANCH == "master"

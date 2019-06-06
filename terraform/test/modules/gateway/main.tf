@@ -66,6 +66,10 @@ resource "google_compute_address" "gateway" {
     }
 }
 
+data "tls_public_key" "admin_pubsshkey" {
+    private_key_pem = "${var.admin_sshkey}"
+}
+
 locals {
     c = ":"  // illegal character
     _gateway_nat_ip = "${concat(google_compute_address.gateway-ephemeral-external.*.address,
@@ -100,6 +104,9 @@ resource "google_compute_instance" "gateway-instance" {
         subnetwork = "${data.google_compute_subnetwork.private.self_link}"
         network_ip = "${google_compute_address.gateway.1.address}"
         // N/B: must *NOT* have an access_config block to prevent NAT address assignment
+    }
+    metadata {
+        ssh-keys = "${var.admin_username}:${data.tls_public_key.admin_pubsshkey.public_key_openssh}"
     }
 
     connection {

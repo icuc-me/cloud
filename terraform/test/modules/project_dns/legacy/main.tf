@@ -2,16 +2,20 @@
 provider "google" {}
 
 variable "legacy_domains" {
-    description = "List of legacy FQDNs to manage with CNAMES into var.domain"
+    description = "List of complete legacy FQDNs to manage"
     type = "list"
 }
 
-variable "domain" {
-    description = "FQDN for legacy domain's to point at"
+variable "domain_zone" {
+    description = "Zone of primary domain to use when glue_count != 0."
 }
 
-variable "project" {
-    description = "Name of project managing these resources"
+variable "glue_count" {
+    description = "Zero, or the number of legacy_domains to add glue records for in domain_zone."
+}
+
+variable "env_uuid" {
+    description = "Environment name and uuid managing these resources"
 }
 
 locals {
@@ -19,71 +23,55 @@ locals {
     h = "-"
 }
 
+data "google_client_config" "domain" {}
+
 // ref: https://www.terraform.io/docs/providers/google/r/dns_managed_zone.html
 resource "google_dns_managed_zone" "legacy" {
     count = "${length(var.legacy_domains)}"
-
     name = "${replace(var.legacy_domains[count.index], local.d, local.h)}"
     dns_name = "${var.legacy_domains[count.index]}."
     visibility = "public"
-    description = "Managed by terraform from project ${var.project}"
+    description = "Managed by terraform environment ${var.env_uuid} for project ${data.google_client_config.domain.project}"
 }
 
-data "template_file" "names" {
+// ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html
+resource "google_dns_record_set" "glue" {
+    count = "${var.glue_count}"
+    managed_zone = "${var.domain_zone}"
+    name = "${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
+    type = "NS"
+    rrdatas = ["${google_dns_managed_zone.legacy.*.name_servers[count.index]}"]
+    ttl = "${60 * 60 * 24}"
+}
+
+data "template_file" "shortnames" {
     count = "${length(var.legacy_domains)}"
     template = "${element(split(local.d,
                                 google_dns_managed_zone.legacy.*.dns_name[count.index]),
                           0)}"
 }
 
-resource "google_dns_record_set" "mx" {
+data "template_file" "fqdns" {
     count = "${length(var.legacy_domains)}"
-
-    managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
-    name = "${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
-    type = "MX"
-    rrdatas = ["10 mail.${var.domain}."]
-    ttl = "3600"
-}
-
-resource "google_dns_record_set" "mail" {
-    count = "${length(var.legacy_domains)}"
-
-    managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
-    name = "mail.${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
-    type = "CNAME"
-    rrdatas = ["mail.${var.domain}."]
-    ttl = "3600"
-}
-
-resource "google_dns_record_set" "www" {
-    count = "${length(var.legacy_domains)}"
-
-    managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
-    name = "www.${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
-    type = "CNAME"
-    rrdatas = ["www.${var.domain}."]
-    ttl = "3600"
-}
-
-resource "google_dns_record_set" "home" {
-    count = "${length(var.legacy_domains)}"
-
-    managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
-    name = "home.${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
-    type = "CNAME"
-    rrdatas = ["home.${var.domain}."]
-    ttl = "3600"
-}
-
-// add dependency on resource
-data "template_file" "zones" {
-    count = "${length(var.legacy_domains)}"
-    template = "${google_dns_managed_zone.legacy.*.name[count.index]}"
+    template = "${substr(google_dns_managed_zone.legacy.*.dns_name[count.index],
+                         0,
+                         length(google_dns_managed_zone.legacy.*.dns_name[count.index]) - 1)}"
 }
 
 output "name_to_zone" {
-    value = "${zipmap(data.template_file.names.*.rendered,
-               data.template_file.zones.*.rendered)}"
+    value = "${zipmap(data.template_file.shortnames.*.rendered,
+                      google_dns_managed_zone.legacy.*.name)}"
+    sensitive = true
+}
+
+output "name_to_ns" {
+    value = "${zipmap(data.template_file.shortnames.*.rendered,
+                      google_dns_managed_zone.legacy.*.name_servers)}"
+    sensitive = true
+}
+
+output "name_to_fqdn" {
+    value = "${zipmap(data.template_file.shortnames.*.rendered,
+                      data.template_file.fqdns.*.rendered)}"
     sensitive = true
 }
