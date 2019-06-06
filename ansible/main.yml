@@ -26,10 +26,9 @@
       - role: ipaserver
         when: "'ipareplicas' in group_names"
 
-      # configuration is shared
-      - strategy: serial
-        role: ipaconfig
-        when: "'ipaservers' in group_names or 'ipareplicas' in group_names"
+      # configuration is replicated, only update one server
+      - role: ipaconfig
+        when: inventory_hostname == groups['ipareplicas'][-1]
 
       - role: ipaclient
         when: "'ipaclients' in group_names and

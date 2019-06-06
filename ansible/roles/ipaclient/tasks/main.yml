@@ -56,4 +56,5 @@
 - name: Client able to obtain admin kerberos ticket
   script: 'kinit.exp admin {{ ipaserver_admin_password }} {{ ipaclient_realm }}'
   no_log: True
+  changed_when: False
   when: ipaserver_admin_password | default('',True) | trim | length

@@ -31,7 +31,7 @@
     IPA_USER: '{{ ipaserver_admin_principal }}'
     IPA_PASS: '{{ ipaserver_admin_password }}'
   register: _ipa_dnsrecord
-  failed_when: _ipa_dnsrecord is failure and \
+  failed_when: _ipa_dnsrecord is failure and
                not _ipa_dnsrecord.msg is search('no modifications to be performed')
   with_items: '{{ ipaserver_dnsrecords }}'
 
