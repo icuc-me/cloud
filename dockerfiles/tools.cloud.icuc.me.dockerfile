@@ -5,7 +5,7 @@ COPY /dockerfiles/tools.cloud.icuc.me.dockerfile /root/
 
 ENV PACKER_VERSION="1.3.5" \
     OS_ARCH="amd64" \
-    TFVER="0.11.13"
+    TFVER="0.11.14"
 ENV TFURL="https://releases.hashicorp.com/terraform/${TFVER}/terraform_${TFVER}_linux_${OS_ARCH}.zip" \
     PACKER_DIST_FILENAME="packer_${PACKER_VERSION}_linux_${OS_ARCH}.zip"
 

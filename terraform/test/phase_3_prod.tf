@@ -123,3 +123,18 @@ resource "acme_certificate" "domain" {
     min_days_remaining = "${local.is_prod == 1 ? 20 : 3}"
     certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
 }
+
+resource "local_file" "public_key" {
+    sensitive_content = "${tls_private_key.cert_private_key.public_key_pem}"
+    filename = "${path.root}/output_files/letsencrypt.key.pub"
+}
+
+resource "local_file" "private_key" {
+    sensitive_content = "${tls_private_key.cert_private_key.private_key_pem}"
+    filename = "${path.root}/output_files/letsencrypt.key"
+}
+
+resource "local_file" "cert" {
+    sensitive_content = "${acme_certificate.domain.certificate_pem}"
+    filename = "${path.root}/output_files/letsencrypt.cert.pem"
+}
