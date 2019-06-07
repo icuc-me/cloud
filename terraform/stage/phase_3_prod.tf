@@ -122,4 +122,30 @@ resource "acme_certificate" "domain" {
     key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
     min_days_remaining = "${local.is_prod == 1 ? 20 : 3}"
     certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
+    dns_challenge {
+        provider = "gcloud"
+        config {
+            // 5 & 180 (default) too quick & slow, root entry needs more time
+            GCE_POLLING_INTERVAL = "10"
+            GCE_PROPAGATION_TIMEOUT = "300"
+            GCE_TTL = "60"
+            GCE_PROJECT = "${local.self["PROJECT"]}"
+            GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
+        }
+    }
+}
+
+resource "local_file" "public_key" {
+    sensitive_content = "${tls_private_key.cert_private_key.public_key_pem}"
+    filename = "${path.root}/output_files/letsencrypt.key.pub"
+}
+
+resource "local_file" "private_key" {
+    sensitive_content = "${tls_private_key.cert_private_key.private_key_pem}"
+    filename = "${path.root}/output_files/letsencrypt.key"
+}
+
+resource "local_file" "cert" {
+    sensitive_content = "${acme_certificate.domain.certificate_pem}"
+    filename = "${path.root}/output_files/letsencrypt.cert.pem"
 }
