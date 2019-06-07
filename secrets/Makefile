@@ -1,11 +1,12 @@
 
 SRC_DIR=$(shell realpath "$$PWD/../")
-TEST_UUID=test-$(shell uuidgen | cut -d - -f 1,4 | tr -d -)
-STAGE_UUID=stage-6f0ea558b32c
-PROD_UUID=prod-89db7eecb49d
+TEST_UUID?=test-$(shell uuidgen | cut -d - -f 1,4 | tr -d -)
+STAGE_UUID?=stage-6f0ea558b32c
+PROD_UUID?=prod-89db7eecb49d
 
 .PHONY: all
 all: guard-ENV_NAME $(ENV_NAME)-uuid $(ENV_NAME)-backend.auto.tfvars $(ENV_NAME)-runtime.auto.tfvars
+	@echo ">>>>> Operating with UUID $(shell cat $(ENV_NAME)-uuid)"
 
 clean:
 	rm -fv *.auto.tfvars
@@ -19,10 +20,7 @@ guard-%:
 	fi;
 
 %-uuid: guard-ENV_NAME
-	( [[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "test" ]] ) || echo "$(TEST_UUID)" > test-uuid
-	( [[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "stage" ]] ) || echo "$(STAGE_UUID)" > stage-uuid
-	( [[ -r "$(ENV_NAME)-uuid" ]] && [[ "$*" == "prod" ]] ) || echo "$(PROD_UUID)" > prod-uuid
-	touch "$@"
+	@test -r $@ || echo "$(TEST_UUID)" > $@
 
 test-%.auto.tfvars: test-uuid
 	@[[ -r "$@" ]] || bash $(SRC_DIR)/bin/secrets.sh test

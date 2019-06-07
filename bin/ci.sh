@@ -13,6 +13,10 @@ source $(dirname $0)/lib.sh
     die "Expecting non-empty \$IMG_TAG" 36
 [[ -n "$TEST_IMG_TAG" ]] || \
     die "Expecting non-empty \$TEST_IMG_TAG" 36
+[[ -n "$CIRRUS_BUILD_ID" ]] || \
+    die "Expecting non-empty \$CIRRUS_BUILD_ID"
+
+export TEST_UUID="test_$CIRRUS_BUILD_ID"
 
 if [[ "$1" != "push" ]]
 then  # We should use skopeo
@@ -30,37 +34,43 @@ case "$1" in
         unset TEST_SECRETS
         bin/env_file.sh TEST_CREDS "$CIRRUS_WORKING_DIR/secrets/50bdcb31cd804734a41ad420bc35fae7.json"
         unset TEST_CREDS
+
+        echo "Configuring credentials"
+        cd "$CIRRUS_WORKING_DIR/secrets"
+        make ENV_NAME=test TEST_UUID=$TEST_UUID
+
         echo "Recovering cached go directories"
         mkdir -p "$(go env GOPATH)"
         rsync --recursive --links --safe-links --sparse "/usr/src/go/" "$(go env GOPATH)"
         mkdir -p "$(go env GOCACHE)"
         rsync --recursive --links --safe-links --sparse "/var/cache/go/" "$(go env GOCACHE)"
+
         echo "setup done"
         ;;
     verify)
         echo "Verifing repository/files/environment"
         cd $CIRRUS_WORKING_DIR/validate
-        make verify ANCESTOR_BRANCH_COMMIT=$CIRRUS_BASE_SHA HEAD_COMMIT=$CIRRUS_CHANGE_IN_REPO
+        make verify ANCESTOR_BRANCH_COMMIT=$CIRRUS_BASE_SHA HEAD_COMMIT=$CIRRUS_CHANGE_IN_REPO TEST_UUID=$TEST_UUID
         ;;
     lint)
         echo "Checking for lint"
         cd $CIRRUS_WORKING_DIR/validate
-        make lint
+        make lint TEST_UUID=$TEST_UUID
         ;;
     deploy)
         echo "Deploying test environment"
         cd $CIRRUS_WORKING_DIR
-        make test_env
+        make test_env TEST_UUID=$TEST_UUID
         ;;
     smoke)
         echo "Smoking test environment"
         cd $CIRRUS_WORKING_DIR/validate
-        make smoke
+        make smoke TEST_UUID=$TEST_UUID
         ;;
     validate)
         echo "Validating test environment"
         cd $CIRRUS_WORKING_DIR/validate
-        make validate
+        make validate TEST_UUID=$TEST_UUID
         ;;
     clean)
         echo "Cleaning test environment"
