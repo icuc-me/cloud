@@ -10,9 +10,15 @@ ipaserver_admin_password: "Secret123"
 # List of dictionaries containing keys for ipa_dnsrecord parameters:
 # name*, ttl, type, value*, state, zone*
 # (* == mandatory)
+# Ref: https://docs.ansible.com/ansible/latest/modules/ipa_dnsrecord_module.html#ipa-dnsrecord-module
 ipaserver_dnsrecords: []
+
+# List of dictionaries containing keys for ipa_group parameters:
+# cn*, gidnumber, group, user, ...
+# Ref: https://docs.ansible.com/ansible/latest/modules/ipa_group_module.html#ipa-group-module
+ipaserver_groups: []
 
 # List of dictionaries containing keys for ipa_user parameters:
 # uid*, uidnumber, gid, ...
-# (* == mandatory)
+# Ref: https://docs.ansible.com/ansible/latest/modules/ipa_user_module.html#ipa-user-module
 ipaserver_users: []
