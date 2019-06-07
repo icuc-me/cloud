@@ -114,6 +114,49 @@ output "img_svc_acts" {
     sensitive = true
 }
 
+// Avoids calculated-count problems later
+locals {
+    e = ""
+    c = ","
+    d = "."
+    h = "-"
+    // FQDN for stage and test assumed to contain their subdomain names,
+    // but need to add UUID to prevent clashes.
+    // see modules/project_dns/notes.txt
+    fqdn = "${local.is_prod== 1
+              ? module.strong_unbox.contents["fqdn"]
+              : join(local.d, list(var.UUID, module.strong_unbox.contents["fqdn"]))}"
+    fqdn_names = ["${split(local.d, local.fqdn)}"]
+    fqdn_parent = "${join(local.d, slice(local.fqdn_names, 1, length(local.fqdn_names)))}"
+    // Needed to attach e.g test_123abc.test.example.com into test.example.com (or similar for stage)
+    glue_zone = "${local.is_prod == 1
+                   ? local.e
+                   : replace(local.fqdn_parent, local.d, local.h)}"
+    // assumed to be shortnames unless prod-environment
+    legacy_domains = ["${split(local.c, module.strong_unbox.contents["legacy_domains"])}"]
+    // Conditionals cannot return lists, only strings, use fomatlist() as workaround
+    t = "%s"
+    legacy_domain_fmt = "${local.is_prod == 1
+                           ? local.t
+                           : join(local.d, list(local.t, local.fqdn))}"
+    canonical_legacy_domains = ["${formatlist(local.legacy_domain_fmt, local.legacy_domains)}"]
+}
+
+output "fqdn" {
+    value = "${local.fqdn}"
+    sensitive = true
+}
+
+output "glue_zone" {
+    value = "${local.glue_zone}"
+    sensitive = true
+}
+
+output "canonical_legacy_domains" {
+    value = "${local.canonical_legacy_domains}"
+    sensitive = true
+}
+
 output "uuid" {
     value = "${var.UUID}"
     sensitive = true

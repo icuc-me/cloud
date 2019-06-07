@@ -5,3 +5,4 @@ phase_?
 .terraform
 n_phases
 *-strongbox.yml
+output_files
