@@ -22,11 +22,22 @@
 
 - name: Deploy Let's Encrypt certificate file
   copy:
-      src: '{{ item.key }}'
-      dest: '{{ item.value }}'
+      src: '{{ letsencrypt_cert_filepath }}'
+      dest: '{{ letsencrypt_dest_cert_filepath }}'
       mode: '0644'
       owner: 'root'
       group: 'root'
-  with_dict:
-      '{{ letsencrypt_cert_filepath }}': '/etc/pki/tls/certs/letsencrypt.cert.pem'
-      '{{ letsencrypt_key_filepath }}': '/etc/pki/tls/private/letsencrypt.key'
+  notify: Refresh Trusted CAs
+
+- name: A group named letsencrypt exists
+  group:
+    name: letsencrypt
+    system: True
+
+- name: Deploy Let's Encrypt certificate key
+  copy:
+      src: '{{ letsencrypt_key_filepath }}'
+      dest: '{{ letsencrypt_dest_key_filepath }}'
+      mode: '0640'
+      owner: 'root'
+      group: 'letsencrypt'

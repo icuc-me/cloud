@@ -22,3 +22,10 @@
     name: postfix
     enabled: True
     state: reloaded
+
+- name: The postfix service is restarted
+  listen: "restart postfix"
+  systemd:
+    name: postfix
+    enabled: True
+    state: restarted

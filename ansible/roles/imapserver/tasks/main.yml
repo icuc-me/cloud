@@ -1,5 +1,12 @@
 ---
 
+- name: Local copy of certificate and key exist
+  assert:
+      that:
+        # From letsencrypt role
+        - 'letsencrypt_dest_cert_filepath | default("",True) | trim | length'
+        - 'letsencrypt_dest_key_filepath | default("",True) | trim | length'
+
 - name: Required packages are installed
   package:
     name: "{{ dovecot_packages }}"
@@ -15,23 +22,45 @@
       - "imaps"
       - "imap"
 
-- name: Render dovecot configuration from templates
+- name: Render dovecot drop configuration from templates
   template:
     src: "{{ item }}"
-    dest: "/etc/dovecot/conf.d/{{ item }}"
+    dest: "/etc/dovecot/conf.d/{{ item | basename }}"
     backup: True
     lstrip_blocks: True
-    mode: "0640"
+    mode: "0644"
     owner: "root"
     group: "root"
     setype: "dovecot_etc_t"
+  when: 'item | basename != "dovecot.conf"'
   with_fileglob:
-      - '{{ role_path }}/templates/'
-  notify:
-    - restart dovecot
+      - '{{ role_path }}/templates/*'
+  notify: Dovecot service is resetarted
+
+- name: Render dovecot main configuration from templates
+  template:
+    src: "dovecot.conf"
+    dest: "/etc/dovecot/dovecot.conf"
+    backup: True
+    lstrip_blocks: True
+    mode: "0644"
+    owner: "root"
+    group: "root"
+    setype: "dovecot_etc_t"
+  notify: Dovecot service is resetarted
 
 - name: Dovecot service is enabled and started
   systemd:
     name: "dovecot"
     state: "started"
     enabled: "True"
+
+- name: Dovecot user is a member of the mail and letsencrypt groups
+  user:
+      name: dovecot
+      groups:
+          - dovecot
+          - mail
+          - letsencrypt
+      system: True
+  notify: Dovecot service is resetarted

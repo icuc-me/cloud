@@ -12,6 +12,7 @@ passdb {
   # [session=yes] [setcred=yes] [failure_show_msg=yes] [max_requests=<n>]
   # [cache_key=<key>] [<service name>]
   #args = dovecot
+  args = failure_show_msg=yes max_requests=10
 }
 
 # System users (NSS, /etc/passwd, or similar).
@@ -54,6 +55,7 @@ userdb {
 
   # Override fields from passwd
   #override_fields = home=/home/virtual/%u
+  override_fields = home=/var/spool/mail/%u mail=maildir:/var/spool/mail/%u/Maildir:LAYOUT=fs
 }
 
 # Static settings generated from template <doc/wiki/UserDatabase.Static.txt>
