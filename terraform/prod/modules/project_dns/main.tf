@@ -60,11 +60,20 @@ resource "google_dns_record_set" "domain_glue" {
     ttl = "${60 * 60 * 24}"
 }
 
-locals {
-    // Other tooling dislikes the final trailing "."
-    domain = "${substr(google_dns_managed_zone.domain.dns_name,
-                       0,
-                       length(google_dns_managed_zone.domain.dns_name) - 1)}"
+// Otherwise sub-domains can be created before parent
+data "google_dns_managed_zone" "domain" {
+    depends_on = ["google_dns_managed_zone.domain", "google_dns_record_set.domain_glue"]
+    name = "${google_dns_managed_zone.domain.name}"
+}
+
+data "null_data_source" "domain" {
+    depends_on = ["google_dns_managed_zone.domain", "google_dns_record_set.domain_glue", "data.google_dns_managed_zone.domain"]
+    inputs = {
+        domain_zone = "${data.google_dns_managed_zone.domain.name}"
+        domain_name = "${substr(data.google_dns_managed_zone.domain.dns_name,
+                                0,
+                                length(data.google_dns_managed_zone.domain.dns_name) - 1)}"
+    }
 }
 
 /*****/
@@ -76,13 +85,13 @@ module "cloud_subdomain" {
         google.subdomain = "google.prod"
     }
     glue_zone = "${google_dns_managed_zone.domain.name}"
-    subdomain_fqdn = "cloud.${local.domain}"
+    subdomain_fqdn = "cloud.${data.null_data_source.domain.outputs["domain_name"]}"
     env_uuid = "${var.env_uuid}"
 }
 
 locals {
     cloud_zone = "${element(values(module.cloud_subdomain.name_to_zone), 0)}"
-    cloud_fqdn = "${element(keys(module.cloud_subdomain.name_to_zone), 0)}.${local.domain}"
+    cloud_fqdn = "${element(keys(module.cloud_subdomain.name_to_zone), 0)}.${data.null_data_source.domain.outputs["domain_name"]}"
     cloud_fqdn_elements = ["${split(local.d, local.cloud_fqdn)}"]
     // Workaround: Google does not support deeper than 6 levels of domains
     short_cloud_fqdn = "${join(local.d,
@@ -130,7 +139,7 @@ module "site_subdomain" {
         google.subdomain = "google.prod"
     }
     glue_zone = "${google_dns_managed_zone.domain.name}"
-    subdomain_fqdn = "site.${local.domain}"
+    subdomain_fqdn = "site.${data.null_data_source.domain.outputs["domain_name"]}"
     env_uuid = "${var.env_uuid}"
 }
 
@@ -140,7 +149,7 @@ module "legacy" {
     source = "./legacy"
     providers = { google = "google.prod" }
     legacy_domains = ["${var.legacy_domains}"]
-    domain_zone = "${google_dns_managed_zone.domain.name}"
+    domain_zone = "${data.null_data_source.domain.outputs["domain_zone"]}"
     glue_count = "${var.glue_zone == ""
                     ? 0
                     : length(var.legacy_domains)}"
@@ -168,7 +177,7 @@ output "name_to_ns" {
 }
 
 output "name_to_fqdn" {
-    value = "${merge(map("domain", local.domain),
+    value = "${merge(map("domain", data.null_data_source.domain.outputs["domain_name"]),
                      module.cloud_subdomain.name_to_fqdn,
                      module.test_cloud_subdomain.name_to_fqdn,
                      module.stage_cloud_subdomain.name_to_fqdn,

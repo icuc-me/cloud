@@ -1,0 +1,12 @@
+---
+
+letsencrypt_cert_filepath: '{{ env_file_dirpath }}/letsencrypt.cert.pem'
+letsencrypt_key_filepath: '{{ env_file_dirpath }}/letsencrypt.key'
+letsencrypt_chain_urls:
+    - 'https://letsencrypt.org/certs/isrgrootx1.pem.txt'
+    - 'https://letsencrypt.org/certs/isrg-root-ocsp-x1.pem.txt'
+    - 'https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem.txt'
+    - 'https://letsencrypt.org/certs/letsencryptauthorityx3.pem.txt'
+    - 'https://letsencrypt.org/certs/lets-encrypt-x4-cross-signed.pem.txt'
+    - 'https://letsencrypt.org/certs/letsencryptauthorityx4.pem.txt'
+    - 'https://letsencrypt.org/certs/trustid-x3-root.pem.txt'

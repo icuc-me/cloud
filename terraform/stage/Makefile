@@ -7,6 +7,8 @@ all: guard-PHASE guard-ENV_NAME $(_PHASE)/apply
 
 $(_PHASE): guard-PHASE guard-ENV_NAME backend.auto.tfvars
 	mkdir -p "$@"
+	mkdir -p "output_files"
+	ln -rsvft "$@" "output_files"
 	@for src in ./modules/ *.auto.tfvars common_*.tf only_$(ENV_NAME)_*.tf $(_PHASE)_main.tf $(_PHASE)_$(ENV_NAME).tf; do \
 		test ! -r "$$src" || ln -rsvft "$@" "$$src"; done
 	TF_IN_AUTOMATION=1 terraform init -input=false -backend-config="./backend.auto.tfvars" "./$@"
@@ -32,6 +34,8 @@ destroy: guard-PHASE $(_PHASE)/plan.bin $(SRCFILES)
 .PHONY: clean
 clean:
 	-rm -rfv phase_{1..99} .terraform
+	-rm -rfv output_files
+	-rm -rfv n_phases
 
 # Utility target for checking required parameters
 .PHONY: guard-%

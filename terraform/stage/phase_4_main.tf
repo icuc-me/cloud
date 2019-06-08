@@ -62,7 +62,7 @@ output "private_network" {
     sensitive = true
 }
 
-resource "tls_private_key" "admin_sshkey" {
+resource "tls_private_key" "admin" {
   algorithm   = "RSA"
   ecdsa_curve = "4096"
 }
@@ -76,7 +76,7 @@ module "gateway" {
     public_subnetwork = "${module.project_networks.public["subnetwork_name"]}"
     private_subnetwork = "${module.project_networks.private["subnetwork_name"]}"
     admin_username = "${local.strongbox_contents["admin_username"]}"
-    admin_sshkey = "${tls_private_key.admin_sshkey.private_key_pem}"
+    admin_sshkey = "${tls_private_key.admin.private_key_pem}"
     setup_data = "${local.strongbox_contents["gateway_setup_data"]}"
 }
 
@@ -88,6 +88,16 @@ output "cloud_gateway_external_ip" {
 output "cloud_gateway_private_ip" {
     value = "${module.gateway.private_ip}"
     sensitive = true
+}
+
+resource "local_file" "admin_public_key" {
+    sensitive_content = "${tls_private_key.admin.public_key_pem}"
+    filename = "${path.root}/output_files/${local.strongbox_contents["admin_username"]}.key.pub"
+}
+
+resource "local_file" "admin_private_key" {
+    sensitive_content = "${tls_private_key.admin.private_key_pem}"
+    filename = "${path.root}/output_files/${local.strongbox_contents["admin_username"]}.key"
 }
 
 data "template_file" "legacy_zones" {

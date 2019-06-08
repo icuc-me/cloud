@@ -13,7 +13,7 @@
   systemd:
       name: ksm
       enabled: True
-      state: '{{ "restarted" if _tmp_result | changed else "started" }}'
+      state: '{{ "restarted" if _tmp_result is changed else "started" }}'
 
 - name: The libvirt-guest configuration is set
   lineinfile:

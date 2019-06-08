@@ -25,6 +25,17 @@
       state: 'enabled'
   with_items: '{{ smtpserver_firewalld_tcp_ports }}'
 
+- name: The postfix user is a member of the mail and letsencrypt group
+  user:
+      name: postfix
+      groups:
+          - postfix
+          - mail
+          - letsencrypt
+      system: True
+  notify:
+    - "restart postfix"
+
 # Loads into result.postfix_configuration
 - include_tasks: "existing_postfix_config.yml"
 
@@ -62,7 +73,6 @@
     name: emailalias
   vars:
     aliases: '{{ email_aliases }}'
-  notify: "reload postfix"
 
 - name: The postfix service is enabled to start on boot
   systemd:

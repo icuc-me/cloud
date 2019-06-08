@@ -1,0 +1,4 @@
+---
+
+letsencrypt_dest_cert_filepath: '/etc/pki/tls/certs/letsencrypt.cert.pem'
+letsencrypt_dest_key_filepath: '/etc/pki/tls/private/letsencrypt.key'

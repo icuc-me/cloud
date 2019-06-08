@@ -27,9 +27,6 @@ _ipaserver_pkinit_pin: >-
        if ipaserver_pkinit_pin | default("", True) | trim | length
         else "" }}
 
-# Required for use of older python/firewalld bindings
-ansible_python_interpreter: 'python3'
-
 _prefix: '{{ "free" if ansible_distribution == "Fedora" else "" }}'
 
 _ipaserver_packages:

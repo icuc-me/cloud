@@ -10,18 +10,23 @@ all:
             ansible_host: '{{ _vault_site_vmhost1_ip }}'
         smtp1:
             ansible_host: '{{ _vault_site_smtp1_ip }}'
+        imap1:
+            ansible_host: '{{ _vault_site_imap1_ip }}'
         dhcp1:
             ansible_host: '{{ _vault_site_dhcp1_ip }}'
         dhcp2:
             ansible_host: '{{ _vault_site_dhcp2_ip }}'
         gateway1:
             ansible_host: '{{ _vault_site_gateway1_ip }}'
+        file1:
+            ansible_host: '{{ _vault_site_file1_ip }}'
     vars:
         ansible_connection: 'ssh'
         ansible_user: '{{ _vault_admin_username }}'
         ansible_ssh_pass: '{{ _vault_admin_userpass }}'
         ansible_become_pass: '{{ _vault_admin_userpass }}'
         system_hostname: '{{ _vault_system_hostname }}'
+        ansible_python_interpreter: 'python3'
     children:
         gateways:
             hosts:
@@ -34,13 +39,22 @@ all:
                 ipa2: {}
             vars:
                 ipaserver_is_replica: True
+        ipaconfig:
+            hosts:
+                ipa1: {}
+                ipa2: {}
+        fileservers:
+            hosts:
+                file1: {}
         ipaclients:
             hosts:
                 vmhost1: {}
                 dhcp1: {}
                 dhcp2: {}
                 smtp1: {}
+                imap1: {}
                 gateway1: {}
+                file1: {}
         timeclients:
             hosts:
                 ipa1: {}
@@ -49,12 +63,15 @@ all:
                 dhcp1: {}
                 dhcp2: {}
                 smtp1: {}
+                imap1: {}
                 gateway1: {}
+                file1: {}
         qemuvms:
             hosts:
                 ipa2: {}
                 dhcp1: {}
                 smtp1: {}
+                imap1: {}
         qemuhosts:
             hosts:
                 vmhost1: {}
@@ -65,3 +82,6 @@ all:
         smtpservers:
             hosts:
                 smtp1: {}
+        imapservers:
+            hosts:
+                imap1: {}

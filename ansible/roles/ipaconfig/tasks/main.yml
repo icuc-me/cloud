@@ -24,10 +24,49 @@
     record_ttl: '{{ item.ttl if "ttl" in item else "300" }}'
     record_type: '{{ item.type if "type" in item else omit }}'
     record_value: '{{ item.value | mandatory }}'
-    state: '{{ item.state if "state" in item else omit }}'
+    state: '{{ item.state if "state" in item else "present" }}'
     zone_name: '{{ item.zone | mandatory }}'
   environment:
     IPA_HOST: '{{ ipaserver_hostname }}'
     IPA_USER: '{{ ipaserver_admin_principal }}'
     IPA_PASS: '{{ ipaserver_admin_password }}'
+  register: _ipa_dnsrecord
+  failed_when: _ipa_dnsrecord is failure and
+               not _ipa_dnsrecord.msg is search('no modifications to be performed')
   with_items: '{{ ipaserver_dnsrecords }}'
+
+- name: User entries exist
+  ipa_user:
+    displayname: '{{ item.displayname if "displayname" in item else omit }}'
+    gidnumber: '{{ item.gidnumber if "gidnumber" in item else omit }}'
+    givenname: '{{ item.givenname if "givenname" in item else omit }}'
+    loginshell: '{{ item.loginshell if "loginshell" in item else omit }}'
+    mail: '{{ item.mail if "mail" in item else omit }}'
+    password: '{{ item.password if "password" in item else omit }}'
+    sn: '{{ item.sn if "sn" in item else omit }}'
+    sshpubkey: '{{ item.sshpubkey if "sshpubkey" in item else omit }}'
+    state: '{{ item.state if "state" in item else "present" }}'
+    uid: '{{ item.uid | mandatory }}'
+    uidnumber: '{{ item.uidnumber if "uidnumber" in item else omit }}'
+    update_password: '{{ item.update_password if "update_password" in item else "on_create" }}'
+  environment:
+    IPA_HOST: '{{ ipaserver_hostname }}'
+    IPA_USER: '{{ ipaserver_admin_principal }}'
+    IPA_PASS: '{{ ipaserver_admin_password }}'
+  with_items: '{{ ipaserver_users }}'
+
+- name: Group entries exist
+  ipa_group:
+    cn: '{{ item.cn | mandatory }}'
+    description: '{{ item.sn if "sn" in item else omit }}'
+    external: '{{ item.external if "external" in item else omit }}'
+    gidnumber: '{{ item.gidnumber if "gidnumber" in item else omit }}'
+    group: '{{ item.group if "group" in item else omit }}'  # N/B: list!
+    nonposix: '{{ item.nonposix if "nonposix" in item else omit }}'
+    state: '{{ item.state if "state" in item else "present" }}'
+    user: '{{ item.user if "user" in item else omit }}'  # N/B: list!
+  environment:
+    IPA_HOST: '{{ ipaserver_hostname }}'
+    IPA_USER: '{{ ipaserver_admin_principal }}'
+    IPA_PASS: '{{ ipaserver_admin_password }}'
+  with_items: '{{ ipaserver_groups }}'

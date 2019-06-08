@@ -1,6 +1,6 @@
 ---
 
-dhcpd_authorative: False  # Only set true if you REALLY mean it
+dhcpd_authorative: True  # Only set true if you REALLY mean it
 
 dhcpd_subnet_addr: '{{ _vault_dhcpd_subnet_addr }}'
 dhcpd_subnet_mask: '{{ _vault_dhcpd_subnet_mask }}'
@@ -24,4 +24,4 @@ dhcpd_omapi_algo: '{{ _vault_dhcpd_omapi_algo }}'
 dhcpd_omapi_key: '{{ _vault_dhcpd_omapi_key }}'
 dhcpd_omapi_private: '{{ _vault_dhcpd_omapi_private }}'
 
-dhcpd_actual_authorative: False  # And this one also
+dhcpd_actual_authorative: True  # And this one also

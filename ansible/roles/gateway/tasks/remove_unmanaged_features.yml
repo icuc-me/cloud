@@ -30,6 +30,6 @@
       ansible-playbook role {{ role_path | basename }} running from {{ lookup("pipe","uname -n") }}
   args:
       executable: /bin/bash
-  when: item | trim | length
-  when: item not in gateway_keep_zones
+  when: item | trim | length and
+        item not in gateway_keep_zones
   with_items: '{{ _zones }}'

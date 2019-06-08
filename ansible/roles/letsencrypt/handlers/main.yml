@@ -1,0 +1,4 @@
+---
+
+- name: Refresh Trusted CAs
+  command: /usr/bin/update-ca-trust
