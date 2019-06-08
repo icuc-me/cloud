@@ -128,6 +128,8 @@ module "dns_records" {
     gateway_count = "2"
     service_destinations {
         mail = "${lookup(local.name_to_zone, "site")}"
+        smtp = "${lookup(local.name_to_zone, "site")}"
+        imap = "${lookup(local.name_to_zone, "site")}"
         www = "${lookup(local.name_to_zone, "site")}"
         file = "${lookup(local.name_to_zone, "site")}"
     }
