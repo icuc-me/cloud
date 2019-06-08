@@ -104,13 +104,6 @@ data "google_dns_managed_zone" "domain" {
     name = "${module.project_dns.name_to_zone["domain"]}"
 }
 
-data "template_file" "domain_ns" {
-    count = "4"
-    template = "${substr(data.google_dns_managed_zone.domain.name_servers[count.index],
-                         0,
-                         length(data.google_dns_managed_zone.domain.name_servers[count.index]) - 1)}"
-}
-
 resource "acme_certificate" "domain" {
     depends_on = ["module.project_dns"]  // not all resources are direct
     account_key_pem = "${acme_registration.reg.account_key_pem}"
@@ -122,6 +115,8 @@ resource "acme_certificate" "domain" {
     key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
     min_days_remaining = "${local.is_prod == 1 ? 20 : 3}"
     certificate_p12_password = "${local.strongkeys[var.ENV_NAME]}"
+    // decouple from default nameservers on runtime host
+    recursive_nameservers = ["8.8.8.8", "8.8.4.4"]
     dns_challenge {
         provider = "gcloud"
         config {
