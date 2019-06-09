@@ -1,0 +1,14 @@
+---
+
+- hosts: all
+  gather_facts: true
+  vars:
+      env_name: '{{ inventory_dir | basename}}'
+      env_file_dirpath: '{{ playbook_dir }}/{{ env_name }}_files'
+  pre_tasks:
+      - debug:
+          msg: "***** {{ inventory_hostname }} operating in {{ env_name }} environment *****"
+  roles:
+      # configuration is replicated, only update one server
+      - role: ipaconfig
+        when: inventory_hostname == groups['ipareplicas'][-1]
