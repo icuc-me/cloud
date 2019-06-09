@@ -11,6 +11,7 @@ SCRIPT_FILENAME=${SCRIPT_FILENAME:-$(basename $(realpath "$0"))}
 SCRIPT_DIRPATH=${SCRIPT_DIRPATH:-$(dirname $(realpath "$0"))}
 SCRIPT_SUBDIR=${SCRIPT_SUBDIR:-$(basename "$SCRIPT_DIRPATH")}
 SRC_DIR=${SRC_DIR:-$(realpath "$SCRIPT_DIRPATH/../")}
+export PATH="${PATH:-/bin:/sbin:/usr/bin:/usr/sbin:$HOME/bin}:$SRC_DIR/bin"
 TF_DIR="$SRC_DIR/terraform"
 
 if type -P go &> /dev/null

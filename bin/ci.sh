@@ -75,7 +75,7 @@ case "$1" in
         do
             [[ -n "$name" ]] || die "Expecting non-empty \$name" 44
             echo "Tagging '$REG_NS/$name:$IMG_TAG' -> 'latest'"
-            sudo skopeo copy "docker://$REG_NS/$name:$IMG_TAG" "docker://$REG_NS/$name:latest"
+            retry.sh 300 3 120 sudo skopeo copy "docker://$REG_NS/$name:$IMG_TAG" "docker://$REG_NS/$name:latest"
         done
         ;;
     untag)
@@ -87,11 +87,11 @@ case "$1" in
         do
             [[ -n "$name" ]] || die "Expecting non-empty \$name" 40
             echo "Deleting '$REG_NS/$name:$IMG_TAG'"
-            sudo skopeo delete "docker://$REG_NS/$name:$IMG_TAG" &
+            retry.sh 30 10 30 sudo skopeo delete "docker://$REG_NS/$name:$IMG_TAG" &
             if [[ "$IMG_TAG" != "$TEST_IMG_TAG" ]]
             then
                 echo "Deleting '$REG_NS/$name:$TEST_IMG_TAG'"
-                sudo skopeo delete "docker://$REG_NS/$name:$TEST_IMG_TAG" &
+                retry.sh 30 10 30 sudo skopeo delete "docker://$REG_NS/$name:$TEST_IMG_TAG" &
             fi
         done
         wait
@@ -102,9 +102,9 @@ case "$1" in
         for name in "$BASE_IN" "$TOOLS_IN" "$RUN_IN"
         do
             [[ -n "$name" ]] || die "Expecting non-empty \$name" 43
-            $CONTAINER push "$REG_NS/$name:$IMG_TAG"
+            retry.sh 300 3 120 $CONTAINER push "$REG_NS/$name:$IMG_TAG"
             [[ "$IMG_TAG" == "$TEST_IMG_TAG" ]] || \
-                sudo $CONTAINER push "$REG_NS/$name:$TEST_IMG_TAG"
+                retry.sh 300 3 120 sudo $CONTAINER push "$REG_NS/$name:$TEST_IMG_TAG"
         done
         ;;
     *)
