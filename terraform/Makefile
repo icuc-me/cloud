@@ -1,5 +1,5 @@
 S_PHASE=1
-N_PHASES=4
+N_PHASES=5
 SRC_DIR=$(shell realpath "$$PWD/../")
 SECRETS_DIR=$(SRC_DIR)/secrets
 TERRAFORM_DIR=$(SRC_DIR)/terraform

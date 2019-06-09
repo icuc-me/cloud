@@ -1,5 +1,5 @@
 /****
-****  Should be able to do acme in all env
+****  ACME Simply not reliable enough
 ***** TODO: https://github.com/terraform-providers/terraform-provider-acme/issues/65
 ****/
 
@@ -20,28 +20,37 @@ resource "tls_private_key" "cert_private_key" {
 }
 
 locals {
+    e = ""
     wildfmt = "*.%s"
-    sans = ["${formatlist(local.wildfmt,
-                          concat(list(lookup(module.project_dns.name_to_fqdn, "domain"),
-                                      lookup(module.project_dns.name_to_fqdn, "site"),
-                                      lookup(module.project_dns.name_to_fqdn, "cloud")),
-                                 local.canonical_legacy_domains,
-                                 ))}"]
-}
+    wild_legacy_sans = ["${formatlist(local.wildfmt, local.canonical_legacy_domains)}"]
 
-data "google_dns_managed_zone" "domain" {
-    // Don't create cert until domain is filled out
-    depends_on = ["module.project_dns", "module.dns_records"]
-    name = "${module.project_dns.name_to_zone["domain"]}"
+    // Only required in prod w/o 6-level deep limitation
+    wild_domain = "*.${local.domain_fqdn}"
+    wild_domain_san = "${local.is_prod == 1
+                         ? local.wild_domain
+                         : local.e}"
+
+    site_cloud_sans = ["${substr(module.site_subdomain.fqdn, 0, length(module.site_subdomain.fqdn) - 1)}",
+                       "${substr(module.cloud_subdomain.fqdn, 0, length(module.cloud_subdomain.fqdn) - 1)}",
+                       "${substr(module.test_cloud_subdomain.fqdn, 0, length(module.test_cloud_subdomain.fqdn) - 1)}",
+                       "${substr(module.stage_cloud_subdomain.fqdn, 0, length(module.stage_cloud_subdomain.fqdn) - 1)}",
+                       "${substr(module.prod_cloud_subdomain.fqdn, 0, length(module.prod_cloud_subdomain.fqdn) - 1)}"]
+    wild_site_cloud = ["${formatlist(local.wildfmt, local.site_cloud_sans)}"]
+    sans = ["${compact(concat(local.canonical_legacy_domains,
+                              local.wild_legacy_sans,
+                              local.wild_site_cloud,
+                              list(local.wild_domain_san)))}"]
 }
 
 resource "acme_certificate" "domain" {
-    depends_on = ["module.project_dns"]  // not all resources are direct
+    // not all resources are direct references for ease of fqdn trailing-dot removal
+    depends_on = ["google_dns_managed_zone.domain",
+                  "module.site_subdomain", "module.cloud_subdomain",
+                  "module.test_cloud_subdomain", "module.stage_cloud_subdomain",
+                  "module.prod_cloud_subdomain", "google_dns_managed_zone.legacy"]
     account_key_pem = "${acme_registration.reg.account_key_pem}"
     // Must subtract trailing period
-    common_name = "${substr(data.google_dns_managed_zone.domain.dns_name,
-                            0,
-                            length(data.google_dns_managed_zone.domain.dns_name) - 1)}"
+    common_name = "${local.domain_fqdn}"
     subject_alternative_names = ["${local.sans}"]
     key_type = "${tls_private_key.cert_private_key.rsa_bits}"  // bits mean rsa
     min_days_remaining = "${local.is_prod == 1 ? 20 : 3}"
@@ -51,10 +60,11 @@ resource "acme_certificate" "domain" {
     dns_challenge {
         provider = "gcloud"
         config {
-            // 5 & 180 (default) too quick & slow, root entry needs more time
-            GCE_POLLING_INTERVAL = "10"
-            GCE_PROPAGATION_TIMEOUT = "300"
+            /* TODO: Default timings?
+            GCE_POLLING_INTERVAL = "30"
+            GCE_PROPAGATION_TIMEOUT = "600"
             GCE_TTL = "60"
+            */
             GCE_PROJECT = "${local.self["PROJECT"]}"
             GCE_SERVICE_ACCOUNT_FILE = "${local.self["CREDENTIALS"]}"
         }
