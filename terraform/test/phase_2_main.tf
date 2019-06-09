@@ -114,7 +114,7 @@ output "img_svc_acts" {
     sensitive = true
 }
 
-// Avoids calculated-count problems later
+// Workaround calculated-count problems in subsequent phases
 locals {
     e = ""
     c = ","
