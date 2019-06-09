@@ -34,7 +34,7 @@
     name: letsencrypt
     system: True
 
-- name: Deploy Let's Encrypt certificate key
+- name: Deploy Let's Encrypt private key
   copy:
       src: '{{ letsencrypt_key_filepath }}'
       dest: '{{ letsencrypt_dest_key_filepath }}'

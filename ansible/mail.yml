@@ -1,0 +1,19 @@
+---
+
+- hosts: all
+  gather_facts: true
+  vars:
+      env_name: '{{ inventory_dir | basename}}'
+      env_file_dirpath: '{{ playbook_dir }}/{{ env_name }}_files'
+  pre_tasks:
+      - debug:
+          msg: "***** {{ inventory_hostname }} operating in {{ env_name }} environment *****"
+  roles:
+      - role: letsencrypt
+        when: "'smtpservers' in group_names or 'imapservers' in group_names"
+
+      - role: imapserver
+        when: "'imapservers' in group_names"
+
+      - role: smtpserver
+        when: "'smtpservers' in group_names or 'imapservers' in group_names"
