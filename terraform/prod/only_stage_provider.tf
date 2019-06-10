@@ -1,13 +1,13 @@
 
 provider "acme" {
-    version = "~> 1.1"
+    version = "~> 1.3"
     server_url = "https://acme-staging-v02.api.letsencrypt.org/directory"
 }
 
 // Default for this environment
 
 provider "google" {
-    version = "~> 2.2"
+    version = "~> 2.5"
     credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
     project = "${var.STAGE_SECRETS["PROJECT"]}"
     region = "${var.STAGE_SECRETS["REGION"]}"
@@ -18,7 +18,7 @@ provider "google" {
 // Aliases for all environments
 
 provider "google" {
-    version = "~> 2.2"
+    version = "~> 2.5"
     alias = "test"
     credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
     project = "${var.STAGE_SECRETS["PROJECT"]}"
@@ -28,7 +28,7 @@ provider "google" {
 }
 
 provider "google" {
-    version = "~> 2.2"
+    version = "~> 2.5"
     alias = "stage"
     credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
     project = "${var.STAGE_SECRETS["PROJECT"]}"
@@ -40,7 +40,7 @@ provider "google" {
 // THE ALIASES BELOW ARE FAKE - FOR TESTING
 
 provider "google" {
-    version = "~> 2.2"
+    version = "~> 2.5"
     alias = "prod"
     credentials = "${var.STAGE_SECRETS["CREDENTIALS"]}"
     project = "${var.STAGE_SECRETS["PROJECT"]}"

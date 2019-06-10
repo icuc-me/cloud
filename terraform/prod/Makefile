@@ -33,7 +33,7 @@ destroy: guard-PHASE $(_PHASE)/plan.bin $(SRCFILES)
 
 .PHONY: clean
 clean:
-	-rm -rfv phase_{1..99} .terraform
+	-rm -rfv phase_{1..99} .terraform terraform.tfstate.d
 	-rm -rfv output_files
 	-rm -rfv n_phases
 
