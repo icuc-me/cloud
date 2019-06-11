@@ -1,8 +1,7 @@
 ---
 
 smtp_admin_user: '{{ _vault_admin_username }}'
-postconf_removals: '{{ _vault_postconf_removals }}'
-postconf_additions: '{{ _vault_postconf_additions }}'
+desired_postconf: '{{ _vault_desired_postconf }}'
 postfix_files: '{{ _vault_postfix_files }}'
 postmap_dbs: '{{ _vault_postmap_dbs }}'
 email_aliases: '{{ _vault_email_aliases }}'

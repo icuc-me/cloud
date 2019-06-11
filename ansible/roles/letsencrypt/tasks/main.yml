@@ -13,10 +13,9 @@
   notify: Refresh Trusted CAs
 
 - name: Let's Encrypt intermediate and related root certificates are downloaded
-  command: 'curl -LO "{{ item }}"'
-  args:
-      chdir: '/etc/pki/ca-trust/source/anchors/'
-      creates: '/etc/pki/ca-trust/source/anchors/{{ item | basename }}'
+  get_url:
+      dest: '/etc/pki/ca-trust/source/anchors/{{ item | basename }}'
+      url: '{{ item }}'
   notify: Refresh Trusted CAs
   with_items: '{{ letsencrypt_chain_urls }}'
 
@@ -34,7 +33,7 @@
     name: letsencrypt
     system: True
 
-- name: Deploy Let's Encrypt certificate key
+- name: Deploy Let's Encrypt private key
   copy:
       src: '{{ letsencrypt_key_filepath }}'
       dest: '{{ letsencrypt_dest_key_filepath }}'

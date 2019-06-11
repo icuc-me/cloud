@@ -24,9 +24,6 @@ data "terraform_remote_state" "phase_3" {
 
 locals {
     strongbox_contents = "${data.terraform_remote_state.phase_2.strongbox_contents}"
-    name_to_zone = "${data.terraform_remote_state.phase_3.name_to_zone}"
-    legacy_shortnames = ["${data.terraform_remote_state.phase_3.legacy_shortnames}"]
-    canonical_legacy_domains = ["${data.terraform_remote_state.phase_3.canonical_legacy_domains}"]
 }
 
 // VPC subnetworks and firewalls required by all instances and containers
@@ -91,19 +88,15 @@ output "cloud_gateway_private_ip" {
 }
 
 resource "local_file" "admin_public_key" {
+    depends_on = ["module.gateway"]  // don't willy-nilly toss keys about
     sensitive_content = "${tls_private_key.admin.public_key_pem}"
     filename = "${path.root}/output_files/${local.strongbox_contents["admin_username"]}.key.pub"
 }
 
 resource "local_file" "admin_private_key" {
+    depends_on = ["module.gateway"]  // don't willy-nilly toss keys about
     sensitive_content = "${tls_private_key.admin.private_key_pem}"
     filename = "${path.root}/output_files/${local.strongbox_contents["admin_username"]}.key"
-}
-
-data "template_file" "legacy_zones" {
-    count = "${length(local.legacy_shortnames)}"
-    template = "${lookup(local.name_to_zone,
-                         local.legacy_shortnames[count.index])}"
 }
 
 // Assumed that production environment deployment always happens behind the site gateway
@@ -113,32 +106,5 @@ module "site_gateway_ip" {
 
 output "site_gateway_external_ip" {
     value = "${module.site_gateway_ip.ip}"
-    sensitive = true
-}
-
-locals {
-    gateways = "${map(lookup(local.name_to_zone, "cloud"), module.gateway.external_ip,
-                      lookup(local.name_to_zone, "site"), module.site_gateway_ip.ip)}"
-}
-
-module "dns_records" {
-    source = "./modules/dns_records"
-    domain_zone = "${lookup(local.name_to_zone, "domain")}"
-    gateways = "${local.gateways}"
-    gateway_count = "2"
-    service_destinations {
-        mail = "${lookup(local.name_to_zone, "site")}"
-        smtp = "${lookup(local.name_to_zone, "site")}"
-        imap = "${lookup(local.name_to_zone, "site")}"
-        www = "${lookup(local.name_to_zone, "site")}"
-        file = "${lookup(local.name_to_zone, "site")}"
-    }
-    managed_zones = ["${concat(data.template_file.legacy_zones.*.rendered,
-                               list(lookup(local.name_to_zone, "cloud"),
-                                    lookup(local.name_to_zone, "site")))}"]
-}
-
-output "uuid" {
-    value = "${var.UUID}"
     sensitive = true
 }
