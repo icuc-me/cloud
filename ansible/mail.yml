@@ -12,6 +12,9 @@
       - role: letsencrypt
         when: "'smtpservers' in group_names or 'imapservers' in group_names"
 
+      - role: saslauth
+        when: "'smtpservers' in group_names"
+
       - role: imapserver
         when: "'imapservers' in group_names"
 

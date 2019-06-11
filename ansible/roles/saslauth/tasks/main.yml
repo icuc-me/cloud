@@ -1,0 +1,30 @@
+---
+
+- name: Required packages are installed
+  package:
+      name:
+          - cyrus-sasl
+          - cyrus-sasl-gssapi
+          - cyrus-sasl-lib
+          - cyrus-sasl-plain
+      state: present
+  register: _tmp_result
+  until: _tmp_result is success
+
+- name: SASL configuration files are deployed
+  copy:
+      backup: True
+      dest: '{{ item.key }}'
+      content: '{{ item.value }}'
+      owner: root
+      group: root
+      mode: '0644'
+  notify:
+    - "reload saslauthd"
+  with_dict: '{{ sasl_files }}'
+
+- name: The SASL auth daemon is enabled and started
+  systemd:
+      name: saslauthd
+      enabled: true
+      state: started
