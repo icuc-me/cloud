@@ -36,25 +36,42 @@
   notify:
     - "restart postfix"
 
-# Loads into result.postfix_configuration
-- include_tasks: "existing_postfix_config.yml"
+- name: Postconf to YAML conversion script is deployed
+  copy:
+      dest: '/usr/local/sbin/'
+      src: 'postconf_yaml.sh'
+      owner: 'root'
+      group: 'root'
+      mode: '0750'
 
-- name: Specific postfix options are removed if present
+- name: Existing postfix options are retrieved
+  command: /usr/local/sbin/postconf_yaml.sh
+  changed_when: False  # only looking
+  register: postconf_yaml
+
+- name: Buffer is parsed as a YAML dictionary
+  set_fact:
+    current: '{{ postconf_yaml.stdout | default("{}", True) | from_yaml }}'
+
+- name: Current configuration is initialized empty
+  set_fact:
+      current:
+          postfix_configuration: {}
+  when: not current.postfix_configuration | default('', True) | length
+
+- name: Current settings missing from desired settings are removed
   command: 'postconf -X {{ item }}'
   notify:
-    - "reload postfix"
-  when: item in result.postfix_configuration
-  with_items: '{{ postconf_removals }}'
+    - "restart postfix"
+  when: item not in desired_postconf | list
+  with_items: '{{ current.postfix_configuration | list}}'
 
-- include_tasks: "existing_postfix_config.yml"
-
-- name: Specific postfix options are added/changed if absent or different
+- name: Desired settings missing or different from current are added
   command: 'postconf "{{ item.key }}={{ item.value }}"'
   notify:
-    - "reload postfix"
-  when: item.key not in result.postfix_configuration or
-        item.value != result.postfix_configuration[item.key]
-  with_dict: '{{ postconf_additions }}'
+    - "restart postfix"
+  when: current.postfix_configuration[item.key] | default(None,True) != item.value
+  with_dict: '{{ desired_postconf }}'
 
 - name: Postfix hash databases and other files are written
   copy:

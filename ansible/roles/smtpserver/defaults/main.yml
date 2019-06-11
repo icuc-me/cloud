@@ -10,13 +10,8 @@ smtpserver_firewalld_services:
 
 smtpserver_firewalld_tcp_ports: []
 
-# List of postfix configuration keys that should be removed
-postconf_removals:
-    - "mydomain"  # formerly set, now use default
-    - "myorigin"  # ''
-
 # Dictionary of postfix configuration options to set
-postconf_additions:
+desired_postconf:
     # Ref: http://www.postfix.org/STANDARD_CONFIGURATION_README.html#null_client
     relayhost: '[smtp.example.com]' # all mail goes through here, ignore MX from DNS
     # Required so that /etc/aliases may be used to set the actual destinations for local mail
