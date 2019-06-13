@@ -60,6 +60,13 @@ resource "google_dns_record_set" "mx" {
     ttl = "${60 * 60 * 24}"
 }
 
+output "common_fqdn" {
+    value = "${substr(google_dns_record_set.glue.name,
+                      0,
+                      length(google_dns_record_set.glue.name) - 1)}"
+    sensitive = true
+}
+
 output "fqdn" {
     value = "${google_dns_record_set.glue.name}"
     sensitive = true

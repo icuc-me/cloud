@@ -54,6 +54,14 @@ resource "google_dns_managed_zone" "domain" {
     description = "${local.managed_by} ${local.self["PROJECT"]}"
 }
 
+resource "google_dns_record_set" "domain_mx" {
+    managed_zone = "${google_dns_managed_zone.domain.name}"
+    name = "${google_dns_managed_zone.domain.dns_name}"
+    type = "MX"
+    rrdatas = ["10 mail.${google_dns_managed_zone.domain.dns_name}"]
+    ttl = "${60 * 60 * 4}"
+}
+
 // ref: https://www.terraform.io/docs/providers/google/r/dns_record_set.html
 resource "google_dns_record_set" "domain_glue" {
     count = "${local.glue_zone == "" ? 0 : 1}"
@@ -61,13 +69,20 @@ resource "google_dns_record_set" "domain_glue" {
     name = "${google_dns_managed_zone.domain.dns_name}"
     type = "NS"
     rrdatas = ["${google_dns_managed_zone.domain.name_servers}"]
-    ttl = "60"
+    ttl = "300"
 }
 
 locals {
     // The rest of the universe prefers domains without trailing dots
     domain_fqdn = "${substr(google_dns_managed_zone.domain.dns_name,
                             0, length(google_dns_managed_zone.domain.dns_name) - 1)}"
+    site_validations = [
+        "google-site-verification=f3NrFaSVqIGgQ8lS8XDZW_XN5gLjDOnnjqhP1awvic0",
+        "google-site-verification=6DvLxVgmaBOEezUgrrntK7ZxGw3GlfUaAUGNvvSYl18",
+        "google-site-verification=LylpAG6l9UsDtVrnqRo8SOlO1gk2lvr2MpXsxP261Do",
+        "google-site-verification=kQ7bVgY98H0qXVEb0X9Tyfni2cU-ygKoHVEvD1c7-pA",
+        "google-site-verification=3Prazw9vQPTC7Mwc-RzQFe7rxU2qZe8zwrXgyOCoGCE"
+    ]
 }
 
 output "domain_fqdn" {
@@ -86,9 +101,7 @@ resource "google_dns_record_set" "google-site-validation" {
     managed_zone = "${google_dns_managed_zone.domain.name}"
     name = "${google_dns_managed_zone.domain.dns_name}"
     type = "TXT"
-    rrdatas = ["google-site-verification=f3NrFaSVqIGgQ8lS8XDZW_XN5gLjDOnnjqhP1awvic0",
-               "google-site-verification=6DvLxVgmaBOEezUgrrntK7ZxGw3GlfUaAUGNvvSYl18",
-               "google-site-verification=LylpAG6l9UsDtVrnqRo8SOlO1gk2lvr2MpXsxP261Do"]
+    rrdatas = ["${local.site_validations}"]
     ttl = "${60 * 60 * 24 * 7}"
 }
 
@@ -103,22 +116,31 @@ resource "google_dns_managed_zone" "legacy" {
 
 resource "google_dns_record_set" "legacy_glue" {
     depends_on = ["google_dns_managed_zone.domain"]
-    count = "${local.glue_zone == "" ? 0 : length(local.canonical_legacy_domains)}"
+    count = "${local.glue_zone == "" ? 0 : length(google_dns_managed_zone.legacy.*.name)}"
     managed_zone = "${google_dns_managed_zone.domain.name}"
     name = "${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
     type = "NS"
     rrdatas = ["${google_dns_managed_zone.legacy.*.name_servers[count.index]}"]
-    ttl = "60"
+    ttl = "${60 * 60 * 4}"
 }
 
 resource "google_dns_record_set" "legacy_mx" {
     depends_on = ["google_dns_managed_zone.domain"]
-    count = "${local.glue_zone == "" ? 0 : length(local.canonical_legacy_domains)}"
-    managed_zone = "${google_dns_managed_zone.domain.name}"
+    count = "${length(google_dns_managed_zone.legacy.*.name)}"
+    managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
     name = "${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
     type = "MX"
     rrdatas = ["10 mail.${google_dns_managed_zone.domain.dns_name}"]
-    ttl = "60"
+    ttl = "${60 * 60 * 4}"
+}
+
+resource "google_dns_record_set" "legacy-google-site-validation" {
+    count = "${length(google_dns_managed_zone.legacy.*.name)}"
+    managed_zone = "${google_dns_managed_zone.legacy.*.name[count.index]}"
+    name = "${google_dns_managed_zone.legacy.*.dns_name[count.index]}"
+    type = "TXT"
+    rrdatas = ["${local.site_validations}"]
+    ttl = "${60 * 60 * 24 * 7}"
 }
 
 data "template_file" "legacy_fqdns" {
@@ -309,6 +331,7 @@ resource "google_dns_record_set" "cloud_services" {
 
 resource "google_dns_record_set" "test_cloud_services" {
     count = "${length(local.service_names)}"
+    provider = "google.test"
     managed_zone = "${module.test_cloud_subdomain.zone}"
     name = "${local.service_names[count.index]}.${module.test_cloud_subdomain.fqdn}"
     type = "CNAME"
@@ -318,6 +341,7 @@ resource "google_dns_record_set" "test_cloud_services" {
 
 resource "google_dns_record_set" "stage_cloud_services" {
     count = "${length(local.service_names)}"
+    provider = "google.stage"
     managed_zone = "${module.stage_cloud_subdomain.zone}"
     name = "${local.service_names[count.index]}.${module.stage_cloud_subdomain.fqdn}"
     type = "CNAME"
@@ -327,6 +351,7 @@ resource "google_dns_record_set" "stage_cloud_services" {
 
 resource "google_dns_record_set" "prod_cloud_services" {
     count = "${length(local.service_names)}"
+    provider = "google.prod"
     managed_zone = "${module.prod_cloud_subdomain.zone}"
     name = "${local.service_names[count.index]}.${module.prod_cloud_subdomain.fqdn}"
     type = "CNAME"
