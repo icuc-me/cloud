@@ -1,13 +1,5 @@
 ---
 
-#- name: Wan and Lan zone unmanaged services, ports, and rich rules are removed
-#  include_tasks: 'clean_managed_zone.yml'
-#  with_dict:
-#      'wan': '{{ gateway_wan_zone }}'
-#      'lan': '{{ gateway_lan_zone }}'
-#  loop_control:
-#    loop_var: '_loop_zone_name'
-
 # Remove all services, ports, and rich-rules from unmanaged zones
 - name: Names of all zones are known
   command: firewall-cmd --get-zones
@@ -24,10 +16,10 @@
       {% if gateway_settings_permanent
             %}wipe_zone_permanent.sh{%
          else
-            %}wipe_zone.sh
-      {% endif %}
-      {{ item }}
-      ansible-playbook role {{ role_path | basename }} running from {{ lookup("pipe","uname -n") }}
+            %}wipe_zone.sh{%
+        endif
+        %} {{ item
+      }} ansible-playbook role {{ role_path | basename }} running from {{ lookup("pipe","uname -n") }}
   args:
       executable: /bin/bash
   when: item | trim | length and

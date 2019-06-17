@@ -1,0 +1,14 @@
+---
+
+- hosts: all
+  gather_facts: true
+  vars:
+      env_name: '{{ inventory_dir | basename}}'
+      env_file_dirpath: '{{ playbook_dir }}/{{ env_name }}_files'
+      gateway_settings_permanent: False
+  pre_tasks:
+      - debug:
+          msg: "***** {{ inventory_hostname }} operating in {{ env_name }} environment *****"
+  roles:
+      - role: gateway
+        when: "'gateways' in group_names"

@@ -34,8 +34,8 @@ subnet {{ dhcpd_subnet_addr }} netmask {{ dhcpd_subnet_mask }} {
      # known-hosts / servers
      pool {
           deny unknown-clients;
-          default-lease-time 36000;  # default to 10 hour leases
-          max-lease-time 180000;     # maximum lease time is 50 hours
+          default-lease-time {{ 60 * 60 * 12}};  # default to 12 hour leases
+          max-lease-time {{ 60 * 60 * 24}};     # maximum lease time is 24 hours
 {% if ansible_fqdn in [dhcpd_pri_fqdn, dhcpd_sec_fqdn] %}
           failover peer "dhcp";
 {% endif %}
@@ -45,8 +45,8 @@ subnet {{ dhcpd_subnet_addr }} netmask {{ dhcpd_subnet_mask }} {
      # unknown / dynamically addresses
      pool {
           allow unknown-clients;
-          default-lease-time 1800;  # 30 minutes
-          max-lease-time 3600;      # one hour
+          default-lease-time {{ 60 * 60}};  # one hour
+          max-lease-time {{60 * 60 * 2}};      # two hours
 {% if ansible_fqdn in [dhcpd_pri_fqdn, dhcpd_sec_fqdn] %}
           failover peer "dhcp";
 {% endif %}

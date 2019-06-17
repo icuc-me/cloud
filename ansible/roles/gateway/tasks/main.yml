@@ -2,10 +2,18 @@
 
 # N/B: Order is significant, don't lock out ansible host!
 
-#- import_tasks: 'basics.yml'
+- debug:
+    msg: "***** WARNING: Changes will NOT persist across reboots, override by setting gateway_settings_permanent True"
+  when: not gateway_settings_permanent | bool
 
-#- import_tasks: 'add_managed_features.yml'
+- debug:
+    msg: "***** WARNING: Changes WILL persist across reboots, override by setting gateway_settings_permanent False"
+  when: gateway_settings_permanent | bool
 
-#- import_tasks: 'configure_forwarding.yml'
+- import_tasks: 'basics.yml'
+
+- import_tasks: 'add_managed_features.yml'
+
+- import_tasks: 'configure_forwarding.yml'
 
 - import_tasks: 'remove_unmanaged_features.yml'
