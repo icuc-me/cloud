@@ -95,7 +95,6 @@ output "domain_zone" {
     sensitive = true
 }
 
-
 // Google gets ornery if it thinks we don't own the domains
 resource "google_dns_record_set" "google-site-validation" {
     managed_zone = "${google_dns_managed_zone.domain.name}"
@@ -250,6 +249,17 @@ module "prod_cloud_subdomain" {
     mx_fqdn = "mail.${module.cloud_subdomain.fqdn}"
 }
 
+output "shortsub_fqdns" {
+    value = {
+        site = "${module.site_subdomain.common_fqdn}"
+        cloud = "${module.site_subdomain.common_fqdn}"
+        test = "${module.test_cloud_subdomain.common_fqdn}"
+        stage = "${module.stage_cloud_subdomain.common_fqdn}"
+        prod = "${module.prod_cloud_subdomain.common_fqdn}"
+    }
+    sensitive = true
+}
+
 locals {
     _tsp_zones = ["${module.test_cloud_subdomain.zone}",
                   "${module.stage_cloud_subdomain.zone}",
@@ -309,6 +319,18 @@ resource "google_dns_record_set" "services" {
     type = "CNAME"
     rrdatas = ["${local.service_fqdns[count.index]}"]
     ttl = "${60 * 60 * 24}"
+}
+
+data "template_file" "service_fqdns" {
+    count = "${length(local.service_names)}"
+    template = "${substr(element(google_dns_record_set.services.*.rrdatas[count.index], 0),
+                         0,
+                         length(element(google_dns_record_set.services.*.rrdatas[count.index], 0)) - 1)}"
+}
+
+output "services_fqdns" {
+    value = "${zipmap(local.service_names, data.template_file.service_fqdns.*.rendered)}"
+    sensitive = true
 }
 
 resource "google_dns_record_set" "site_services" {

@@ -22,3 +22,8 @@ Feature: Multiple terraform environment phases and workspaces each have specific
         When I switch to each workspace and refresh
         Then I find a zero exit code for each refresh
         And the deployment outputs are all available
+
+    Scenario:
+        Given the deployment outputs are all available
+        When I examine the output "env_name"
+        Then I find the "env_name" output exactly matches the env. var. "ENV_NAME" contents

@@ -156,8 +156,3 @@ output "canonical_legacy_domains" {
     value = "${local.canonical_legacy_domains}"
     sensitive = true
 }
-
-output "uuid" {
-    value = "${var.UUID}"
-    sensitive = true
-}

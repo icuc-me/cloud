@@ -79,3 +79,13 @@ output "strongbox_filenames" {
     }
     sensitive = true
 }
+
+output "env_name" {
+    value = "${var.ENV_NAME}"
+    sensitive = true
+}
+
+output "uuid" {
+    value = "${var.UUID}"
+    sensitive = true
+}
