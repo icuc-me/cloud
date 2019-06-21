@@ -55,3 +55,9 @@
 
       - role: smtpserver
         when: "'smtpservers' in group_names or 'imapservers' in group_names"
+
+      - role: emailclient
+        when: "'smtpservers' not in group_names and 'imapservers' not in group_names"
+
+      - role: therm_email
+        when: "'gateways' in group_names"

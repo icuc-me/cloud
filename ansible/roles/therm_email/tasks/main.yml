@@ -1,0 +1,43 @@
+---
+
+- name: Necessary packages are installed
+  package:
+      name:
+          - lm_sensors
+          - pcp
+          - pcp-pmda-lmsensors
+          - pcp-system-tools
+      state: present
+  register: pcp_result
+  until: pcp_result is success
+
+- name: Necessary services are started and enabled at boot
+  systemd:
+      name: '{{ item }}'
+      state: 'started'
+      enabled: True
+  with_items:
+      - 'pmcd'
+      - 'pmlogger'
+
+- name: lmsensors pmda is configured
+  command: './Install'
+  args:
+      chdir: '/var/lib/pcp/pmdas/lmsensors/'
+  when: pcp_result is changed
+
+- name: Monitoring script is present
+  copy:
+      backup: True
+      src: 'therm_email.sh'
+      dest: '/usr/local/bin/therm_email.sh'
+      owner: 'root'
+      group: 'root'
+      mode: '0775'
+
+- name: Monitoring cron job is installed
+  cron:
+      name: 'Monitor current system temperature does not exceed a set maximum'
+      job: '/usr/local/bin/therm_email.sh'
+      minute: '*/23'
+      user: '{{ ansible_user }}'
