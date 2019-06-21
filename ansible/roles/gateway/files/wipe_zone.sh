@@ -35,8 +35,11 @@ EOF
 if [[ "$SCRIPT_NAME" == "wipe_zone_permanent.sh" ]]
 then
     PERMANENT="--permanent"
-else
+elif [[ "$SCRIPT_NAME" == "wipe_zone.sh" ]]
+then
     PERMANENT=""
+else
+    die 3 "Expecting to be called as wipe_zone.sh or wipe_zone_permanent.sh, not: $(basename $0)"
 fi
 
 [[ "$(firewall-cmd $PERMANENT --get-zones)" =~ "$ZONE" ]] || \
