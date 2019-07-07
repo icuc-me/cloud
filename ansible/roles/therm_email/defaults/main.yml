@@ -1,0 +1,4 @@
+---
+
+therm_email_mydestination: ''
+therm_email_relayhost: '[smtp.{{ ansible_domain }}]'

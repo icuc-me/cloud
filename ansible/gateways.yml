@@ -1,0 +1,19 @@
+---
+
+- hosts: all
+  gather_facts: true
+  vars:
+      env_name: '{{ inventory_dir | basename}}'
+      env_file_dirpath: '{{ playbook_dir }}/{{ env_name }}_files'
+  pre_tasks:
+      - debug:
+          msg: "***** {{ inventory_hostname }} operating in {{ env_name }} environment *****"
+  roles:
+      - role: slimserver
+        when: "'gateways' in group_names"
+      - role: gateway
+        when: "'gateways' in group_names"
+      - role: emailclient
+        when: "'smtpservers' not in group_names and 'imapservers' not in group_names"
+      - role: therm_email
+        when: "'gateways' in group_names"

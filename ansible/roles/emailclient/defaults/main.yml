@@ -1,0 +1,10 @@
+---
+
+
+emailclient_mydestination: ''  # blank= final destination for nothing
+emailclient_mydomain: '{{ ansible_domain }}'
+emailclient_myorigin: '$mydomain'
+emailclient_relayhost: '[smtp.{{ ansible_domain }}]'
+emailclient_aliases:
+    - user: "{{ ansible_user }}"
+      alias: "root"

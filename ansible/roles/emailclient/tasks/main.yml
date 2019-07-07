@@ -1,0 +1,34 @@
+---
+
+- name: Necessary packages are installed
+  package:
+      name:
+          - postfix
+      state: present
+  register: emailclient_result
+  until: emailclient_result is success
+
+- name: Postfix service is started and enabled at boot
+  systemd:
+      name: 'postfix'
+      state: 'started'
+      enabled: True
+
+- name: Local mail is routed
+  lineinfile:
+      path: "/etc/postfix/main.cf"
+      line: '{{ item.key}} = {{ item.value }}'
+      regexp: '^{{ item.key}}\s+=.*'
+      backup: True
+  notify: The postfix service is restarted
+  with_dict:
+    mydestination: '{{ emailclient_mydestination }}'
+    relayhost: '{{ emailclient_relayhost }}'
+    mydomain: '{{ emailclient_mydomain }}'
+    myorigin: '{{ emailclient_myorigin }}'
+
+- name: The admin user's e-mail is forwarded to root
+  include_role:
+    name: emailalias
+  vars:
+    aliases: '{{ emailclient_aliases }}'
