@@ -12,8 +12,6 @@ ipa_install_template: >-
                                   if ipaserver_is_replica
                                   else "ipa_server_install_command.j2" }}
 
-ipaserver_marker_fact_filepath: /etc/ansible/facts.d/ipaserver_installed.fact
-
 _ipaserver_dirsrv_pin: >-
     {{ ipaserver_dirsrv_pin | trim
     if ipaserver_dirsrv_pin | default("", True) | trim | length
