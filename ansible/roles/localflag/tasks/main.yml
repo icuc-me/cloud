@@ -1,0 +1,28 @@
+---
+
+- name: Required variable values are defined and non-empty
+  assert:
+    that:
+        - 'localflag_name | default("", True) | trim | length'
+        - 'localflag_path | default("", True) | trim | length'
+
+- name: The ansible local facts directory exists
+  file:
+    path: "{{ localflag_path }}"
+    state: "directory"
+    mode: "770"
+    owner: "root"
+    group: "root"
+
+- name: "Local {{ localfact_name }} flag value is set true"
+  copy:
+    follow: True
+    mode: "660"
+    dest: '{{ localflag_path | trim }}/{{ localflag_name }}.fact'
+    content: "true"
+    owner: "root"
+    group: "root"
+
+- name: Facts are re-gathered
+  setup:
+    gather_subset: min
