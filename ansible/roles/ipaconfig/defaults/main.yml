@@ -22,3 +22,10 @@ ipaserver_groups: []
 # uid*, uidnumber, gid, ...
 # Ref: https://docs.ansible.com/ansible/latest/modules/ipa_user_module.html#ipa-user-module
 ipaserver_users: []
+
+# When non-empty, contents will be written to /usr/local/sbin/ipaconfig_script.sh
+# then executed on one ipaserver host only.  It is assumed the script is idempotent.
+ipaconfig_script_contents: |
+    #!/bin/bash
+
+    /bin/true

@@ -3,6 +3,7 @@
 - name: Variable expectations are validated
   assert:
       that:
+          - 'hostvars.localhost.random_ipaserver | default("",True) | trim | length'
           - 'ipaserver_hostname | default("",True) | trim | length'
           - 'ipaserver_domain | default("",True) | trim | length'
           - 'ipaserver_realm | default("",True) | trim | length'
@@ -17,23 +18,6 @@
     IPA_HOST: '{{ ipaserver_hostname }}'
     IPA_USER: '{{ ipaserver_admin_principal }}'
     IPA_PASS: '{{ ipaserver_admin_password }}'
-
-- name: Non-client DNS managed entries exist
-  ipa_dnsrecord:
-    record_name: '{{ item.name | mandatory }}'
-    record_ttl: '{{ item.ttl if "ttl" in item else "300" }}'
-    record_type: '{{ item.type if "type" in item else omit }}'
-    record_value: '{{ item.value | mandatory }}'
-    state: '{{ item.state if "state" in item else "present" }}'
-    zone_name: '{{ item.zone | mandatory }}'
-  environment:
-    IPA_HOST: '{{ ipaserver_hostname }}'
-    IPA_USER: '{{ ipaserver_admin_principal }}'
-    IPA_PASS: '{{ ipaserver_admin_password }}'
-  register: _ipa_dnsrecord
-  failed_when: _ipa_dnsrecord is failure and
-               not _ipa_dnsrecord.msg is search('no modifications to be performed')
-  with_items: '{{ ipaserver_dnsrecords }}'
 
 - name: User entries exist
   ipa_user:
@@ -70,3 +54,32 @@
     IPA_USER: '{{ ipaserver_admin_principal }}'
     IPA_PASS: '{{ ipaserver_admin_password }}'
   with_items: '{{ ipaserver_groups }}'
+
+- name: The ipaconfig_script_contents are written
+  copy:
+      backup: True
+      content: '{{ ipaconfig_script_contents }}'
+      dest: /usr/local/sbin/ipaconfig_script.sh
+      group: 'root'
+      owner: 'root'
+      mode: '0770'
+
+- name: The ipaconfig_script is executed
+  command: /usr/local/sbin/ipaconfig_script.sh
+
+- name: Non-client DNS managed entries exist
+  ipa_dnsrecord:
+    record_name: '{{ item.name | mandatory }}'
+    record_ttl: '{{ item.ttl if "ttl" in item else "300" }}'
+    record_type: '{{ item.type if "type" in item else omit }}'
+    record_value: '{{ item.value | mandatory }}'
+    state: '{{ item.state if "state" in item else "present" }}'
+    zone_name: '{{ item.zone | mandatory }}'
+  environment:
+    IPA_HOST: '{{ ipaserver_hostname }}'
+    IPA_USER: '{{ ipaserver_admin_principal }}'
+    IPA_PASS: '{{ ipaserver_admin_password }}'
+  register: _ipa_dnsrecord
+  failed_when: _ipa_dnsrecord is failure and
+               not _ipa_dnsrecord.msg is search('no modifications to be performed')
+  with_items: '{{ ipaserver_dnsrecords }}'

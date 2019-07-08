@@ -1,5 +1,14 @@
 ---
 
+- hosts: localhost
+  gather_facts: true
+  tasks:
+      - name: One ipaserver host is selected at random
+        set_fact:
+            random_ipaserver: '{{ groups.ipaservers | random() }}'
+        when: 'inventory_hostname == "localhost"'
+
+
 - hosts: all
   gather_facts: false
   vars:
@@ -10,16 +19,23 @@
           msg: "***** {{ inventory_hostname }} operating in {{ env_name }} environment *****"
   roles:
       - role: ansible_dependencies
+        when: 'inventory_hostname != "localhost"'
+
       - role: hostname
+        when: 'inventory_hostname != "localhost"'
+
       - role: basic_lockdown
+        when: 'inventory_hostname != "localhost"'
 
       - role: slimserver
         when: "'gateways' in group_names"
+
       - role: gateway
         when: "'gateways' in group_names"
 
       - role: qemuhost
         when: "'qemuhosts' in group_names"
+
       - role: qemuvm
         when: "'qemuvms' in group_names"
 
@@ -29,12 +45,13 @@
       # Register master server first, before any replicas
       - role: ipaserver
         when: "'ipaservers' in group_names"
+
       - role: ipaserver
         when: "'ipareplicas' in group_names"
 
       # configuration is replicated, only update one server
       - role: ipaconfig
-        when: inventory_hostname == groups['ipareplicas'][-1]
+        when: inventory_hostname == hostvars.localhost.random_ipaserver
 
       - role: ipaclient
         when: "'ipaclients' in group_names and
