@@ -22,3 +22,10 @@ ipaserver_groups: []
 # uid*, uidnumber, gid, ...
 # Ref: https://docs.ansible.com/ansible/latest/modules/ipa_user_module.html#ipa-user-module
 ipaserver_users: []
+
+# When non-empty, file will be written to /usr/local/sbin/ipaconfig_script.sh
+# then executed on one ipaserver host only.  It is assumed the script is idempotent.
+# and exits non-zero on failure.  An admin ticket will have already been obtained.
+ipaconfig_lib_filepath: '{{ role_path }}/files/ipaconfig_lib.sh'
+ipaconfig_script_filepath: '{{ role_path }}/files/ipaconfig_script.sh'
+ipaconfig_script_debug: False  # when true, DEBUG=true will be set

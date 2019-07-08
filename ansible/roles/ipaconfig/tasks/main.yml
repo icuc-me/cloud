@@ -3,11 +3,15 @@
 - name: Variable expectations are validated
   assert:
       that:
+          - 'hostvars.localhost.random_ipaserver | default("",True) | trim | length'
           - 'ipaserver_hostname | default("",True) | trim | length'
           - 'ipaserver_domain | default("",True) | trim | length'
           - 'ipaserver_realm | default("",True) | trim | length'
           - 'ipaserver_admin_principal | default("",True) | trim | length'
           - 'ipaserver_admin_password | default("",True) | trim | length'
+          - 'ipaconfig_script_filepath is is_file'
+          - 'ipaconfig_lib_filepath is is_file'
+          - 'ipaconfig_script_debug | default(False,True) | bool in [True,False]'
 
 - name: The new user e-mail domain and shell are set
   ipa_config:
@@ -17,23 +21,6 @@
     IPA_HOST: '{{ ipaserver_hostname }}'
     IPA_USER: '{{ ipaserver_admin_principal }}'
     IPA_PASS: '{{ ipaserver_admin_password }}'
-
-- name: Non-client DNS managed entries exist
-  ipa_dnsrecord:
-    record_name: '{{ item.name | mandatory }}'
-    record_ttl: '{{ item.ttl if "ttl" in item else "300" }}'
-    record_type: '{{ item.type if "type" in item else omit }}'
-    record_value: '{{ item.value | mandatory }}'
-    state: '{{ item.state if "state" in item else "present" }}'
-    zone_name: '{{ item.zone | mandatory }}'
-  environment:
-    IPA_HOST: '{{ ipaserver_hostname }}'
-    IPA_USER: '{{ ipaserver_admin_principal }}'
-    IPA_PASS: '{{ ipaserver_admin_password }}'
-  register: _ipa_dnsrecord
-  failed_when: _ipa_dnsrecord is failure and
-               not _ipa_dnsrecord.msg is search('no modifications to be performed')
-  with_items: '{{ ipaserver_dnsrecords }}'
 
 - name: User entries exist
   ipa_user:
@@ -70,3 +57,51 @@
     IPA_USER: '{{ ipaserver_admin_principal }}'
     IPA_PASS: '{{ ipaserver_admin_password }}'
   with_items: '{{ ipaserver_groups }}'
+
+- name: The ipaconfig lib and script are written
+  copy:
+      backup: True
+      src: '{{ item.value }}'
+      dest: "/usr/local/sbin/{{ item.key }}"
+      group: 'root'
+      owner: 'root'
+      mode: '0770'
+  with_dict:
+      ipaconfig_script.sh: '{{ ipaconfig_script_filepath }}'
+      ipaconfig_lib.sh: '{{ ipaconfig_lib_filepath }}'
+
+- name: Obtain admin kerberos ticket
+  script: 'kinit.exp admin {{ ipaserver_admin_password | mandatory }} {{ ipaserver_realm | mandatory }}'
+  no_log: True
+  register: ipaserver_ticket
+  until: ipaserver_ticket is success
+  retries: '3'
+  delay: '15'
+
+- name: The ipaconfig_script is executed
+  command: /usr/local/sbin/ipaconfig_script.sh
+  environment:
+      DEBUG: '{{ "true" if ipaconfig_script_debug | bool else "false" }}'
+  register: ipaconfig_command
+
+- name: The script result is debugged
+  debug:
+    var: 'ipaconfig_command'
+  when: ipaconfig_script_debug | bool
+
+- name: Non-client DNS managed entries exist
+  ipa_dnsrecord:
+    record_name: '{{ item.name | mandatory }}'
+    record_ttl: '{{ item.ttl if "ttl" in item else "300" }}'
+    record_type: '{{ item.type if "type" in item else omit }}'
+    record_value: '{{ item.value | mandatory }}'
+    state: '{{ item.state if "state" in item else "present" }}'
+    zone_name: '{{ item.zone | mandatory }}'
+  environment:
+    IPA_HOST: '{{ ipaserver_hostname }}'
+    IPA_USER: '{{ ipaserver_admin_principal }}'
+    IPA_PASS: '{{ ipaserver_admin_password }}'
+  register: _ipa_dnsrecord
+  failed_when: _ipa_dnsrecord is failure and
+               not _ipa_dnsrecord.msg is search('no modifications to be performed')
+  with_items: '{{ ipaserver_dnsrecords }}'
