@@ -17,3 +17,10 @@
 - import_tasks: 'configure_forwarding.yml'
 
 - import_tasks: 'remove_unmanaged_features.yml'
+
+- include_tasks: 'clean_managed_zone.yml'
+  with_dict:
+      wan: '{{ gateway_wan_zone }}'
+      lan: '{{ gateway_lan_zone }}'
+  loop_control:
+      loop_var: _loop_zone_name
