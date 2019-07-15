@@ -18,29 +18,6 @@
       immediate: True
   notify: Firewalld reloaded when permanent
 
-- name: Lan NetworkManager connection is zoned
-  command: >-
-      nmcli connection modify \
-      {% if not gateway_settings_permanent %}--temporary{% endif %} \
-      {{ item.key }} \
-      +connection.zone {{ item.value }}
-  notify: Firewalld reloaded when permanent
-  with_dict:
-      '{{ gateway_wan_interface }}': '{{ gateway_wan_zone }}'
-      '{{ gateway_lan_interface }}': '{{ gateway_lan_zone }}'
-
-- name: Lan and Wan interfaces are zoned
-  firewalld:
-      interface: '{{ item.key }}'
-      zone: '{{ item.value }}'
-      permanent: '{{ gateway_settings_permanent }}'
-      state: 'enabled'
-      immediate: True
-  notify: Firewalld reloaded when permanent
-  with_dict:
-      '{{ gateway_wan_interface }}': '{{ gateway_wan_zone }}'
-      '{{ gateway_lan_interface }}': '{{ gateway_lan_zone }}'
-
 - name: External zone is set as the default
   command: >-
       firewall-cmd --set-default-zone=external
