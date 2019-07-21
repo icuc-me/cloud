@@ -1,0 +1,7 @@
+---
+
+- name: Expectations are verified
+  assert:
+      that: 'not is_backup_server | bool'
+
+- include_tasks: client_configuration.yml

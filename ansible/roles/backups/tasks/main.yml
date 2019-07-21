@@ -1,0 +1,62 @@
+---
+
+- name: Expectations are verified
+  assert:
+      that:
+          - 'backup_ssh_pub_key_filepath | is_file'
+          - 'backup_server_inventory_hostname | default("", True) | trim | length'
+          - 'backup_server_inventory_hostname in play_hosts'
+
+- name: This host is the backup server
+  set_fact:
+      is_backup_server: True
+  when: inventory_hostname is backup_server_inventory_hostname
+
+- name: This host is a backup client
+  set_fact:
+      is_backup_server: False
+  when: inventory_hostname is not backup_server_inventory_hostname
+
+- when: not ansible_local.backup_packages_installed | default(False,True) | bool
+  block:
+
+    - name: The SafeKeep RPM key is installed
+      rpm_key:
+          key: '{{ backup_gpg_key }}'
+
+    - name: The SakeKeep packages are copied
+      copy:
+          dest: /tmp/
+          src: '{{ item }}'
+      with_items: '{{ backup_server_packages if is_backup_server else backup_client_packages }}'
+
+    - name: The SafeKeep packages are installed
+      dns:
+          name: >-
+              {% for f in backup_server_packages if is_backup_server else backup_client_packages %}
+                /tmp/{{ f }},
+              {% endfor %}
+
+    - name: The ansible local facts directory exists
+      file:
+        path: "/etc/ansible/facts.d"
+        state: "directory"
+
+    - name: The Safekeep packages install marker file contains true
+      copy:
+        follow: True
+        mode: "660"
+        dest: '/etc/ansible/facts.d/backup_packages_installed.fact'
+        content: "true"
+
+- name: The Safekeep ssh-key is allowed root access
+  authorized_key:
+      key: '{{ backup_ssh_pub_key }}'
+
+# N/B: In playbook, clients must already be installed, before server.
+- include_tasks: client.yml
+  when: not is_backup_server and backup_client_configuration | default("", True) | trim | length
+
+- include_tasks: server.yml
+          - 'backup_ssh_pri_key | default("", True) | trim | length'
+  when: is_backup_server

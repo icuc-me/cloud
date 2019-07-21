@@ -1,0 +1,108 @@
+---
+
+- name: Expectations are verified
+  assert:
+      that:
+          - 'is_backup_server | bool'
+          - 'backup_ssh_pub_key_filepath | is_file'
+          - 'backup_ssh_pri_key_filepath | is_file'
+          - 'backup_ssh_pri_ctrl_key_filepath | is_file'
+          - 'backup_ssh_pri_data_key_filepath | is_file'
+          - 'backup_archive_bucket_uri | default("",True) | trim | length'
+          - 'backup_archive_passphrase | default("",True) | trim | length'
+
+- include_tasks: client_configuration.yml
+
+- name: The ssh key directory exists with correct owner/permissions
+  file:
+      path: /etc/safekeep/.ssh
+      state: directory
+      mode: '0700'
+      owner: sakekeep
+      group: safekeep
+
+- name: The ssh configuration is managed with correct owner/permissions
+  blockinfile:
+      path: /etc/safekeep/.ssh/config
+      mode: '0600'
+      owner: sakekeep
+      group: safekeep
+      backup: True
+      create: True
+      insertbefore: BOF
+      insertafter: EOF
+      block: |
+            Host *
+                # Need to comment most of these to deploy keys
+                CheckHostIP yes
+                StrictHostKeyChecking yes
+                PasswordAuthentication no
+                PubkeyAuthentication yes
+                PreferredAuthentications publickey
+                GSSAPIAuthentication no
+                SendEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
+                SendEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
+                SendEnv LC_IDENTIFICATION LC_ALL LANGUAGE
+                SendEnv XMODIFIERS
+
+- name: The ssh keys exists with correct owner/permissions
+  copy:
+      src: '{{ item }}'
+      dest: '/etc/safekeep/.ssh/config/{{ item | basename }}'
+      mode: '0600'
+      owner: sakekeep
+      group: safekeep
+      backup: True
+  with_items:
+    - '{{ backup_ssh_pub_key_filepath }}'
+    - '{{ backup_ssh_pri_key_filepath }}'
+    - '{{ backup_ssh_pri_ctrl_key_filepath }}'
+    - '{{ backup_ssh_pri_data_key_filepath }}'
+
+- name: The backup server configuration template is rendered
+  template:
+      src: safekeep.conf
+      dest: /etc/safekeep/safekeep.conf
+      mode: '0600'
+      owner: sakekeep
+      group: safekeep
+      backup: true
+
+- name: The backup utility scripts are copied
+  copy:
+      src: '{{ item }}'
+      dest: '/etc/safekeep/scripts/{{ item }}'
+      mode: '"660" if item is "lib.sh" else "0770"'
+      owner: sakekeep
+      group: safekeep
+      backup: true
+  with_items:
+      - lib.sh
+      - safekeep.sh
+      - listing.sh
+
+- name: The backup archive script template is rendered
+  template:
+      src: 'archive.sh'
+      dest: '/etc/safekeep/scripts/archive'
+      mode: "0770"
+      owner: sakekeep
+      group: safekeep
+      backup: true
+
+- name: The backup archive passphrase file is written
+  copy:
+      dest: '/etc/safekeep/archive_passphrase'
+      mode: '0600'
+      owner: sakekeep
+      group: safekeep
+      backup: False
+
+- name: The backup archive boto configuration template is rendered
+  template:
+      src: 'boto'
+      dest: '/etc/safekeep/scripts/.boto'
+      mode: "0600"
+      owner: sakekeep
+      group: safekeep
+      backup: False

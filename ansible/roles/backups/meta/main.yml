@@ -1,0 +1,5 @@
+---
+
+dependencies:
+    # Required for variables: emailclient_mydomain and emailclient_relayhost
+    - role: emailclient

@@ -1,0 +1,41 @@
+---
+
+- name: Expectations are verified
+  assert:
+      that:
+          - 'backup_ssh_pub_key_filepath | is_file'
+          - 'backup_server_inventory_hostname | default("",True) | trim | length'
+          - 'backup_server_inventory_hostname in play_hosts'
+
+- name: The client configuration exists on server
+  copy:
+      dest: /etc/safekeep/backup.d/{{ ansible_fqdn }}.backup
+      content: '{{ backup_client_configuration }}'
+  delegate_to: backup_server_inventory_hostname
+  when: backup_client_configuration | default("", True) | trim | length
+
+- name: The client configuration does not exist on server
+  file:
+      path: /etc/safekeep/backup.d/{{ ansible_fqdn }}.backup
+      state: absent
+  delegate_to: backup_server_inventory_hostname
+  when: not backup_client_configuration | default("", True) | trim | length
+
+- name: The scripts subdirectory exists on server
+  file:
+      path: /etc/safekeep/scripts
+      owner: safekeep
+      group: safekeep
+      mode: '0770'
+  delegate_to: backup_server_inventory_hostname
+
+- name: The client script exists on server
+  copy:
+      dest: '/etc/safekeep/scripts/{{ item.key }}'
+      content: '{{ item.value }}'
+      owner: safekeep
+      group: safekeep
+      mode: '0770'
+  delegate_to: backup_server_inventory_hostname
+  when: backup_client_configuration | default("", True) | trim | length
+  with_dict: '{{ backup_client_script }}'

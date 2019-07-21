@@ -1,0 +1,37 @@
+---
+
+# All are required on every host
+backup_server_inventory_hostname: ""
+backup_ssh_pub_key_filepath: '{{ env_file_dirpath }}/id_rsa'
+
+# Required if backups are to be enabled on this host
+backup_client_configuration: ""
+
+# Required if client configuration specifies a server-side script
+# Key is filename, value is contents.
+backup_client_script: {}
+
+# Required on server only
+backup_ssh_pri_key_filepath: '{{ env_file_dirpath }}/id_rsa'
+backup_ssh_pri_ctrl_key_filepath: '{{ env_file_dirpath }}/safekeep-server-ctrl-key'
+backup_ssh_pri_data_key_filepath: '{{ env_file_dirpath }}/safekeep-server-data-key'
+backup_archive_bucket_uri: ""
+backup_archive_passphrase: ""
+backup_archive_key_id: ""
+backup_archive_access_key: ""
+
+# Assumed pre-existing under files/
+backup_gpg_key: RPM-GPG-KEY-SafeKeep
+
+backup_server_packages:
+    - safekeep-common-1.5.0-1.noarch.rpm
+    - safekeep-client-1.5.0-1.noarch.rpm
+    - safekeep-server-1.5.0-1.noarch.rpm
+
+backup_client_packages:
+    - safekeep-common-1.5.0-1.noarch.rpm
+    - safekeep-client-1.5.0-1.noarch.rpm
+
+backup_client_extra_packages:
+    - python2-boto
+    - duplicity

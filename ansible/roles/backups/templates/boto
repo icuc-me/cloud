@@ -1,0 +1,9 @@
+[Credentials]
+aws_access_key_id = {{ backup_archive_key_id }}
+aws_secret_access_key = {{ backup_archive_access_key }}
+
+[Boto]
+num_retries = 10
+is_secure = false
+debug = 2
+connection_stale_duration = 300
