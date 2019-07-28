@@ -1,0 +1,12 @@
+---
+
+- package:
+  name: '*'
+  state: latest
+
+- debug:
+  - msg: "Rebooting {{ inventory_hostname }} please make sure encrypted disks are unlocked"
+
+- reboot:
+  post_reboot_delay: 2
+  reboot_timeout: 3600
