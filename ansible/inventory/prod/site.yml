@@ -28,6 +28,21 @@ all:
         system_hostname: '{{ _vault_system_hostname }}'
         ansible_python_interpreter: 'python3'
     children:
+        update_1:
+            hosts:
+                ipa2: {}
+                dhcp1: {}
+                smtp1: {}
+                imap1: {}
+        update_2:
+            hosts:
+                ipa1: {}
+                dhcp2: {}
+                vmhost1: {}
+                file1: {}
+        update_3:
+            hosts:
+                gateway1: {}
         gateways:
             hosts:
                 gateway1: {}

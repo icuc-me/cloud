@@ -1,0 +1,19 @@
+---
+
+- hosts: all
+  gather_facts: true
+
+- hosts: update_1
+  gather_facts: false
+  roles:
+      - updatereboot
+
+- hosts: update_2
+  gather_facts: false
+  roles:
+      - updatereboot
+
+- hosts: update_3
+  gather_facts: false
+  roles:
+      - updatereboot
