@@ -49,7 +49,7 @@ resource "acme_certificate" "domain" {
     common_name = "${local.domain_fqdn}"
     subject_alternative_names = ["${local.sans}"]
     key_type = "${tls_private_key.registration.rsa_bits}"  // bits mean rsa
-    min_days_remaining = "${local.is_prod == 1 ? 20 : 3}"
+    min_days_remaining = "${local.is_prod == 1 ? 30 : 3}"
     // decouple from default nameservers on runtime host
     recursive_nameservers = ["8.8.8.8", "8.8.4.4"]
     dns_challenge {
