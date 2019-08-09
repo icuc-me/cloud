@@ -1,12 +1,24 @@
 ---
 
-- package:
-  name: '*'
-  state: latest
+- name: All packages are updated
+  package:
+      name: '*'
+      state: latest
+  register: updated
 
 - debug:
-  - msg: "Rebooting {{ inventory_hostname }} please make sure encrypted disks are unlocked"
+    msg: "Rebooting {{ inventory_hostname }} please make sure encrypted disks are unlocked"
 
-- reboot:
-  post_reboot_delay: 2
-  reboot_timeout: 3600
+- name: The system is rebooted
+  reboot:
+    post_reboot_delay: 2
+    reboot_timeout: 3600
+  when: updated is changed
+
+- name: Only the latest two kernels are kept
+  shell: 'dnf remove -y $(dnf repoquery --installonly --latest-limit=-2 -q)'
+  when: "ansible_distribution == 'Fedora'"
+
+- name: Only the latest two kernels are kept
+  shell: 'package-cleanup -y --oldkernels --count=2'
+  when: "ansible_distribution == 'CentOS'"
