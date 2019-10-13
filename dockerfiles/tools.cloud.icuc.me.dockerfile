@@ -10,6 +10,7 @@ ENV TFURL="https://releases.hashicorp.com/terraform/${TFVER}/terraform_${TFVER}_
     PACKER_DIST_FILENAME="packer_${PACKER_VERSION}_linux_${OS_ARCH}.zip"
 
 RUN ooe.sh retry.sh 180 3 30 yum update -y && \
+    ooe.sh retry.sh 120 3 60 yum install -y ansible && \
     cd /tmp && \
     ooe.sh retry.sh 30 5 30 curl -L --silent --show-error \
         -O "https://releases.hashicorp.com/packer/${PACKER_VERSION}/${PACKER_DIST_FILENAME}" && \
