@@ -37,7 +37,7 @@ RUN chmod 0755 /usr/local/bin/as_user.sh && \
     mkdir -p "$GOCACHE" && \
     cd /tmp && \
     ooe.sh retry.sh 30 5 30 curl -L --silent --show-error -O $GLCIURL && \
-    ooe.sh retry.sh 30 5 30 sh ./golangci-lint.sh -b $GOPATH/bin v1.15.0 && \
+    ooe.sh retry.sh 30 5 30 sh ./golangci-lint.sh -b $GOPATH/bin v1.21.0 && \
     cd / && \
     rm -rf /var/tmp/* /var/tmp/.??* /tmp/* /tmp/.??*
 
