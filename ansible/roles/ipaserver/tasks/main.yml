@@ -78,13 +78,16 @@
 
     # An unsuccessful install nearly always required manual intervention
     - name: Mark installation attempted, successful or not
-      include_tasks: set_local_facts.yml
+      include_role:
+          name: localflag
+      vars:
+          localflag_name: "ipaserver_installed"
       when: ipa_install_result is changed
 
     - debug:
         msg: |
             WARNING: Installation failed, after manual UN-installation,
-                     be sure to remove {{ ipaserver_marker_fact_filepath | trim }}
+                     be sure to remove local "{{ localflag_name }}" fact.
       when: ipa_install_result is failed
 
     # Failure is asserted now, if it is so
@@ -95,17 +98,13 @@
     enabled: True
     state: started
 
-# FIXME: sometimes this gets "stuck"
-# - name: All directory services are eventually running
-#   script: ipactl_status_good.sh
-#   register: ipactl_status_good
-#   until: ipactl_status_good is success
-#   retries: '{{ ipaserver_running_tries | int }}'
-#   delay: '{{ ipaserver_running_delay | int }}'
-
 - name: Obtain admin kerberos ticket
   script: 'kinit.exp admin {{ ipaserver_admin_password }} {{ ipaserver_realm }}'
   no_log: True
+  register: ipaserver_ticket
+  until: ipaserver_ticket is success
+  retries: '3'
+  delay: '15'
 
 - name: Obtain CA Certificate
   command: 'cat /etc/ipa/ca.crt'

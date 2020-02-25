@@ -1,5 +1,14 @@
 ---
 
+- hosts: localhost
+  gather_facts: true
+  tasks:
+      - name: One ipaserver host is selected at random
+        set_fact:
+            random_ipaserver: '{{ groups.ipaservers | random() }}'
+        when: 'inventory_hostname == "localhost"'
+
+
 - hosts: all
   gather_facts: true
   vars:
@@ -9,6 +18,13 @@
       - debug:
           msg: "***** {{ inventory_hostname }} operating in {{ env_name }} environment *****"
   roles:
+      # Register master server first, before any replicas
+      - role: ipaserver
+        when: "'ipaservers' in group_names"
+
+      - role: ipaserver
+        when: "'ipareplicas' in group_names"
+
       # configuration is replicated, only update one server
       - role: ipaconfig
-        when: inventory_hostname == groups['ipareplicas'][-1]
+        when: inventory_hostname == hostvars.localhost.random_ipaserver
