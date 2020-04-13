@@ -5,3 +5,4 @@ ansible_dependencies: >
     python3 libselinux-python policycoreutils-python
     yum-utils python3-dnf python3-pycurl
     python3-pycurl python3-simplejson rsync
+    python3-netaddr
