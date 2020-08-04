@@ -42,7 +42,9 @@ locals {
     glue_zone = "${data.terraform_remote_state.phase_2.glue_zone}"
     canonical_legacy_domains = "${data.terraform_remote_state.phase_2.canonical_legacy_domains}"
     managed_by = "Managed by terraform environment ${var.UUID} for project"
-    cloud_gateway_external_ip = "${data.terraform_remote_state.phase_4.cloud_gateway_external_ip}"
+    // Temporarily removed
+    // cloud_gateway_external_ip = "${data.terraform_remote_state.phase_4.cloud_gateway_external_ip}"
+    cloud_gateway_external_ip = "127.1.1.1"
     site_gateway_external_ip = "${data.terraform_remote_state.phase_4.site_gateway_external_ip}"
 }
 
